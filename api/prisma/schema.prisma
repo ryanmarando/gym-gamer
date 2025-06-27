@@ -14,22 +14,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Admin {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String
-  createdAt DateTime @default(now()) @map("created_at")
-  password  String
-
-  @@map("admin")
-}
-
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
   name      String
-  createdAt DateTime @default(now()) @map("created_at")
-  password  String
+  createdAt DateTime  @default(now()) @map("created_at")
+  isAdmin   Boolean   @default(false) @map("is_admin")
+  password  Password?
+  level     Int       @default(1)
+  xp        Int       @default(0)
 
   @@map("user")
+}
+
+model Password {
+  id     Int    @id @default(autoincrement())
+  userId Int    @unique
+  hash   String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

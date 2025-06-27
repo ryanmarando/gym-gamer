@@ -6,7 +6,8 @@ const router = Router();
 
 router.post("/login", authController.login);
 router.post("/register", authController.register);
-router.get("/registerAdmin", authController.createAdminUser);
+router.patch("/registerAdmin/:id", authController.registerAdminUser);
 router.get("/getAllUsers", authController.getAllUsers);
+router.delete("/deleteAllUsers", authController.deleteAllUsers);
 
 export default router;

@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { prisma } from "../config.js";
+import { prisma, jwtSecret } from "../config.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 export const login = async (
     req: Request,
@@ -7,38 +9,54 @@ export const login = async (
     next: NextFunction
 ) => {
     try {
-        const { email, password } = req.body;
-        if (!email || !password) {
+        const { email } = req.body;
+        if (!email) {
             res.status(400).json({
-                error: "All fields are required.",
+                error: "Please enter an email.",
             });
             return;
         }
 
         const user = await prisma.user.findFirst({
             where: { email },
+            include: { password: true },
         });
 
         if (!user) {
-            res.status(401).json({ message: "Invalid email." });
+            res.status(401).json({ message: "Invalid email. No user found." });
             return;
         }
 
-        if (!user.password) {
+        if (!user.password?.hash) {
             res.status(401).json({
                 message: "Error with account username or password",
             });
             return;
         }
 
-        if (password !== user.password) {
-            res.status(401).json({ message: "Incorrect password." });
+        const passwordValid = await bcrypt.compare(
+            req.body.password,
+            user.password.hash
+        );
+
+        if (!passwordValid) {
+            res.status(401).json({ message: "Invalid password" });
             return;
         }
 
-        res.status(200).json({
-            message: `Successfully logged in. Welcome ${user.name}!`,
+        const token = jwt.sign({ id: user.id, email: user.email }, jwtSecret!, {
+            expiresIn: "6h",
         });
+
+        res.json({
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+            },
+        });
+        console.log("Successful login! Hi", user.name);
     } catch (error) {
         console.log("Unsuccessful Login");
         res.status(500).json({
@@ -53,19 +71,26 @@ export const register = async (
     next: NextFunction
 ) => {
     try {
-        const { email, name, password } = req.body;
-        if (!email || !name || !password) {
+        const { email, name } = req.body;
+        if (!email || !name || !req.body.password) {
             res.status(400).json({
                 error: "All fields are required.",
             });
             return;
         }
 
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
+
         const newUser = await prisma.user.create({
             data: {
                 email: email,
                 name: name,
-                password: password,
+                password: {
+                    create: {
+                        hash: hashedPassword,
+                    },
+                },
             },
         });
         console.log("Successful POST Registered User Id:", newUser.id);
@@ -80,13 +105,27 @@ export const register = async (
     }
 };
 
-export const createAdminUser = async (
+export const registerAdminUser = async (
     req: Request,
     res: Response,
     next: NextFunction
 ) => {
-    console.log("Registered an Admin!");
-    res.send("Registered an Admin.");
+    const userId = Number(req.params.id);
+
+    try {
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: { isAdmin: true },
+        });
+
+        res.status(200).json({
+            message: "User successfully updated to admin id:",
+            user: updatedUser,
+        });
+    } catch (error) {
+        console.log("Unsuccessful PATCH Registering Admin.");
+        res.status(500).json({ message: "Failed to update user to admin." });
+    }
 };
 
 export const getAllUsers = async (
@@ -101,4 +140,14 @@ export const getAllUsers = async (
     }
 
     res.status(200).json(users);
+};
+
+export const deleteAllUsers = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const users = await prisma.user.deleteMany();
+
+    res.status(200).json({ message: "Deleted all users." });
 };

@@ -14,11 +14,16 @@
     "description": "",
     "dependencies": {
         "@prisma/client": "^6.10.1",
-        "express": "^5.1.0"
+        "bcrypt": "^6.0.0",
+        "dotenv": "^16.6.0",
+        "express": "^5.1.0",
+        "jsonwebtoken": "^9.0.2"
     },
     "devDependencies": {
+        "@types/bcrypt": "^5.0.2",
         "@types/cors": "^2.8.19",
         "@types/express": "^5.0.3",
+        "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "^24.0.4",
         "nodemon": "^3.1.10",
         "prisma": "^6.10.1",
