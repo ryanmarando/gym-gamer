@@ -15,14 +15,15 @@ datasource db {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  name      String
-  createdAt DateTime  @default(now()) @map("created_at")
-  isAdmin   Boolean   @default(false) @map("is_admin")
-  password  Password?
-  level     Int       @default(1)
-  xp        Int       @default(0)
+  id             Int            @id @default(autoincrement())
+  email          String         @unique
+  name           String
+  createdAt      DateTime       @default(now()) @map("created_at")
+  isAdmin        Boolean        @default(false) @map("is_admin")
+  password       Password?
+  level          Int            @default(1)
+  xp             Int            @default(0)
+  workoutEntries WorkoutEntry[]
 
   @@map("user")
 }
@@ -32,4 +33,21 @@ model Password {
   userId Int    @unique
   hash   String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Workout {
+  id      Int            @id @default(autoincrement())
+  name    String
+  entries WorkoutEntry[]
+}
+
+model WorkoutEntry {
+  id        Int      @id @default(autoincrement())
+  workout   Workout  @relation(fields: [workoutId], references: [id])
+  workoutId Int
+  weight    Float
+  date      DateTime
+
+  user   User? @relation(fields: [userId], references: [id])
+  userId Int?
 }

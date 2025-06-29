@@ -119,7 +119,7 @@ export const registerAdminUser = async (
         });
 
         res.status(200).json({
-            message: "User successfully updated to admin id:",
+            message: `User successfully updated to admin id ${updatedUser.id}`,
             user: updatedUser,
         });
     } catch (error) {
