@@ -23,6 +23,7 @@ model User {
   password       Password?
   level          Int            @default(1)
   xp             Int            @default(0)
+  weight         Float?
   workoutEntries WorkoutEntry[]
 
   @@map("user")
