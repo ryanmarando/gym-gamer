@@ -24,7 +24,7 @@ app.listen(port, "0.0.0.0", () => {
 app.use("/auth", authRouter);
 
 // Authentication
-app.use(authenticated);
+//app.use(authenticated);
 
 // Routers
 app.use("/workouts", workoutRouter);

@@ -151,3 +151,24 @@ export const deleteAllUsers = async (
 
     res.status(200).json({ message: "Deleted all users." });
 };
+
+export const getUserWorkouts = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const userId = Number(req.params.id);
+
+    const userWithWorkouts = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            workouts: {
+                include: {
+                    workout: true, // 👈 Pull in the Workout template
+                },
+            },
+        },
+    });
+
+    res.status(200).json(userWithWorkouts);
+};
