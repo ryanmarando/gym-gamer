@@ -2,6 +2,7 @@ import express from "express";
 import logging from "./middleware/logging.js";
 import authRouter from "./routes/auth.js";
 import workoutRouter from "./routes/workouts.js";
+import userRouter from "./routes/user.js";
 import authenticated from "./middleware/auth.js";
 
 const app = express();
@@ -28,3 +29,4 @@ app.use("/auth", authRouter);
 
 // Routers
 app.use("/workouts", workoutRouter);
+app.use("/user", userRouter);

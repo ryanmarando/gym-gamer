@@ -14,16 +14,16 @@ datasource db {
 }
 
 model User {
-  id             Int            @id @default(autoincrement())
-  email          String         @unique
-  name           String
-  createdAt      DateTime       @default(now()) @map("created_at")
-  isAdmin        Boolean        @default(false) @map("is_admin")
-  password       Password?
-  level          Int            @default(1)
-  xp             Int            @default(0)
-  weight         Float?
-  workouts UserWorkout[]
+  id        Int           @id @default(autoincrement())
+  email     String        @unique
+  name      String
+  createdAt DateTime      @default(now()) @map("created_at")
+  isAdmin   Boolean       @default(false) @map("is_admin")
+  password  Password?
+  level     Int           @default(1)
+  xp        Int           @default(0)
+  weight    Float?
+  workouts  UserWorkout[]
 
   @@map("user")
 }
@@ -36,31 +36,31 @@ model Password {
 }
 
 model Workout {
-  id      Int            @id @default(autoincrement())
-  name    String
-  users    UserWorkout[]
+  id    Int           @id @default(autoincrement())
+  name  String
+  users UserWorkout[]
 }
 
 model UserWorkout {
-  userId Int
+  userId    Int
   workoutId Int
 
-  user      User    @relation(fields: [userId], references: [id])
-  workout   Workout @relation(fields: [workoutId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  workout Workout @relation(fields: [workoutId], references: [id])
 
-  entries   WorkoutEntry[] 
+  entries WorkoutEntry[]
 
-  @@id([userId, workoutId]) 
+  @@id([userId, workoutId])
 }
 
 model WorkoutEntry {
-  id            Int          @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  userId        Int
-  workoutId     Int
+  userId    Int
+  workoutId Int
 
-  userWorkout   UserWorkout  @relation(fields: [userId, workoutId], references: [userId, workoutId])
+  userWorkout UserWorkout @relation(fields: [userId, workoutId], references: [userId, workoutId])
 
-  weight        Float
-  date          DateTime
+  weight Float
+  date   DateTime @default(now()) @map("created_at")
 }

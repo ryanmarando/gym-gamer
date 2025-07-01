@@ -12,9 +12,5 @@ router.patch(
     authenticated,
     authController.registerAdminUser
 );
-router.get("/getAllUsers", authenticated, authController.getAllUsers);
-router.delete("/deleteAllUsers", authenticated, authController.deleteAllUsers);
-
-router.get("/getUserWorkouts/:id", authController.getUserWorkouts);
 
 export default router;
