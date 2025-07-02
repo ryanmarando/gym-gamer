@@ -3,6 +3,7 @@ import logging from "./middleware/logging.js";
 import authRouter from "./routes/auth.js";
 import workoutRouter from "./routes/workouts.js";
 import userRouter from "./routes/user.js";
+import progressPhotoRouter from "./routes/progressPhoto.js";
 import authenticated from "./middleware/auth.js";
 
 const app = express();
@@ -24,9 +25,13 @@ app.listen(port, "0.0.0.0", () => {
 // Login and Register
 app.use("/auth", authRouter);
 
+// Uploaded photos access
+app.use("/uploads", express.static("uploads"));
+
 // Authentication
 //app.use(authenticated);
 
 // Routers
 app.use("/workouts", workoutRouter);
 app.use("/user", userRouter);
+app.use("/progressPhoto", progressPhotoRouter);

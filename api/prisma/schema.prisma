@@ -14,16 +14,17 @@ datasource db {
 }
 
 model User {
-  id        Int           @id @default(autoincrement())
-  email     String        @unique
-  name      String
-  createdAt DateTime      @default(now()) @map("created_at")
-  isAdmin   Boolean       @default(false) @map("is_admin")
-  password  Password?
-  level     Int           @default(1)
-  xp        Int           @default(0)
-  weight    Float?
-  workouts  UserWorkout[]
+  id             Int             @id @default(autoincrement())
+  email          String          @unique
+  name           String
+  createdAt      DateTime        @default(now()) @map("created_at")
+  isAdmin        Boolean         @default(false) @map("is_admin")
+  password       Password?
+  level          Int             @default(1)
+  xp             Int             @default(0)
+  weight         Float?
+  workouts       UserWorkout[]
+  progressPhotos ProgressPhoto[]
 
   @@map("user")
 }
@@ -63,4 +64,13 @@ model WorkoutEntry {
 
   weight Float
   date   DateTime @default(now()) @map("created_at")
+}
+
+model ProgressPhoto {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  imagePath String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }

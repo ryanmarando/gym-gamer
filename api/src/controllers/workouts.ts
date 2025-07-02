@@ -68,6 +68,31 @@ export const saveToUser = async (
             return;
         }
 
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            res.status(400).json({
+                message: "User not found.",
+            });
+            return;
+        }
+
+        const existing = await prisma.userWorkout.findFirst({
+            where: {
+                userId: userId,
+                workoutId: workoutId,
+            },
+        });
+
+        if (existing) {
+            res.status(200).json({
+                message: `Workout '${workoutToBeAdded.name}' is already saved for this user.`,
+            });
+            return;
+        }
+
         // Add the link in the join table
         await prisma.userWorkout.create({
             data: {
