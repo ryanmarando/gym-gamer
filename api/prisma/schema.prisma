@@ -14,17 +14,19 @@ datasource db {
 }
 
 model User {
-  id             Int               @id @default(autoincrement())
-  email          String            @unique
-  name           String
-  createdAt      DateTime          @default(now()) @map("created_at")
-  password       Password?
-  level          Int               @default(1)
-  xp             Int               @default(0)
-  weight         Float?
-  workouts       UserWorkout[]
-  progressPhotos ProgressPhoto[]
-  achievements   UserAchievement[]
+  id              Int               @id @default(autoincrement())
+  email           String            @unique
+  name            String
+  createdAt       DateTime          @default(now()) @map("created_at")
+  password        Password?
+  level           Int               @default(1)
+  levelProgress   Int               @default(0)
+  xp              Int               @default(0)
+  weightEntries   UserWeightEntry[]
+  workouts        UserWorkout[]
+  createdWorkouts Workout[]
+  progressPhotos  ProgressPhoto[]
+  achievements    UserAchievement[]
 
   @@map("user")
 }
@@ -37,17 +39,19 @@ model Password {
 }
 
 model Workout {
-  id    Int           @id @default(autoincrement())
-  name  String
-  users UserWorkout[]
+  id              Int           @id @default(autoincrement())
+  name            String
+  createdByUserId Int?
+  createdBy       User?         @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  users           UserWorkout[]
 }
 
 model UserWorkout {
   userId    Int
   workoutId Int
 
-  user    User    @relation(fields: [userId], references: [id])
-  workout Workout @relation(fields: [workoutId], references: [id])
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workout Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
 
   entries WorkoutEntry[]
 
@@ -60,7 +64,7 @@ model WorkoutEntry {
   userId    Int
   workoutId Int
 
-  userWorkout UserWorkout @relation(fields: [userId, workoutId], references: [userId, workoutId])
+  userWorkout UserWorkout @relation(fields: [userId, workoutId], references: [userId, workoutId], onDelete: Cascade)
 
   weight Float
   date   DateTime @default(now()) @map("created_at")
@@ -72,13 +76,28 @@ model ProgressPhoto {
   imagePath String
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum AchievementType {
+  WORKOUT
+  STREAK
+  PERSONAL_BEST
+  SEASONAL
+  SOCIAL
+  MILESTONE
 }
 
 model Achievement {
-  id    Int               @id @default(autoincrement())
-  name  String
-  xp    Int
+  id         Int             @id @default(autoincrement())
+  name       String
+  xp         Int
+  descprtion String?
+  isQuest    Boolean         @default(false)
+  deadline   DateTime?
+  goalAmount Float?
+  goalType   AchievementType
+
   users UserAchievement[]
 }
 
@@ -86,11 +105,20 @@ model UserAchievement {
   userId        Int
   achievementId Int
 
-  user        User        @relation(fields: [userId], references: [id])
-  achievement Achievement @relation(fields: [achievementId], references: [id])
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
 
   progress  Float   @default(0)
   completed Boolean @default(false)
 
   @@id([userId, achievementId])
+}
+
+model UserWeightEntry {
+  id        Int      @id @default(autoincrement())
+  weight    Float
+  enteredAt DateTime @default(now())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

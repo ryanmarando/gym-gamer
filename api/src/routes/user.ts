@@ -13,4 +13,10 @@ router.get("/getUserAchievements/:id", userController.getUserAchievements);
 
 router.patch("/resetUserStats/:id", userController.resetUserStats);
 
+router.post("/addUserWeightEntry/:id", userController.addUserWeightEntry);
+router.get(
+    "/getAllUserWeightEntries/:id",
+    userController.getAllUserWeightEntries
+);
+
 export default router;

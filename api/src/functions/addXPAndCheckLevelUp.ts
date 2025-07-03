@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 function getRequiredXp(level: number): number {
     const baseXP = 100;
@@ -9,7 +9,7 @@ function getRequiredXp(level: number): number {
 export async function addXpAndCheckLevelUp(
     userId: number,
     xpToAdd: number,
-    tx: Prisma.TransactionClient // ✅ Correct type for the transaction client!
+    tx: Prisma.TransactionClient
 ) {
     let user = await tx.user.findUnique({
         where: { id: userId },
@@ -33,17 +33,25 @@ export async function addXpAndCheckLevelUp(
         }
     }
 
+    const requiredXpForLevel = getRequiredXp(newLevel);
+    const progressPercent =
+        requiredXpForLevel === 0
+            ? 0
+            : Math.floor((newXp / requiredXpForLevel) * 100);
+
     const updatedUser = await tx.user.update({
         where: { id: userId },
         data: {
             xp: newXp,
             level: newLevel,
+            levelProgress: progressPercent, // ✅ update your new field!
         },
         select: {
             id: true,
             name: true,
             xp: true,
             level: true,
+            levelProgress: true,
         },
     });
 

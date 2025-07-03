@@ -10,6 +10,10 @@ router.post(
     achievementController.updateAchievementProgress
 );
 
-router.delete("/", achievementController.deleteAllAchievementsFromUser);
+router.delete("/", achievementController.deleteAchievementByIdFromUser);
+router.delete(
+    "/deleteAllAchievements",
+    achievementController.deleteAllAchievements
+);
 
 export default router;

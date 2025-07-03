@@ -152,3 +152,89 @@ export const resetUserStats = async (
         });
     }
 };
+
+export const addUserWeightEntry = async (req: Request, res: Response) => {
+    try {
+        const userId = Number(req.params.id);
+        let { weight } = req.body;
+
+        weight = Number(weight);
+
+        if (!userId || isNaN(weight)) {
+            res.status(400).json({
+                message: "Please provide a valid userId and weight.",
+            });
+
+            return;
+        }
+
+        // Confirm user exists
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            res.status(404).json({
+                message: "User not found.",
+            });
+
+            return;
+        }
+
+        // Create the weight entry
+        const weightEntry = await prisma.userWeightEntry.create({
+            data: {
+                weight: weight,
+                userId: userId,
+            },
+        });
+
+        res.status(201).json({
+            message: "Weight entry added successfully!",
+            weightEntry,
+        });
+
+        return;
+    } catch (error) {
+        console.error("Error adding user weight entry:", error);
+
+        res.status(500).json({
+            message: "An error occurred while adding the weight entry.",
+            error: error instanceof Error ? error.message : String(error),
+        });
+
+        return;
+    }
+};
+
+export const getAllUserWeightEntries = async (req: Request, res: Response) => {
+    const userId = Number(req.params.id);
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                name: true,
+                weightEntries: true,
+            },
+        });
+
+        res.status(200).json({
+            user: {
+                id: user?.id,
+                name: user?.name,
+                weightEntries: user?.weightEntries,
+            },
+        });
+    } catch (error) {
+        console.error("Error GET user weight entries:", error);
+
+        res.status(500).json({
+            message: "An error occurred while GET the weight entries.",
+            error: error instanceof Error ? error.message : String(error),
+        });
+
+        return;
+    }
+};

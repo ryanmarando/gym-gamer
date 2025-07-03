@@ -43,6 +43,27 @@ export const deleteAllWorkouts = async (
     }
 };
 
+export const deleteWorkoutById = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const workoutId = Number(req.params.id);
+
+    try {
+        await prisma.workout.delete({
+            where: { id: workoutId },
+        });
+
+        res.status(200).json({ message: "Deleted workout id " + workoutId });
+    } catch (error) {
+        console.log("Unsuccessful DELETE of Workout Id" + workoutId);
+        res.status(500).json({
+            error: `Unsuccessful DELETE...${error}`,
+        });
+    }
+};
+
 export const saveToUser = async (
     req: Request,
     res: Response,
@@ -338,11 +359,59 @@ export const completeWorkout = async (req: Request, res: Response) => {
                 id: updatedUser?.id,
                 name: updatedUser?.name,
                 level: updatedUser?.level,
+                levelProgress: updatedUser?.levelProgress,
                 xp: updatedUser?.xp,
             },
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Something went wrong" });
+        res.status(500).json({
+            message: "Something went wrong completing the workout",
+        });
+    }
+};
+
+export const createCustomWorkout = async (req: Request, res: Response) => {
+    try {
+        const { userId, customName } = req.body;
+
+        if (
+            !Number.isFinite(userId) ||
+            userId <= 0 ||
+            typeof customName !== "string" ||
+            customName.trim() === ""
+        ) {
+            res.status(400).json({
+                message:
+                    "Please provide a valid userId number and name string.",
+            });
+            return;
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            res.status(404).json({ message: "Please enter a valid userId." });
+            return;
+        }
+
+        const customWorkout = await prisma.workout.create({
+            data: {
+                name: customName,
+                createdByUserId: userId,
+            },
+        });
+
+        res.status(201).json({
+            message: "New workout created!",
+            customWorkout,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: "Something went wrong creating a custom workout.",
+        });
     }
 };

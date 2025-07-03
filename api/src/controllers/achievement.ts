@@ -93,7 +93,7 @@ export const saveToUser = async (
     }
 };
 
-export const deleteAllAchievementsFromUser = async (
+export const deleteAchievementByIdFromUser = async (
     req: Request,
     res: Response
 ) => {
@@ -122,6 +122,22 @@ export const deleteAllAchievementsFromUser = async (
         console.error("Error deleting all achievements from user:", error);
         res.status(500).json({
             message: "Failed to delete all achievements from user.",
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+};
+
+export const deleteAllAchievements = async (req: Request, res: Response) => {
+    try {
+        const deletedAchievements = await prisma.achievement.deleteMany({});
+
+        res.status(200).json({
+            message: `Deleted ${deletedAchievements.count} achievements.`,
+        });
+    } catch (error) {
+        console.error("Error deleting all achievements:", error);
+        res.status(500).json({
+            message: "Failed to delete all achievements.",
             error: error instanceof Error ? error.message : String(error),
         });
     }
@@ -209,6 +225,7 @@ export const updateAchievementProgress = async (
                     id: true,
                     name: true,
                     xp: true,
+                    levelProgress: true,
                     level: true,
                     achievements: {
                         select: {
@@ -233,6 +250,7 @@ export const updateAchievementProgress = async (
                     name: updatedUser?.name,
                     xp: updatedUser?.xp,
                     level: updatedUser?.level,
+                    levelProgress: updatedUser?.levelProgress,
                     achievements: updatedUser?.achievements.map((ua) => ({
                         achievementId: ua.achievementId,
                         name: ua.achievement.name,
