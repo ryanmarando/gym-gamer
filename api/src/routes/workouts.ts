@@ -17,4 +17,6 @@ router.delete(
     workoutController.deleteAllEntriesForUserWorkout
 );
 
+router.patch("/completeWorkout/:id", workoutController.completeWorkout);
+
 export default router;

@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { prisma } from "../config.js";
-import { jwtSecret } from "../config.js";
+import { addXpAndCheckLevelUp } from "../functions/addXPAndCheckLevelUp.js";
+
+const completedWorkoutProgress = 50;
 
 export const getAllWorkouts = async (
     req: Request,
@@ -105,9 +107,9 @@ export const saveToUser = async (
             message: `Saved ${workoutToBeAdded.name} to userId: ${userId}`,
         });
     } catch (error) {
-        console.log("Unsuccessful GET of Workouts");
+        console.log("Unsuccessful PATCH To Save User Workouts");
         res.status(500).json({
-            error: `Unsuccessful GET...${error}`,
+            error: `Unsuccessful PATCH To Save User Workouts...${error}`,
         });
     }
 };
@@ -317,5 +319,30 @@ export const deleteAllEntriesForUserWorkout = async (
             message: "Failed to delete workout entries.",
             error: error instanceof Error ? error.message : String(error),
         });
+    }
+};
+
+export const completeWorkout = async (req: Request, res: Response) => {
+    const userId = Number(req.params.id);
+
+    try {
+        const updatedUser = await addXpAndCheckLevelUp(
+            userId,
+            completedWorkoutProgress,
+            prisma
+        );
+
+        res.json({
+            message: "Progress updated for completing a workout!",
+            user: {
+                id: updatedUser?.id,
+                name: updatedUser?.name,
+                level: updatedUser?.level,
+                xp: updatedUser?.xp,
+            },
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Something went wrong" });
     }
 };

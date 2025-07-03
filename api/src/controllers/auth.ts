@@ -104,26 +104,3 @@ export const register = async (
         });
     }
 };
-
-export const registerAdminUser = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    const userId = Number(req.params.id);
-
-    try {
-        const updatedUser = await prisma.user.update({
-            where: { id: userId },
-            data: { isAdmin: true },
-        });
-
-        res.status(200).json({
-            message: `User successfully updated to admin id ${updatedUser.id}`,
-            user: updatedUser,
-        });
-    } catch (error) {
-        console.log("Unsuccessful PATCH Registering Admin.");
-        res.status(500).json({ message: "Failed to update user to admin." });
-    }
-};

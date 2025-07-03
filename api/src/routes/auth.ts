@@ -7,10 +7,5 @@ const router = Router();
 
 router.post("/login", authController.login);
 router.post("/register", authController.register);
-router.patch(
-    "/registerAdmin/:id",
-    authenticated,
-    authController.registerAdminUser
-);
 
 export default router;

@@ -85,3 +85,70 @@ export const getAllUserPhotos = async (
         });
     }
 };
+
+export const getUserAchievements = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const userId = Number(req.params.id);
+
+    const userWithAchievements = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            achievements: {
+                include: {
+                    achievement: true,
+                },
+            },
+        },
+    });
+
+    res.status(200).json(userWithAchievements);
+};
+
+export const resetUserStats = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const userId = Number(req.params.id);
+
+        const resetUser = await prisma.user.findFirst({
+            where: { id: userId },
+        });
+
+        if (!resetUser) {
+            res.status(404).json({ message: "User not found" });
+            return;
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                xp: 0,
+                level: 1,
+            },
+            select: {
+                id: true,
+                name: true,
+                xp: true,
+                level: true,
+            },
+        });
+
+        res.json({
+            message: "User stats have been reset.",
+            user: updatedUser,
+        });
+
+        return;
+    } catch (error) {
+        console.error("Error resetting user stats:", error);
+        res.status(500).json({
+            message: "Something went wrong resetting user stats.",
+            error: String(error),
+        });
+    }
+};

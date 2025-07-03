@@ -14,17 +14,17 @@ datasource db {
 }
 
 model User {
-  id             Int             @id @default(autoincrement())
-  email          String          @unique
+  id             Int               @id @default(autoincrement())
+  email          String            @unique
   name           String
-  createdAt      DateTime        @default(now()) @map("created_at")
-  isAdmin        Boolean         @default(false) @map("is_admin")
+  createdAt      DateTime          @default(now()) @map("created_at")
   password       Password?
-  level          Int             @default(1)
-  xp             Int             @default(0)
+  level          Int               @default(1)
+  xp             Int               @default(0)
   weight         Float?
   workouts       UserWorkout[]
   progressPhotos ProgressPhoto[]
+  achievements   UserAchievement[]
 
   @@map("user")
 }
@@ -73,4 +73,24 @@ model ProgressPhoto {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model Achievement {
+  id    Int               @id @default(autoincrement())
+  name  String
+  xp    Int
+  users UserAchievement[]
+}
+
+model UserAchievement {
+  userId        Int
+  achievementId Int
+
+  user        User        @relation(fields: [userId], references: [id])
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
+  progress  Float   @default(0)
+  completed Boolean @default(false)
+
+  @@id([userId, achievementId])
 }

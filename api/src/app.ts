@@ -4,6 +4,7 @@ import authRouter from "./routes/auth.js";
 import workoutRouter from "./routes/workouts.js";
 import userRouter from "./routes/user.js";
 import progressPhotoRouter from "./routes/progressPhoto.js";
+import achievementRouter from "./routes/achievement.js";
 import authenticated from "./middleware/auth.js";
 
 const app = express();
@@ -35,3 +36,4 @@ app.use("/uploads", express.static("uploads"));
 app.use("/workouts", workoutRouter);
 app.use("/user", userRouter);
 app.use("/progressPhoto", progressPhotoRouter);
+app.use("/achievement", achievementRouter);
