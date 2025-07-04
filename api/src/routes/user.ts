@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as userController from "../controllers/user.js";
+import { validateBody, WeightEntrySchema } from "../middleware/validation.js";
 
 const router = Router();
 
@@ -13,7 +14,11 @@ router.get("/getUserAchievements/:id", userController.getUserAchievements);
 
 router.patch("/resetUserStats/:id", userController.resetUserStats);
 
-router.post("/addUserWeightEntry/:id", userController.addUserWeightEntry);
+router.post(
+    "/addUserWeightEntry/:id",
+    validateBody(WeightEntrySchema),
+    userController.addUserWeightEntry
+);
 router.get(
     "/getAllUserWeightEntries/:id",
     userController.getAllUserWeightEntries

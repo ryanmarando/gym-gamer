@@ -1,5 +1,10 @@
 import { Router } from "express";
 import * as workoutController from "../controllers/workouts.js";
+import {
+    validateBody,
+    WeightEntrySchema,
+    CustomWorkoutInputSchema,
+} from "../middleware/validation.js";
 
 const router = Router();
 
@@ -8,7 +13,11 @@ router.delete("/", workoutController.deleteAllWorkouts);
 router.delete("/:id", workoutController.deleteWorkoutById);
 router.patch("/saveToUser", workoutController.saveToUser);
 router.delete("/deleteFromUser", workoutController.deleteFromUser);
-router.post("/addWorkoutEntry", workoutController.addWorkoutEntry);
+router.post(
+    "/addWorkoutEntry",
+    validateBody(WeightEntrySchema),
+    workoutController.addWorkoutEntry
+);
 router.delete(
     "/deleteWorkoutEntryById/:id",
     workoutController.deleteWorkoutEntryById
@@ -20,6 +29,10 @@ router.delete(
 
 router.patch("/completeWorkout/:id", workoutController.completeWorkout);
 
-router.post("/createCustomWorkout", workoutController.createCustomWorkout);
+router.post(
+    "/createCustomWorkout",
+    validateBody(CustomWorkoutInputSchema),
+    workoutController.createCustomWorkout
+);
 
 export default router;

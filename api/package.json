@@ -1,6 +1,6 @@
 {
     "name": "api",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "main": "app.ts",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
@@ -21,7 +21,9 @@
         "dotenv": "^16.6.0",
         "express": "^5.1.0",
         "jsonwebtoken": "^9.0.2",
-        "multer": "^2.0.1"
+        "multer": "^2.0.1",
+        "xss": "^1.0.15",
+        "zod": "^3.25.73"
     },
     "devDependencies": {
         "@types/bcrypt": "^5.0.2",
