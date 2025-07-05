@@ -20,6 +20,10 @@ export async function addXpAndCheckLevelUp(
         throw new Error("User not found");
     }
 
+    console.log(
+        `🟢 Adding ${xpToAdd} XP to ${user.name} (id: ${user.id}) — Current XP: ${user.xp}, Level: ${user.level}`
+    );
+
     let newXp = user.xp + xpToAdd;
     let newLevel = user.level;
 
@@ -28,6 +32,9 @@ export async function addXpAndCheckLevelUp(
         if (newXp >= requiredXp) {
             newXp -= requiredXp;
             newLevel += 1;
+            console.log(
+                `✨ ${user.name} (id: ${user.id}) leveled up! New Level: ${newLevel}`
+            );
         } else {
             break;
         }
@@ -44,7 +51,7 @@ export async function addXpAndCheckLevelUp(
         data: {
             xp: newXp,
             level: newLevel,
-            levelProgress: progressPercent, // ✅ update your new field!
+            levelProgress: progressPercent,
         },
         select: {
             id: true,
@@ -52,8 +59,25 @@ export async function addXpAndCheckLevelUp(
             xp: true,
             level: true,
             levelProgress: true,
+            achievements: {
+                select: {
+                    achievementId: true,
+                    progress: true,
+                    completed: true,
+                    achievement: {
+                        select: {
+                            name: true,
+                            xp: true,
+                        },
+                    },
+                },
+            },
         },
     });
+
+    console.log(
+        `✅ ${user.name} now has ${updatedUser.xp} XP, Level ${updatedUser.level} (${updatedUser.levelProgress}% to next level)`
+    );
 
     return updatedUser;
 }

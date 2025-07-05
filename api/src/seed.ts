@@ -1,3 +1,4 @@
+import { globalAgent } from "http";
 import { prisma } from "./config.js";
 import { AchievementType } from "@prisma/client";
 
@@ -17,11 +18,22 @@ async function SeedWorkouts() {
 
 async function SeedAchievements() {
     const achievements = [
-        { name: "First Workout!", xp: 50, goalType: AchievementType.WORKOUT },
-        { name: "One Week Streak", xp: 100, goalType: AchievementType.STREAK },
+        {
+            name: "First Workout!",
+            xp: 50,
+            goalAmount: 1,
+            goalType: AchievementType.WORKOUT,
+        },
+        {
+            name: "One Week Streak",
+            xp: 100,
+            goalAmount: 7,
+            goalType: AchievementType.STREAK,
+        },
         {
             name: "5 Workouts in a Week",
             xp: 150,
+            goalAmount: 5,
             goalType: AchievementType.STREAK,
         },
         {
@@ -81,6 +93,7 @@ async function SeedAchievements() {
                 name: ach.name,
                 xp: ach.xp,
                 goalType: ach.goalType,
+                goalAmount: ach.goalAmount,
                 isQuest: ach.isQuest ?? false, // default to false if not set
             },
         });

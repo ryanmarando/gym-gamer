@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { prisma } from "../config.js";
 import { addXpAndCheckLevelUp } from "../functions/addXPAndCheckLevelUp.js";
+import { progressAchievement } from "../functions/progressAchievement.js";
 
 export const getAllAchievements = async (
     req: Request,
@@ -148,126 +149,43 @@ export const updateAchievementProgress = async (
     res: Response
 ) => {
     const { userId, achievementId, progressToAdd } = req.body;
-
     try {
-        const userAchievement = await prisma.userAchievement.findUnique({
-            where: {
-                userId_achievementId: {
-                    userId: userId,
-                    achievementId: achievementId,
-                },
-            },
-            include: {
-                achievement: true, // For XP value
+        const updatedUser = await prisma.$transaction(async (tx) => {
+            return progressAchievement(
+                tx,
+                userId,
+                achievementId,
+                progressToAdd
+            );
+        });
+
+        res.json({
+            message: "Progress updated!",
+            updatedUser: {
+                id: updatedUser?.id,
+                name: updatedUser?.name,
+                xp: updatedUser?.xp,
+                level: updatedUser?.level,
+                levelProgress: updatedUser?.levelProgress,
+                achievements: updatedUser?.achievements.map((ua: any) => ({
+                    achievementId: ua.achievementId,
+                    name: ua.achievement.name,
+                    progress: ua.progress,
+                    completed: ua.completed,
+                    xp: ua.achievement.xp,
+                })),
             },
         });
 
-        if (!userAchievement) {
-            res.status(404).json({ message: "UserAchievement not found" });
-            return;
-        }
-
-        if (userAchievement.completed && userAchievement.progress >= 100) {
+        return;
+    } catch (err) {
+        if (err instanceof Error && err.message.includes("already completed")) {
             res.status(409).json({
                 message: "Already completed this achievement",
             });
-            return;
-        }
-
-        let newProgress = userAchievement.progress + progressToAdd;
-
-        if (newProgress >= 100) {
-            newProgress = 100;
-
-            const updatedUser = await prisma.$transaction(async (tx) => {
-                await tx.userAchievement.update({
-                    where: {
-                        userId_achievementId: {
-                            userId: userId,
-                            achievementId: achievementId,
-                        },
-                    },
-                    data: {
-                        progress: newProgress,
-                        completed: true,
-                    },
-                });
-
-                return addXpAndCheckLevelUp(
-                    userId,
-                    userAchievement.achievement.xp,
-                    tx
-                );
-            });
-
-            res.json({
-                message: "Achievement completed and XP awarded!",
-                user: updatedUser,
-            });
-
-            return;
         } else {
-            await prisma.userAchievement.update({
-                where: {
-                    userId_achievementId: {
-                        userId: userId,
-                        achievementId: achievementId,
-                    },
-                },
-                data: {
-                    progress: newProgress,
-                },
-            });
-
-            const updatedUser = await prisma.user.findUnique({
-                where: { id: userId },
-                select: {
-                    id: true,
-                    name: true,
-                    xp: true,
-                    levelProgress: true,
-                    level: true,
-                    achievements: {
-                        select: {
-                            achievementId: true,
-                            progress: true,
-                            completed: true,
-                            achievement: {
-                                select: {
-                                    name: true,
-                                    xp: true,
-                                },
-                            },
-                        },
-                    },
-                },
-            });
-
-            res.json({
-                message: "Progress updated!",
-                user: {
-                    id: updatedUser?.id,
-                    name: updatedUser?.name,
-                    xp: updatedUser?.xp,
-                    level: updatedUser?.level,
-                    levelProgress: updatedUser?.levelProgress,
-                    achievements: updatedUser?.achievements.map((ua) => ({
-                        achievementId: ua.achievementId,
-                        name: ua.achievement.name,
-                        progress: ua.progress,
-                        completed: ua.completed,
-                        xp: ua.achievement.xp,
-                    })),
-                },
-            });
-
-            return;
+            console.error(err);
+            res.status(500).json({ message: "Something went wrong" });
         }
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({ message: "Something went wrong" });
-
-        return;
     }
 };

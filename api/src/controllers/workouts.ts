@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { prisma } from "../config.js";
 import { addXpAndCheckLevelUp } from "../functions/addXPAndCheckLevelUp.js";
+import { checkAndProgressAchievements } from "../functions/checkAndProgressAchivements.js";
+import { AchievementType } from "@prisma/client";
 
 const completedWorkoutProgress = 50;
 
@@ -347,21 +349,24 @@ export const completeWorkout = async (req: Request, res: Response) => {
     const userId = Number(req.params.id);
 
     try {
+        // XP for workout completion
         const updatedUser = await addXpAndCheckLevelUp(
             userId,
             completedWorkoutProgress,
             prisma
         );
 
+        // Progress any matching achivements
+        await checkAndProgressAchievements(
+            prisma,
+            userId,
+            [AchievementType.WORKOUT, AchievementType.STREAK],
+            {}
+        );
+
         res.json({
             message: "Progress updated for completing a workout!",
-            user: {
-                id: updatedUser?.id,
-                name: updatedUser?.name,
-                level: updatedUser?.level,
-                levelProgress: updatedUser?.levelProgress,
-                xp: updatedUser?.xp,
-            },
+            user: updatedUser,
         });
     } catch (error) {
         console.error(error);
