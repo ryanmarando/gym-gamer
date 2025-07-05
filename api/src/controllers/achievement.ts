@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { prisma } from "../config.js";
-import { addXpAndCheckLevelUp } from "../functions/addXPAndCheckLevelUp.js";
 import { progressAchievement } from "../functions/progressAchievement.js";
+import { weeklyReset } from "../functions/weeklyReset.js";
 
 export const getAllAchievements = async (
     req: Request,
@@ -187,5 +187,17 @@ export const updateAchievementProgress = async (
             console.error(err);
             res.status(500).json({ message: "Something went wrong" });
         }
+    }
+};
+
+export const weeklyAchivementReset = async (req: Request, res: Response) => {
+    try {
+        weeklyReset();
+        res.status(200).json({ message: "Weekly reset complete." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: "Something went wrong with the weekly rest.",
+        });
     }
 };

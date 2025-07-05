@@ -21,4 +21,6 @@ router.delete(
     achievementController.deleteAllAchievements
 );
 
+router.get("/weeklyReset", achievementController.weeklyAchivementReset);
+
 export default router;

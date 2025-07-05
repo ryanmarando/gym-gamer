@@ -89,14 +89,15 @@ enum AchievementType {
 }
 
 model Achievement {
-  id         Int             @id @default(autoincrement())
-  name       String
-  xp         Int
-  descprtion String?
-  isQuest    Boolean         @default(false)
-  deadline   DateTime?
-  goalAmount Float?
-  goalType   AchievementType
+  id          Int             @id @default(autoincrement())
+  name        String
+  xp          Int
+  descprtion  String?
+  isQuest     Boolean         @default(false)
+  deadline    DateTime?
+  goalAmount  Float?
+  goalType    AchievementType
+  weeklyReset Boolean         @default(false)
 
   users UserAchievement[]
 }

@@ -349,24 +349,49 @@ export const completeWorkout = async (req: Request, res: Response) => {
     const userId = Number(req.params.id);
 
     try {
-        // XP for workout completion
-        const updatedUser = await addXpAndCheckLevelUp(
-            userId,
-            completedWorkoutProgress,
-            prisma
-        );
+        const result = await prisma.$transaction(async (tx) => {
+            // 1️⃣ Award XP for the workout itself
+            await addXpAndCheckLevelUp(userId, completedWorkoutProgress, tx);
 
-        // Progress any matching achivements
-        await checkAndProgressAchievements(
-            prisma,
-            userId,
-            [AchievementType.WORKOUT, AchievementType.STREAK],
-            {}
-        );
+            // 2️⃣ Progress any matching achievements
+            await checkAndProgressAchievements(
+                tx,
+                userId,
+                [AchievementType.WORKOUT, AchievementType.STREAK],
+                {}
+            );
+
+            // 3️⃣ Re-fetch fresh user with updated XP, level, progress, and achievements
+            const freshUser = await tx.user.findUnique({
+                where: { id: userId },
+                select: {
+                    id: true,
+                    name: true,
+                    level: true,
+                    levelProgress: true,
+                    xp: true,
+                    achievements: {
+                        select: {
+                            achievementId: true,
+                            progress: true,
+                            completed: true,
+                            achievement: {
+                                select: {
+                                    name: true,
+                                    xp: true,
+                                    goalAmount: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+            return freshUser;
+        });
 
         res.json({
             message: "Progress updated for completing a workout!",
-            user: updatedUser,
+            user: result,
         });
     } catch (error) {
         console.error(error);
