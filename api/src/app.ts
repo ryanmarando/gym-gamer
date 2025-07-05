@@ -9,7 +9,7 @@ import xss from "./middleware/xss.js";
 import authenticated from "./middleware/auth.js";
 
 const app = express();
-const port = 3000;
+const port = 3001;
 
 app.get("/", (req, res) => {
     res.send("Welcome To The Gym Gamer API!");

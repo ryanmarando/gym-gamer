@@ -5,7 +5,7 @@ import {
     StyleSheet,
     ViewStyle,
 } from "react-native";
-import PixelText from "./pixelText";
+import PixelText from "./PixelText";
 
 interface PixelButtonProps extends TouchableOpacityProps {
     text: string;
