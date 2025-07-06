@@ -15,6 +15,23 @@ export const getAllUsers = async (
     res.status(200).json(users);
 };
 
+export const getUserById = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const userId = Number(req.params.id);
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+    });
+
+    if (!user) {
+        res.status(501).json({ message: "No user found." });
+    }
+
+    res.status(200).json(user);
+};
+
 export const deleteAllUsers = async (
     req: Request,
     res: Response,
@@ -129,12 +146,14 @@ export const resetUserStats = async (
             data: {
                 xp: 0,
                 level: 1,
+                levelProgress: 0,
             },
             select: {
                 id: true,
                 name: true,
                 xp: true,
                 level: true,
+                levelProgress: true,
             },
         });
 

@@ -95,8 +95,22 @@ export const register = async (
         });
         console.log("Successful POST Registered User Id:", newUser.id);
 
-        //console.log("Registered!");
-        res.status(201).json(newUser);
+        const token = jwt.sign(
+            { id: newUser.id, email: newUser.email },
+            jwtSecret!,
+            {
+                expiresIn: "6h",
+            }
+        );
+
+        res.status(201).json({
+            token,
+            user: {
+                id: newUser.id,
+                email: newUser.email,
+                name: newUser.name,
+            },
+        });
     } catch (error) {
         console.log("Unsuccessful POST Registering User");
         res.status(500).json({
