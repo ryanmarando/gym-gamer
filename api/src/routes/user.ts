@@ -15,6 +15,10 @@ router.get(
     "/getMostProgressedAchivement/:id",
     userController.getMostProgressedAchivement
 );
+router.get(
+    "/getUserWorkoutWeightEntries/:id",
+    userController.getUserWorkoutWeightEntries
+);
 
 router.patch("/resetUserStats/:id", userController.resetUserStats);
 

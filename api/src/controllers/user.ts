@@ -285,3 +285,35 @@ export const getAllUserWeightEntries = async (req: Request, res: Response) => {
         return;
     }
 };
+
+export const getUserWorkoutWeightEntries = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const userId = Number(req.params.id);
+        if (!userId || isNaN(userId)) {
+            res.status(400).json({ message: "Invalid or missing userId" });
+            return;
+        }
+
+        const entries = await prisma.workoutEntry.findMany({
+            where: { userId },
+            orderBy: {
+                date: "desc", // your schema uses `date` mapped to created_at
+            },
+            include: {
+                userWorkout: {
+                    include: {
+                        workout: true, // include workout details if you want
+                    },
+                },
+            },
+        });
+
+        res.status(200).json({ entries });
+    } catch (error) {
+        console.error("❌ Failed to get user workout entries:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};

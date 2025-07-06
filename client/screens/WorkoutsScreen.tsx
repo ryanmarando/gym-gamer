@@ -40,6 +40,8 @@ export default function WorkoutsScreen() {
     const [modalAction, setModalAction] = useState<"start" | "complete" | null>(
         null
     );
+    const [allWorkoutEntries, setAllWorkoutEntries] = useState<any[]>([]);
+
     const openStartModal = () => {
         setModalAction("start");
         setModalMessage("Are you sure you want to start a workout?");
@@ -69,16 +71,16 @@ export default function WorkoutsScreen() {
                 for (const workout of workouts) {
                     const entries = weightEntries[workout.workoutId];
                     if (!entries || entries.length === 0) continue;
-                    const lastWeight = Number(entries[entries.length - 1]);
+                    const maxWeight = Math.max(...entries.map(Number));
 
                     // Only send if lastWeight > 0 (optional)
-                    if (lastWeight > 0) {
+                    if (maxWeight > 0) {
                         await authFetch(
                             `/workouts/addWorkoutEntry?userId=${userId}&workoutId=${workout.workoutId}`,
                             {
                                 method: "POST",
                                 body: JSON.stringify({
-                                    weight: lastWeight,
+                                    weight: maxWeight,
                                 }),
                             }
                         );
@@ -132,6 +134,12 @@ export default function WorkoutsScreen() {
 
             const data = await authFetch(`/user/getUserWorkouts/${userId}`);
             setWorkouts(data.workouts || []);
+
+            // Fetch all workout entries
+            const entriesData = await authFetch(
+                `/user/getUserWorkoutWeightEntries/${userId}`
+            );
+            setAllWorkoutEntries(entriesData.entries || []);
 
             // Initialize weight entries with default 3 zeros per workout
             const initialWeights: WeightEntries = {};
@@ -191,6 +199,15 @@ export default function WorkoutsScreen() {
         });
     };
 
+    const getLastWorkoutWeight = (workoutId: number): number => {
+        const entriesForWorkout = allWorkoutEntries.filter(
+            (entry) => entry.userWorkout?.workoutId === workoutId
+        );
+        if (entriesForWorkout.length === 0) return 0;
+        // Get the max weight from the most recent entry
+        return entriesForWorkout[0].weight; // or do Math.max(...) if you want the max ever
+    };
+
     return (
         <View style={styles.container}>
             <PixelText
@@ -237,16 +254,40 @@ export default function WorkoutsScreen() {
                             <PixelText
                                 fontSize={14}
                                 color="#0f0"
-                                style={{ marginBottom: 4 }}
+                                style={{
+                                    marginBottom: 4,
+                                    textAlign: "left",
+                                    paddingLeft: -12,
+                                }}
                             >
                                 {item.workout.name}
                             </PixelText>
                             <PixelText
                                 fontSize={10}
                                 color="#fff"
-                                style={{ marginBottom: 8 }}
+                                style={{
+                                    marginBottom: 8,
+                                    textAlign: "left",
+                                    paddingLeft: -12,
+                                    width: 1000,
+                                }}
                             >
-                                Reps: 10 {/* hardcoded for now */}
+                                Reps: 10, Failure, Failure{" "}
+                                {/* hardcoded for now */}
+                            </PixelText>
+
+                            <PixelText
+                                fontSize={10}
+                                color="#fff"
+                                style={{
+                                    marginBottom: 8,
+                                    textAlign: "left",
+                                    paddingLeft: -12,
+                                }}
+                            >
+                                {`Max weight: ${getLastWorkoutWeight(
+                                    item.workoutId
+                                )} lbs`}
                             </PixelText>
 
                             <View style={{ flexDirection: "row", gap: 8 }}>
