@@ -1,64 +1,58 @@
 import React, { useState } from "react";
-import { View, StyleSheet, TextInput, Alert, Image } from "react-native";
+import { View, StyleSheet, TextInput, Alert } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import * as SecureStore from "expo-secure-store";
 
+// ⚡️ Use your .env or constants!
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
+export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
     const [email, setEmail] = useState("");
+    const [name, setName] = useState("");
     const [password, setPassword] = useState("");
 
-    const handleLogin = async () => {
+    const handleRegister = async () => {
         try {
-            const response = await fetch(API_URL + "/auth/login", {
+            const response = await fetch(`${API_URL}/auth/register`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({
+                    email,
+                    name,
+                    password,
+                }),
             });
 
             if (!response.ok) {
-                throw new Error("Invalid credentials");
+                const data = await response.json();
+                throw new Error(data.message || "Registration failed");
             }
 
             const data = await response.json();
-            console.log("✅ Login success:", data);
+            console.log("✅ Registration success:", data);
 
-            // Save user data
             await SecureStore.setItemAsync("userToken", data.token);
             console.log("🔒 Token saved to SecureStore!");
             await SecureStore.setItemAsync("userId", data.user.id.toString());
 
-            Alert.alert("Success", "You are logged in!");
+            Alert.alert("Success", "Your account has been created!");
 
-            // Set login state true here
             setIsLoggedIn(true);
-
-            // Navigate back to home
+            // Navigate back to Login
             //navigation.navigate("Profile");
         } catch (error: any) {
-            console.error("❌ Login error:", error);
-            Alert.alert("Login Failed", error.message);
+            console.error("❌ Registration error:", error);
+            Alert.alert("Registration Failed", error.message);
         }
     };
 
     return (
         <View style={styles.container}>
-            <PixelText fontSize={20} color="#ff0">
-                Welcome to Gym Gamer!
-            </PixelText>
-
-            <Image
-                source={require("../assets/barbell_pixel.png")}
-                style={{ width: 64, height: 64 }}
-                resizeMode="contain"
-            />
-
             <PixelText fontSize={20} color="#0ff">
-                Log In to Continue
+                Create a Gym Gamer Account
             </PixelText>
 
             <TextInput
@@ -72,6 +66,14 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
             />
 
             <TextInput
+                placeholder="Name"
+                placeholderTextColor="#888"
+                value={name}
+                onChangeText={setName}
+                style={styles.input}
+            />
+
+            <TextInput
                 placeholder="Password"
                 placeholderTextColor="#888"
                 value={password}
@@ -81,8 +83,8 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
             />
 
             <PixelButton
-                text="Log In"
-                onPress={handleLogin}
+                text="Register"
+                onPress={handleRegister}
                 color="#0ff"
                 containerStyle={{
                     backgroundColor: "#000",
@@ -92,8 +94,8 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
             />
 
             <PixelButton
-                text="Sign Up"
-                onPress={() => navigation.navigate("Register")}
+                text="Back to Login"
+                onPress={() => navigation.navigate("Login")}
                 color="#f00"
                 containerStyle={{
                     backgroundColor: "#000",
