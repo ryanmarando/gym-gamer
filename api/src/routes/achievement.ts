@@ -7,7 +7,6 @@ import {
 
 const router = Router();
 
-router.get("/", achievementController.getAllAchievements);
 router.patch("/saveToUser", achievementController.saveToUser);
 router.post(
     "/updateAchievementProgress",
@@ -15,12 +14,14 @@ router.post(
     achievementController.updateAchievementProgress
 );
 
-router.delete("/", achievementController.deleteAchievementByIdFromUser);
 router.delete(
     "/deleteAllAchievements",
     achievementController.deleteAllAchievements
 );
 
 router.get("/weeklyReset", achievementController.weeklyAchivementReset);
+
+router.get("/", achievementController.getAllAchievements);
+router.delete("/", achievementController.deleteAchievementByIdFromUser);
 
 export default router;

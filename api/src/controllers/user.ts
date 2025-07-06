@@ -124,6 +124,34 @@ export const getUserAchievements = async (
     res.status(200).json(userWithAchievements);
 };
 
+export const getMostProgressedAchivement = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const userId = Number(req.params.id);
+
+    const userWithAchievements = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            achievements: {
+                where: {
+                    completed: false,
+                },
+                include: {
+                    achievement: true,
+                },
+                orderBy: {
+                    progress: "desc",
+                },
+                take: 1,
+            },
+        },
+    });
+
+    res.status(200).json(userWithAchievements);
+};
+
 export const resetUserStats = async (
     req: Request,
     res: Response,

@@ -8,10 +8,7 @@ import {
 
 const router = Router();
 
-router.get("/", workoutController.getAllWorkouts);
 router.delete("/deleteFromUser", workoutController.deleteFromUser);
-router.delete("/", workoutController.deleteAllWorkouts);
-router.delete("/:id", workoutController.deleteWorkoutById);
 router.patch("/saveToUser", workoutController.saveToUser);
 router.post(
     "/addWorkoutEntry",
@@ -34,5 +31,9 @@ router.post(
     validateBody(CustomWorkoutInputSchema),
     workoutController.createCustomWorkout
 );
+
+router.get("/", workoutController.getAllWorkouts);
+router.delete("/", workoutController.deleteAllWorkouts);
+router.delete("/:id", workoutController.deleteWorkoutById);
 
 export default router;

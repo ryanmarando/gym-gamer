@@ -1,7 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { View, StyleSheet, Image, ActivityIndicator } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
+import PixelModal from "../components/PixelModal";
+import PixelAchievementCard from "../components/PixelAchievementCard";
 import ProgressBar from "../components/ProgressBar";
 import { authFetch } from "../utils/authFetch";
 import { logout } from "../utils/logout";
@@ -26,12 +29,15 @@ export default function ProfileScreen({
 }: any) {
     const [userData, setUserData] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
 
-    useEffect(() => {
-        if (isLoggedIn) {
-            fetchUserData();
-        }
-    }, [isLoggedIn]);
+    useFocusEffect(
+        useCallback(() => {
+            if (isLoggedIn) {
+                fetchUserData();
+            }
+        }, [isLoggedIn])
+    );
 
     const fetchUserData = async () => {
         try {
@@ -49,6 +55,7 @@ export default function ProfileScreen({
 
     const logoutUser = async () => {
         logout(setIsLoggedIn, setUserData);
+        setModalVisible(false);
     };
 
     const completeUserWorkout = async () => {
@@ -166,17 +173,73 @@ export default function ProfileScreen({
                         marginTop: 10,
                     }}
                 />
+                <View
+                    style={{
+                        alignItems: "center",
+                        marginTop: 20,
+                    }}
+                >
+                    <PixelText fontSize={12} color="#fff">
+                        Here's your split:
+                    </PixelText>
+                    <PixelButton
+                        text="Push"
+                        onPress={() => {
+                            navigation.navigate("Workouts");
+                        }}
+                        color="#f0f"
+                        containerStyle={{
+                            backgroundColor: "#000",
+                            borderColor: "#f0f",
+                            marginTop: 10,
+                        }}
+                    />
+                    <PixelButton
+                        text="Pull"
+                        onPress={() => {
+                            navigation.navigate("Workouts");
+                        }}
+                        color="#f0f"
+                        containerStyle={{
+                            backgroundColor: "#000",
+                            borderColor: "#f0f",
+                            marginTop: 10,
+                        }}
+                    />
+                    <PixelButton
+                        text="Legs"
+                        onPress={() => {
+                            navigation.navigate("Workouts");
+                        }}
+                        color="#f0f"
+                        containerStyle={{
+                            backgroundColor: "#000",
+                            borderColor: "#f0f",
+                            marginTop: 10,
+                        }}
+                    />
+                </View>
             </View>
 
             <View style={styles.bottomButtonContainer}>
+                <View>
+                    <PixelAchievementCard />
+                </View>
                 <PixelButton
                     text="Log Out"
-                    onPress={logoutUser}
+                    onPress={() => setModalVisible(true)}
                     color="#f00"
                     containerStyle={{
                         backgroundColor: "#000",
                         borderColor: "#f00",
                     }}
+                />
+                <PixelModal
+                    visible={modalVisible}
+                    title="Are you sure?"
+                    message="You will be logged out."
+                    onConfirm={logoutUser}
+                    onCancel={() => setModalVisible(false)}
                 />
             </View>
         </View>

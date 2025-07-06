@@ -146,7 +146,6 @@ export const deleteFromUser = async (
     try {
         const workoutId = Number(req.query.workoutId);
         const userId = Number(req.query.userId);
-        console.log("WorkoutId:", workoutId);
 
         if (!userId) {
             console.log("Unsuccessful query... no user id.");

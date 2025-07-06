@@ -7,12 +7,14 @@ const router = Router();
 router.get("/getAllUsers", userController.getAllUsers);
 router.delete("/deleteAllUsers", userController.deleteAllUsers);
 
-router.get("/:id", userController.getUserById);
-
 router.get("/getUserWorkouts/:id", userController.getUserWorkouts);
 router.get("/getAllUserPhotos/:id", userController.getAllUserPhotos);
 
 router.get("/getUserAchievements/:id", userController.getUserAchievements);
+router.get(
+    "/getMostProgressedAchivement/:id",
+    userController.getMostProgressedAchivement
+);
 
 router.patch("/resetUserStats/:id", userController.resetUserStats);
 
@@ -25,5 +27,7 @@ router.get(
     "/getAllUserWeightEntries/:id",
     userController.getAllUserWeightEntries
 );
+
+router.get("/:id", userController.getUserById);
 
 export default router;
