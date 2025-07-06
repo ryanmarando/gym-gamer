@@ -1,5 +1,6 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import PixelText from "./PixelText";
 
@@ -28,13 +29,16 @@ export default function BottomTabs({
                     borderTopColor: "#0ff",
                     height: 70,
                 },
-                tabBarItemStyle: {
-                    flex: 1, // spread items evenly
-                },
                 tabBarActiveTintColor: "#0ff",
                 tabBarInactiveTintColor: "#888",
+                tabBarLabel: () => null,
                 tabBarIcon: ({ color, size }) => {
-                    let iconName: string;
+                    let iconName:
+                        | "person"
+                        | "barbell"
+                        | "trophy"
+                        | "podium"
+                        | "ellipse";
                     if (route.name === "Profile") iconName = "person";
                     else if (route.name === "Workouts") iconName = "barbell";
                     else if (route.name === "Achievements") iconName = "trophy";
@@ -42,30 +46,41 @@ export default function BottomTabs({
                     else iconName = "ellipse";
 
                     return (
-                        <Ionicons
-                            name={iconName as any}
-                            size={size}
-                            color={color}
-                        />
+                        <View style={{ alignItems: "center" }}>
+                            <Ionicons
+                                name={iconName}
+                                size={size}
+                                color={color}
+                            />
+
+                            <PixelText
+                                fontSize={8}
+                                color={color}
+                                numberOfLines={1}
+                                style={{
+                                    marginTop: 2,
+                                    textAlign: "left",
+                                    width: "100%",
+                                }}
+                            >
+                                {route.name}
+                            </PixelText>
+                        </View>
                     );
                 },
-                tabBarLabel: ({ color }) => (
-                    <PixelText
-                        fontSize={8}
-                        color={color}
-                        numberOfLines={1}
-                        style={{
-                            textAlign: "center",
-                            paddingHorizontal: 4,
-                            width: 1000,
-                        }}
-                    >
-                        {route.name}
-                    </PixelText>
-                ),
             })}
         >
-            <Tab.Screen name="Profile">
+            <Tab.Screen
+                name="Profile"
+                options={{
+                    tabBarItemStyle: {
+                        flex: 1,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        // Profile stays centered
+                    },
+                }}
+            >
                 {(props) => (
                     <ProfileScreen
                         {...props}
@@ -74,9 +89,42 @@ export default function BottomTabs({
                     />
                 )}
             </Tab.Screen>
-            <Tab.Screen name="Workouts" component={WorkoutsScreen} />
-            <Tab.Screen name="Achievements" component={AchievementsScreen} />
-            <Tab.Screen name="Leaderboards" component={LeaderboardsScreen} />
+            <Tab.Screen
+                name="Workouts"
+                options={{
+                    tabBarItemStyle: {
+                        flex: 1,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        transform: [{ translateX: -16 }], // 👈 shift left
+                    },
+                }}
+                component={WorkoutsScreen}
+            />
+            <Tab.Screen
+                name="Achievements"
+                options={{
+                    tabBarItemStyle: {
+                        flex: 1,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        transform: [{ translateX: -15 }], // 👈 shift left
+                    },
+                }}
+                component={AchievementsScreen}
+            />
+            <Tab.Screen
+                name="Leaderboards"
+                options={{
+                    tabBarItemStyle: {
+                        flex: 1,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        transform: [{ translateX: -5 }], // 👈 shift left
+                    },
+                }}
+                component={LeaderboardsScreen}
+            />
         </Tab.Navigator>
     );
 }

@@ -198,5 +198,6 @@ const styles = StyleSheet.create({
     bottomButtonContainer: {
         alignItems: "center",
         justifyContent: "flex-end",
+        marginBottom: "-17%",
     },
 });

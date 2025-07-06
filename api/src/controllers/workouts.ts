@@ -129,6 +129,7 @@ export const saveToUser = async (
         res.status(200).json({
             message: `Saved ${workoutToBeAdded.name} to userId: ${userId}`,
         });
+        console.log("Successful Save of Workout To User");
     } catch (error) {
         console.log("Unsuccessful PATCH To Save User Workouts");
         res.status(500).json({
@@ -145,6 +146,7 @@ export const deleteFromUser = async (
     try {
         const workoutId = Number(req.query.workoutId);
         const userId = Number(req.query.userId);
+        console.log("WorkoutId:", workoutId);
 
         if (!userId) {
             console.log("Unsuccessful query... no user id.");
