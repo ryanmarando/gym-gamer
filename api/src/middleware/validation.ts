@@ -1,6 +1,20 @@
 import { NextFunction, Request, Response } from "express";
 import z, { ZodSchema } from "zod";
 
+const WorkoutArchitypeEnum = z.enum([
+    "PUSH",
+    "PULL",
+    "LEGS",
+    "CHEST",
+    "SHOULDERS",
+    "ARMS",
+    "BACK",
+    "ABS",
+    "QUADS",
+    "HAMSTRINGS",
+    "CALVES",
+]);
+
 export const WeightEntrySchema = z.object({
     weight: z.number({ message: "Weight must be a number" }),
 });
@@ -10,6 +24,9 @@ export const CustomWorkoutInputSchema = z.object({
     customName: z
         .string()
         .max(50, { message: "Name must be at most 50 characters" }),
+    architype: z
+        .array(WorkoutArchitypeEnum)
+        .nonempty("Must select at least one architype"),
 });
 
 export const RegisterInputSchema = z.object({

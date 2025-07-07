@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { View, StyleSheet, Image, ActivityIndicator } from "react-native";
 import PixelText from "../components/PixelText";
@@ -44,7 +44,8 @@ export default function ProfileScreen({
             setLoading(true);
             const userId = await SecureStore.getItemAsync("userId");
             const data = await authFetch(`/user/${Number(userId)}`);
-            console.log("✅ User data:", data);
+            //console.log("✅ User data:", data);
+            console.log("✅ Profile screen loaded");
             setUserData(data);
         } catch (error) {
             console.error("❌ Failed to fetch user data:", error);
@@ -56,18 +57,6 @@ export default function ProfileScreen({
     const logoutUser = async () => {
         logout(setIsLoggedIn, setUserData);
         setModalVisible(false);
-    };
-
-    const completeUserWorkout = async () => {
-        try {
-            await completeWorkout(Number(userData!.id));
-
-            // ⏬ Re-fetch the user data to get new progress/level
-            const data = await authFetch(`/user/${Number(userData!.id)}`);
-            setUserData(data);
-        } catch (error) {
-            console.error("❌ Error completing workout:", error);
-        }
     };
 
     const resetUserStats = async () => {
@@ -153,17 +142,6 @@ export default function ProfileScreen({
                 />
 
                 <PixelButton
-                    text="Complete Workout"
-                    onPress={completeUserWorkout}
-                    color="#f0f"
-                    containerStyle={{
-                        backgroundColor: "#000",
-                        borderColor: "#f0f",
-                        marginTop: 20,
-                    }}
-                />
-
-                <PixelButton
                     text="Reset Stats"
                     onPress={resetUserStats}
                     color="#f00"
@@ -180,34 +158,10 @@ export default function ProfileScreen({
                     }}
                 >
                     <PixelText fontSize={12} color="#fff">
-                        Here's your split:
+                        Get into the gym:
                     </PixelText>
                     <PixelButton
-                        text="Push"
-                        onPress={() => {
-                            navigation.navigate("Workouts");
-                        }}
-                        color="#f0f"
-                        containerStyle={{
-                            backgroundColor: "#000",
-                            borderColor: "#f0f",
-                            marginTop: 10,
-                        }}
-                    />
-                    <PixelButton
-                        text="Pull"
-                        onPress={() => {
-                            navigation.navigate("Workouts");
-                        }}
-                        color="#f0f"
-                        containerStyle={{
-                            backgroundColor: "#000",
-                            borderColor: "#f0f",
-                            marginTop: 10,
-                        }}
-                    />
-                    <PixelButton
-                        text="Legs"
+                        text="Start Workout"
                         onPress={() => {
                             navigation.navigate("Workouts");
                         }}

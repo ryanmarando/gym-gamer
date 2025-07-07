@@ -8,6 +8,7 @@ import ProfileScreen from "../screens/ProfileScreen";
 import WorkoutsScreen from "../screens/WorkoutsScreen";
 import AchievementsScreen from "../screens/AchievementsScreen";
 import LeaderboardsScreen from "../screens/LeaderboardsScreen";
+import SaveWorkoutScreen from "../screens/SaveWorkoutsScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -37,12 +38,12 @@ export default function BottomTabs({
                         | "person"
                         | "barbell"
                         | "trophy"
-                        | "podium"
+                        | "gift"
                         | "ellipse";
                     if (route.name === "Profile") iconName = "person";
                     else if (route.name === "Workouts") iconName = "barbell";
                     else if (route.name === "Achievements") iconName = "trophy";
-                    else if (route.name === "Leaderboards") iconName = "podium";
+                    else if (route.name === "Workout Shop") iconName = "gift";
                     else iconName = "ellipse";
 
                     return (
@@ -102,7 +103,7 @@ export default function BottomTabs({
                 component={WorkoutsScreen}
             />
             <Tab.Screen
-                name="Achievements"
+                name="Workout Shop"
                 options={{
                     tabBarItemStyle: {
                         flex: 1,
@@ -111,10 +112,10 @@ export default function BottomTabs({
                         transform: [{ translateX: -15 }], // 👈 shift left
                     },
                 }}
-                component={AchievementsScreen}
+                component={SaveWorkoutScreen}
             />
             <Tab.Screen
-                name="Leaderboards"
+                name="Achievements"
                 options={{
                     tabBarItemStyle: {
                         flex: 1,
@@ -123,7 +124,7 @@ export default function BottomTabs({
                         transform: [{ translateX: -5 }], // 👈 shift left
                     },
                 }}
-                component={LeaderboardsScreen}
+                component={AchievementsScreen}
             />
         </Tab.Navigator>
     );

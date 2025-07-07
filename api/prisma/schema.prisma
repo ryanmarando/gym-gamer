@@ -38,11 +38,26 @@ model Password {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+enum WorkoutArchitype {
+  PUSH
+  PULL
+  LEGS
+  CHEST
+  SHOULDERS
+  ARMS
+  BACK
+  ABS
+  QUADS
+  HAMSTRINGS
+  CALVES
+}
+
 model Workout {
-  id              Int           @id @default(autoincrement())
+  id              Int                @id @default(autoincrement())
   name            String
   createdByUserId Int?
-  createdBy       User?         @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  architype       WorkoutArchitype[]
+  createdBy       User?              @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
   users           UserWorkout[]
 }
 

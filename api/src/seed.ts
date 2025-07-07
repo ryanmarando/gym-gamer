@@ -1,19 +1,171 @@
 import { prisma } from "./config.js";
-import { AchievementType } from "@prisma/client";
+import { AchievementType, WorkoutArchitype } from "@prisma/client";
 
 async function SeedWorkouts() {
-    await prisma.workout.create({
-        data: { name: "Bench Press" },
-    });
+    // Reset the ID sequence if needed (PostgreSQL specific)
+    await prisma.$executeRaw`ALTER SEQUENCE "Workout_id_seq" RESTART WITH 1`;
 
-    await prisma.workout.create({
-        data: { name: "Bicep Curls" },
-    });
+    const workouts = [
+        // PUSH — CHEST / SHOULDERS / TRICEPS
+        {
+            name: "Bench Press",
+            architype: [WorkoutArchitype.PUSH, WorkoutArchitype.CHEST],
+        },
+        {
+            name: "Incline Dumbbell Press",
+            architype: [WorkoutArchitype.PUSH, WorkoutArchitype.CHEST],
+        },
+        {
+            name: "Push-Ups",
+            architype: [WorkoutArchitype.PUSH, WorkoutArchitype.CHEST],
+        },
+        {
+            name: "Shoulder Press",
+            architype: [WorkoutArchitype.PUSH, WorkoutArchitype.SHOULDERS],
+        },
+        {
+            name: "Lateral Raises",
+            architype: [WorkoutArchitype.PUSH, WorkoutArchitype.SHOULDERS],
+        },
+        {
+            name: "Front Raises",
+            architype: [WorkoutArchitype.PUSH, WorkoutArchitype.SHOULDERS],
+        },
+        {
+            name: "Tricep Pushdown",
+            architype: [WorkoutArchitype.PUSH, WorkoutArchitype.ARMS],
+        },
+        {
+            name: "Overhead Tricep Extension",
+            architype: [WorkoutArchitype.PUSH, WorkoutArchitype.ARMS],
+        },
 
-    await prisma.workout.create({
-        data: { name: "Squat" },
-    });
+        // PULL — BACK / BICEPS
+        {
+            name: "Pull-Ups",
+            architype: [WorkoutArchitype.PULL, WorkoutArchitype.BACK],
+        },
+        {
+            name: "Lat Pulldown",
+            architype: [WorkoutArchitype.PULL, WorkoutArchitype.BACK],
+        },
+        {
+            name: "Bent Over Row",
+            architype: [WorkoutArchitype.PULL, WorkoutArchitype.BACK],
+        },
+        {
+            name: "Seated Cable Row",
+            architype: [WorkoutArchitype.PULL, WorkoutArchitype.BACK],
+        },
+        {
+            name: "Deadlift",
+            architype: [WorkoutArchitype.PULL, WorkoutArchitype.BACK],
+        },
+        {
+            name: "Bicep Curls",
+            architype: [WorkoutArchitype.PULL, WorkoutArchitype.ARMS],
+        },
+        {
+            name: "Hammer Curls",
+            architype: [WorkoutArchitype.PULL, WorkoutArchitype.ARMS],
+        },
+        {
+            name: "Face Pulls",
+            architype: [WorkoutArchitype.PULL, WorkoutArchitype.SHOULDERS],
+        },
+
+        // LEGS — QUADS / HAMSTRINGS / CALVES
+        {
+            name: "Squat",
+            architype: [
+                WorkoutArchitype.LEGS,
+                WorkoutArchitype.QUADS,
+                WorkoutArchitype.HAMSTRINGS,
+                WorkoutArchitype.CALVES,
+            ],
+        },
+        {
+            name: "Leg Press",
+            architype: [
+                WorkoutArchitype.LEGS,
+                WorkoutArchitype.QUADS,
+                WorkoutArchitype.HAMSTRINGS,
+            ],
+        },
+        {
+            name: "Leg Extension",
+            architype: [WorkoutArchitype.LEGS, WorkoutArchitype.QUADS],
+        },
+        {
+            name: "Leg Curl",
+            architype: [WorkoutArchitype.LEGS, WorkoutArchitype.HAMSTRINGS],
+        },
+        {
+            name: "Romanian Deadlift",
+            architype: [WorkoutArchitype.LEGS, WorkoutArchitype.HAMSTRINGS],
+        },
+        {
+            name: "Calf Raises",
+            architype: [WorkoutArchitype.LEGS, WorkoutArchitype.CALVES],
+        },
+        {
+            name: "Lunges",
+            architype: [
+                WorkoutArchitype.LEGS,
+                WorkoutArchitype.QUADS,
+                WorkoutArchitype.HAMSTRINGS,
+            ],
+        },
+
+        // CORE — ABS
+        {
+            name: "Plank",
+            architype: [WorkoutArchitype.ABS],
+        },
+        {
+            name: "Crunches",
+            architype: [WorkoutArchitype.ABS],
+        },
+        {
+            name: "Leg Raises",
+            architype: [WorkoutArchitype.ABS],
+        },
+        {
+            name: "Russian Twists",
+            architype: [WorkoutArchitype.ABS],
+        },
+
+        // Combo & Functional
+        {
+            name: "Farmer's Walk",
+            architype: [
+                WorkoutArchitype.PULL,
+                WorkoutArchitype.BACK,
+                WorkoutArchitype.ARMS,
+            ],
+        },
+        {
+            name: "Burpees",
+            architype: [
+                WorkoutArchitype.PUSH,
+                WorkoutArchitype.LEGS,
+                WorkoutArchitype.ABS,
+            ],
+        },
+        {
+            name: "Mountain Climbers",
+            architype: [WorkoutArchitype.ABS, WorkoutArchitype.LEGS],
+        },
+    ];
+
+    for (const workout of workouts) {
+        await prisma.workout.create({ data: workout });
+    }
+
+    console.log("✅ Seed complete with a huge library of workouts!");
 }
+
+SeedWorkouts();
 
 export async function SeedAchievements() {
     await prisma.$executeRaw`ALTER SEQUENCE "Achievement_id_seq" RESTART WITH 1`;
@@ -149,4 +301,4 @@ export async function SeedAchievements() {
     console.log("✅ Seeded achievements with full model fields!");
 }
 
-SeedAchievements();
+//SeedAchievements();

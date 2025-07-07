@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
     View,
     StyleSheet,
@@ -15,7 +16,7 @@ interface AchievementDetails {
     id: number;
     name: string;
     xp: number;
-    // ...other fields if needed
+    weeklyReset: boolean;
 }
 
 interface UserAchievement {
@@ -43,23 +44,32 @@ export default function AchievementsScreen() {
     }, []);
 
     // Fetch both achievements and user achievements whenever userId or refreshToggle changes
-    useEffect(() => {
-        if (userId === null) return;
+    useFocusEffect(
+        useCallback(() => {
+            console.log("✅ Achivements loaded");
+            if (userId === null) return;
 
-        const fetchAchievements = async () => {
-            const data = await authFetch("/achievement");
-            setAchievements(data || []);
-        };
+            const fetchAchievements = async () => {
+                const data = await authFetch("/achievement");
+                setAchievements(data || []);
+            };
 
-        const fetchUserAchievements = async () => {
-            const data = await authFetch(`/user/getUserAchievements/${userId}`);
-            // Assuming data.achievements is the array of user achievements:
-            setUserAchievements(data?.achievements || []);
-        };
+            const fetchUserAchievements = async () => {
+                const data = await authFetch(
+                    `/user/getUserAchievements/${userId}`
+                );
+                setUserAchievements(data?.achievements || []);
+            };
 
-        fetchAchievements();
-        fetchUserAchievements();
-    }, [userId, refreshToggle]);
+            fetchAchievements();
+            fetchUserAchievements();
+
+            // Optionally return a cleanup function if needed
+            return () => {
+                // cleanup if necessary
+            };
+        }, [userId, refreshToggle])
+    );
 
     // Add achievement to user
     const handleAdd = async (achievementId: number) => {
@@ -140,22 +150,34 @@ export default function AchievementsScreen() {
                                 />
 
                                 {/* Delete button */}
-                                <TouchableOpacity
-                                    style={{
-                                        backgroundColor: "#f00",
-                                        paddingVertical: 6,
-                                        paddingHorizontal: 10,
-                                        borderRadius: 4,
-                                        marginBottom: 6,
-                                    }}
-                                    onPress={() =>
-                                        handleDelete(item.achievementId)
-                                    }
-                                >
-                                    <PixelText fontSize={10} color="#fff">
-                                        Delete
+                                {item.completed ? (
+                                    <PixelText fontSize={10} color="#0f0">
+                                        Completed ✅
                                     </PixelText>
-                                </TouchableOpacity>
+                                ) : (
+                                    <TouchableOpacity
+                                        style={{
+                                            backgroundColor: "#f00",
+                                            paddingVertical: 6,
+                                            paddingHorizontal: 10,
+                                            borderRadius: 4,
+                                            marginBottom: 6,
+                                        }}
+                                        onPress={() =>
+                                            handleDelete(item.achievementId)
+                                        }
+                                    >
+                                        <PixelText fontSize={10} color="#fff">
+                                            Delete
+                                        </PixelText>
+                                    </TouchableOpacity>
+                                )}
+
+                                {item.achievement.weeklyReset && (
+                                    <PixelText fontSize={10} color="#0ff">
+                                        Resets weekly 🔄
+                                    </PixelText>
+                                )}
 
                                 <PixelText fontSize={10} color="#fff">
                                     {item.achievement.xp} XP{" "}

@@ -8,6 +8,10 @@ router.get("/getAllUsers", userController.getAllUsers);
 router.delete("/deleteAllUsers", userController.deleteAllUsers);
 
 router.get("/getUserWorkouts/:id", userController.getUserWorkouts);
+router.get(
+    "/getUserWorkoutsByArchitype/:id/:architype",
+    userController.getUserWorkoutsByArchitype
+);
 router.get("/getAllUserPhotos/:id", userController.getAllUserPhotos);
 
 router.get("/getUserAchievements/:id", userController.getUserAchievements);

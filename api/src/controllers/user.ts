@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import { WorkoutArchitype } from "@prisma/client";
 import { prisma } from "../config.js";
 
 export const getAllUsers = async (
@@ -62,6 +63,43 @@ export const getUserWorkouts = async (
     });
 
     res.status(200).json(userWithWorkouts);
+};
+
+export const getUserWorkoutsByArchitype = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const userId = Number(req.params.id);
+    const architypeParam = req.params
+        .architype as keyof typeof WorkoutArchitype;
+    const architype = WorkoutArchitype[architypeParam];
+
+    if (!architype) {
+        res.status(400).json({ error: "Invalid architype" });
+        return;
+    }
+
+    try {
+        const workouts = await prisma.userWorkout.findMany({
+            where: {
+                userId: Number(userId),
+                workout: {
+                    architype: {
+                        has: architype,
+                    },
+                },
+            },
+            include: {
+                workout: true,
+            },
+        });
+
+        res.json({ workouts });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to get workouts" });
+    }
 };
 
 export const getAllUserPhotos = async (

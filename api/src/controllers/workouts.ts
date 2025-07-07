@@ -3,6 +3,7 @@ import { prisma } from "../config.js";
 import { addXpAndCheckLevelUp } from "../functions/addXPAndCheckLevelUp.js";
 import { checkAndProgressAchievements } from "../functions/checkAndProgressAchivements.js";
 import { AchievementType } from "@prisma/client";
+import { arch } from "os";
 
 const completedWorkoutProgress = 50;
 
@@ -404,17 +405,18 @@ export const completeWorkout = async (req: Request, res: Response) => {
 
 export const createCustomWorkout = async (req: Request, res: Response) => {
     try {
-        const { userId, customName } = req.body;
+        const { userId, customName, architype } = req.body;
 
         if (
             !Number.isFinite(userId) ||
             userId <= 0 ||
             typeof customName !== "string" ||
-            customName.trim() === ""
+            customName.trim() === "" ||
+            !architype
         ) {
             res.status(400).json({
                 message:
-                    "Please provide a valid userId number and name string.",
+                    "Please provide a valid userId number, name string, and an architype.",
             });
             return;
         }
@@ -432,6 +434,7 @@ export const createCustomWorkout = async (req: Request, res: Response) => {
             data: {
                 name: customName,
                 createdByUserId: userId,
+                architype: architype,
             },
         });
 

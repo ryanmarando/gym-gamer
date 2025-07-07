@@ -1,20 +1,14 @@
 // screens/WorkoutsScreen.tsx
 
 import React, { useEffect, useState, useCallback } from "react";
-import {
-    View,
-    StyleSheet,
-    FlatList,
-    TextInput,
-    TextInputProps,
-    NativeSyntheticEvent,
-    TextInputChangeEventData,
-} from "react-native";
+import { View, StyleSheet, FlatList, TextInput } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
-import PixelModal from "../components/PixelModal"; // Your modal component
+import PixelModal from "../components/PixelModal";
+import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
+import PickWorkoutDay from "../components/PickWorkoutDay";
 
 interface Workout {
     userId: number;
@@ -34,13 +28,20 @@ export default function WorkoutsScreen() {
     const [timer, setTimer] = useState<number>(0); // seconds elapsed
     const [workoutStarted, setWorkoutStarted] = useState<boolean>(false);
     const [showModal, setShowModal] = useState<boolean>(false);
+    const [showConfirmationModal, setShowConfirmationModal] =
+        useState<boolean>(false);
     const [modalMessage, setModalMessage] = useState(
         "Are you sure you want to start a workout?"
     );
+    const [modalConfirmationTitle, setmodalConfirmationTitle] =
+        useState("Whoa there, gamer!");
     const [modalAction, setModalAction] = useState<"start" | "complete" | null>(
         null
     );
     const [allWorkoutEntries, setAllWorkoutEntries] = useState<any[]>([]);
+    const [selectedDay, setSelectedDay] = useState<
+        "PUSH" | "PULL" | "LEGS" | null
+    >(null);
 
     const openStartModal = () => {
         setModalAction("start");
@@ -94,7 +95,9 @@ export default function WorkoutsScreen() {
 
                 setWorkoutStarted(false);
                 setTimer(0);
-                alert("Workout completed!");
+                setmodalConfirmationTitle("Nice work, gamer!");
+                setModalMessage("Workout complete! You just gained XP!");
+                setShowConfirmationModal(true);
             } catch (error) {
                 console.error("Complete workout failed", error);
                 alert("Failed to complete workout");
@@ -104,10 +107,35 @@ export default function WorkoutsScreen() {
         setModalAction(null);
     };
 
+    // Fetch user workouts from API
+    const fetchUserWorkouts = useCallback(async () => {
+        try {
+            const userIdStr = await SecureStore.getItemAsync("userId");
+            if (!userIdStr) return;
+
+            if (!selectedDay) return;
+
+            const data = await authFetch(
+                `/user/getUserWorkoutsByArchitype/${userIdStr}/${selectedDay}`
+            );
+
+            setWorkouts(data.workouts || []);
+
+            // ✅ Reset the weightEntries so each workout has 3 boxes
+            const initialWeights: WeightEntries = {};
+            (data.workouts || []).forEach((w: Workout) => {
+                initialWeights[w.workoutId] = [0, 0, 0];
+            });
+            setWeightEntries(initialWeights);
+        } catch (err) {
+            console.error(err);
+        }
+    }, [selectedDay]);
+
     // Fetch workouts on mount
     useEffect(() => {
         fetchUserWorkouts();
-    }, []);
+    }, [fetchUserWorkouts]);
 
     // Timer effect
     useEffect(() => {
@@ -123,34 +151,6 @@ export default function WorkoutsScreen() {
             if (interval) clearInterval(interval);
         };
     }, [workoutStarted, timer]);
-
-    // Fetch user workouts from API
-    const fetchUserWorkouts = useCallback(async () => {
-        try {
-            const userIdStr = await SecureStore.getItemAsync("userId");
-            if (!userIdStr) return;
-            const userId = Number(userIdStr);
-            if (isNaN(userId)) return;
-
-            const data = await authFetch(`/user/getUserWorkouts/${userId}`);
-            setWorkouts(data.workouts || []);
-
-            // Fetch all workout entries
-            const entriesData = await authFetch(
-                `/user/getUserWorkoutWeightEntries/${userId}`
-            );
-            setAllWorkoutEntries(entriesData.entries || []);
-
-            // Initialize weight entries with default 3 zeros per workout
-            const initialWeights: WeightEntries = {};
-            data.workouts.forEach((w: Workout) => {
-                initialWeights[w.workoutId] = [0, 0, 0];
-            });
-            setWeightEntries(initialWeights);
-        } catch (error) {
-            console.error("Failed to fetch workouts", error);
-        }
-    }, []);
 
     // Format seconds as MM:SS
     const formatTime = (seconds: number): string => {
@@ -208,138 +208,177 @@ export default function WorkoutsScreen() {
         return entriesForWorkout[0].weight; // or do Math.max(...) if you want the max ever
     };
 
+    const handleChangeDay = () => {
+        if (workoutStarted) {
+            setModalMessage(
+                "You cannot change your workout day while a workout is active."
+            );
+            setmodalConfirmationTitle("Whoa there, gamer!");
+            setShowConfirmationModal(true);
+            return;
+        }
+        setSelectedDay(null);
+        setWorkouts([]);
+    };
+
     return (
         <View style={styles.container}>
-            <PixelText
-                fontSize={20}
-                color="#ff0"
-                style={{ marginBottom: 12, textAlign: "center" }}
-            >
-                Push Day
-            </PixelText>
-            <PixelText
-                fontSize={18}
-                color="#0ff"
-                style={{ marginBottom: 12, textAlign: "center" }}
-            >
-                Timer: {formatTime(timer)}
-            </PixelText>
-
-            {workoutStarted ? (
-                <PixelButton
-                    color="#f00"
-                    text="Complete Workout"
-                    onPress={openCompleteModal}
-                    containerStyle={{
-                        marginTop: 20,
-                        backgroundColor: "#000",
-                        borderColor: "#f00",
-                    }}
-                />
+            {!selectedDay ? (
+                <PickWorkoutDay onSelect={setSelectedDay} />
             ) : (
-                <PixelButton
-                    text="Start Workout"
-                    onPress={openStartModal}
-                    containerStyle={{ marginTop: 20 }}
-                />
-            )}
+                <>
+                    <PixelButton
+                        text="Change Day"
+                        onPress={handleChangeDay}
+                        containerStyle={{ marginBottom: 10 }}
+                    />
 
-            <FlatList
-                data={workouts}
-                keyExtractor={(item) => item.workoutId.toString()}
-                style={{ flex: 1 }}
-                renderItem={({ item }) => (
-                    <View style={styles.workoutCard}>
-                        <View style={{ flex: 1 }}>
-                            <PixelText
-                                fontSize={14}
-                                color="#0f0"
-                                style={{
-                                    marginBottom: 4,
-                                    textAlign: "left",
-                                    paddingLeft: -12,
-                                }}
-                            >
-                                {item.workout.name}
-                            </PixelText>
-                            <PixelText
-                                fontSize={10}
-                                color="#fff"
-                                style={{
-                                    marginBottom: 8,
-                                    textAlign: "left",
-                                    paddingLeft: -12,
-                                    width: 1000,
-                                }}
-                            >
-                                Reps: 10, Failure, Failure{" "}
-                                {/* hardcoded for now */}
-                            </PixelText>
+                    <PixelText
+                        fontSize={20}
+                        color="#ff0"
+                        style={{ marginBottom: 12, textAlign: "center" }}
+                    >
+                        {selectedDay} Day
+                    </PixelText>
+                    <PixelText
+                        fontSize={18}
+                        color="#0ff"
+                        style={{ marginBottom: 12, textAlign: "center" }}
+                    >
+                        Timer: {formatTime(timer)}
+                    </PixelText>
 
-                            <PixelText
-                                fontSize={10}
-                                color="#fff"
-                                style={{
-                                    marginBottom: 8,
-                                    textAlign: "left",
-                                    paddingLeft: -12,
-                                }}
-                            >
-                                {`Max weight: ${getLastWorkoutWeight(
-                                    item.workoutId
-                                )} lbs`}
-                            </PixelText>
+                    {workoutStarted ? (
+                        <PixelButton
+                            color="#f00"
+                            text="Complete Workout"
+                            onPress={openCompleteModal}
+                            containerStyle={{
+                                marginTop: 20,
+                                backgroundColor: "#000",
+                                borderColor: "#f00",
+                            }}
+                        />
+                    ) : (
+                        <PixelButton
+                            text="Start Workout"
+                            onPress={openStartModal}
+                            containerStyle={{ marginTop: 20 }}
+                        />
+                    )}
 
-                            <View style={{ flexDirection: "row", gap: 8 }}>
-                                {(weightEntries[item.workoutId] || []).map(
-                                    (weight, i) => (
-                                        <TextInput
-                                            key={i}
-                                            keyboardType="numeric"
-                                            value={weight.toString()}
-                                            onChangeText={(v) =>
-                                                handleWeightChange(
-                                                    item.workoutId,
-                                                    i,
-                                                    v
-                                                )
-                                            }
-                                            style={styles.weightInput}
-                                            placeholder="0"
-                                            placeholderTextColor="#555"
-                                        />
-                                    )
-                                )}
+                    <FlatList
+                        data={workouts}
+                        keyExtractor={(item) => item.workoutId.toString()}
+                        style={{ flex: 1 }}
+                        renderItem={({ item }) => (
+                            <View style={styles.workoutCard}>
+                                <View style={{ flex: 1 }}>
+                                    <PixelText
+                                        fontSize={14}
+                                        color="#0f0"
+                                        style={{
+                                            marginBottom: 4,
+                                            textAlign: "left",
+                                            paddingLeft: -12,
+                                        }}
+                                    >
+                                        {item.workout.name}
+                                    </PixelText>
+                                    <PixelText
+                                        fontSize={10}
+                                        color="#fff"
+                                        style={{
+                                            marginBottom: 8,
+                                            textAlign: "left",
+                                            paddingLeft: -12,
+                                            width: 1000,
+                                        }}
+                                    >
+                                        Reps: 10, Failure, Failure{" "}
+                                        {/* hardcoded for now */}
+                                    </PixelText>
+
+                                    <PixelText
+                                        fontSize={10}
+                                        color="#fff"
+                                        style={{
+                                            marginBottom: 8,
+                                            textAlign: "left",
+                                            paddingLeft: -12,
+                                        }}
+                                    >
+                                        {`Max weight: ${getLastWorkoutWeight(
+                                            item.workoutId
+                                        )} lbs`}
+                                    </PixelText>
+
+                                    <View
+                                        style={{ flexDirection: "row", gap: 8 }}
+                                    >
+                                        {(
+                                            weightEntries[item.workoutId] || []
+                                        ).map((weight, i) => (
+                                            <TextInput
+                                                key={i}
+                                                keyboardType="numeric"
+                                                value={weight.toString()}
+                                                onChangeText={(v) =>
+                                                    handleWeightChange(
+                                                        item.workoutId,
+                                                        i,
+                                                        v
+                                                    )
+                                                }
+                                                style={styles.weightInput}
+                                                placeholder="0"
+                                                placeholderTextColor="#555"
+                                            />
+                                        ))}
+                                    </View>
+                                </View>
+
+                                <View style={styles.buttonsColumn}>
+                                    <PixelButton
+                                        text="+"
+                                        onPress={() => addEntry(item.workoutId)}
+                                        containerStyle={{
+                                            marginBottom: 8,
+                                            width: 40,
+                                        }}
+                                    />
+                                    <PixelButton
+                                        text="-"
+                                        onPress={() =>
+                                            deleteEntry(item.workoutId)
+                                        }
+                                        containerStyle={{ width: 40 }}
+                                    />
+                                </View>
                             </View>
-                        </View>
+                        )}
+                    />
 
-                        <View style={styles.buttonsColumn}>
-                            <PixelButton
-                                text="+"
-                                onPress={() => addEntry(item.workoutId)}
-                                containerStyle={{ marginBottom: 8, width: 40 }}
-                            />
-                            <PixelButton
-                                text="-"
-                                onPress={() => deleteEntry(item.workoutId)}
-                                containerStyle={{ width: 40 }}
-                            />
-                        </View>
-                    </View>
-                )}
-            />
-
-            <PixelModal
-                visible={showModal}
-                onConfirm={onModalConfirm}
-                onCancel={() => setShowModal(false)}
-                title={
-                    modalAction === "start"
-                        ? "Start Workout"
-                        : "Complete Workout"
-                }
-                message={modalMessage}
-            />
+                    <PixelModal
+                        visible={showModal}
+                        onConfirm={onModalConfirm}
+                        onCancel={() => setShowModal(false)}
+                        title={
+                            modalAction === "start"
+                                ? "Start Workout"
+                                : "Complete Workout"
+                        }
+                        message={modalMessage}
+                    />
+                    <ConfirmationPixelModal
+                        visible={showConfirmationModal}
+                        onConfirm={() => setShowConfirmationModal(false)}
+                        onCancel={() => setShowConfirmationModal(false)}
+                        title={modalConfirmationTitle}
+                        message={modalMessage}
+                    />
+                </>
+            )}
         </View>
     );
 }
