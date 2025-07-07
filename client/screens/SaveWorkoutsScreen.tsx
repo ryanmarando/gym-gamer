@@ -12,6 +12,7 @@ import PixelButton from "../components/PixelButton";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import CustomWorkoutModal from "../components/CustomWorkoutModal";
+import { playPixelSound } from "../utils/playPixelSound";
 
 export default function SaveWorkoutScreen() {
     const [userWorkouts, setUserWorkouts] = useState<any[]>([]);
@@ -126,7 +127,10 @@ export default function SaveWorkoutScreen() {
                 {item.name}
             </PixelText>
             <TouchableOpacity
-                onPress={() => toggleWorkout(item.id)}
+                onPress={() => {
+                    toggleWorkout(item.id);
+                    playPixelSound();
+                }}
                 style={[
                     styles.button,
                     {

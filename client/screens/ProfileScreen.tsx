@@ -6,7 +6,6 @@ import {
     Image,
     ActivityIndicator,
     TouchableOpacity,
-    Platform,
 } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
@@ -17,10 +16,11 @@ import { authFetch } from "../utils/authFetch";
 import { logout } from "../utils/logout";
 import { resetStats } from "../utils/resetStats";
 import * as SecureStore from "expo-secure-store";
-import * as Notifications from "expo-notifications";
+import { playPixelSound } from "../utils/playPixelSound";
 import {
-    scheduleNotification,
+    sendPushNotification,
     registerForPushNotificationsAsync,
+    scheduleNotification,
 } from "../utils/notification";
 
 interface UserData {
@@ -53,7 +53,6 @@ export default function ProfileScreen({
 
     useEffect(() => {
         const registerPush = async () => {
-            console.log("registering notif");
             const token = await registerForPushNotificationsAsync();
             if (token) setExpoPushToken(token);
         };
@@ -154,14 +153,12 @@ export default function ProfileScreen({
     }
 
     const sendNotification = async () => {
-        console.log("send notif");
-        await scheduleNotification({
-            title: "You've got mail! 📬",
-            body: "Here is the notification body",
-            data: { exampleData: "Some data here" },
-            seconds: 2, // optional, defaults to 2
-            repeats: false, // optional, defaults to false
-        });
+        if (!expoPushToken) {
+            return;
+        }
+        const title = "Hey Gamer!";
+        const body = "You completed an achievement!";
+        await sendPushNotification({ expoPushToken, title, body });
     };
 
     return (
@@ -220,6 +217,7 @@ export default function ProfileScreen({
                         text="Start Workout"
                         onPress={() => {
                             navigation.navigate("Workouts");
+                            playPixelSound();
                         }}
                         color="#f0f"
                         containerStyle={{
