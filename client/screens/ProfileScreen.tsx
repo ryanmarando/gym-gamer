@@ -1,6 +1,13 @@
-import React, { useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { View, StyleSheet, Image, ActivityIndicator } from "react-native";
+import {
+    View,
+    StyleSheet,
+    Image,
+    ActivityIndicator,
+    TouchableOpacity,
+    Platform,
+} from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import PixelModal from "../components/PixelModal";
@@ -8,9 +15,13 @@ import PixelAchievementCard from "../components/PixelAchievementCard";
 import ProgressBar from "../components/ProgressBar";
 import { authFetch } from "../utils/authFetch";
 import { logout } from "../utils/logout";
-import { completeWorkout } from "../utils/completeWorkout";
 import { resetStats } from "../utils/resetStats";
 import * as SecureStore from "expo-secure-store";
+import * as Notifications from "expo-notifications";
+import {
+    scheduleNotification,
+    registerForPushNotificationsAsync,
+} from "../utils/notification";
 
 interface UserData {
     id: number;
@@ -30,6 +41,24 @@ export default function ProfileScreen({
     const [userData, setUserData] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
+    const [modalMessage, setModalMessage] = useState<string>(
+        "You will be logged out."
+    );
+    const [modalTitleMessage, setmodalTitleMessage] =
+        useState<string>("Are you sure?");
+    const [modalAction, setModalAction] = useState<"logout" | "reset" | null>(
+        null
+    );
+    const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
+
+    useEffect(() => {
+        const registerPush = async () => {
+            console.log("registering notif");
+            const token = await registerForPushNotificationsAsync();
+            if (token) setExpoPushToken(token);
+        };
+        registerPush();
+    }, []);
 
     useFocusEffect(
         useCallback(() => {
@@ -54,21 +83,37 @@ export default function ProfileScreen({
         }
     };
 
+    const doResetStats = async () => {
+        if (!userData) return;
+
+        try {
+            await resetStats(Number(userData.id));
+            const data = await authFetch(`/user/${Number(userData.id)}`);
+            setUserData(data);
+        } catch (error) {
+            console.error("❌ Error resetting stats:", error);
+        }
+    };
+
+    const handleModalConfirm = async () => {
+        if (modalAction === "logout") {
+            logoutUser();
+        } else if (modalAction === "reset") {
+            await doResetStats();
+        }
+        setModalVisible(false);
+    };
+
     const logoutUser = async () => {
         logout(setIsLoggedIn, setUserData);
         setModalVisible(false);
     };
 
     const resetUserStats = async () => {
-        try {
-            await resetStats(Number(userData!.id));
-
-            // ⏬ Re-fetch the user data to get new progress/level
-            const data = await authFetch(`/user/${Number(userData!.id)}`);
-            setUserData(data);
-        } catch (error) {
-            console.error("❌ Error resettting stats:", error);
-        }
+        setModalVisible(true);
+        const message = `This will reset your XP and return your level to 0.`;
+        setModalAction("reset");
+        setModalMessage(message);
     };
 
     if (!isLoggedIn) {
@@ -107,6 +152,17 @@ export default function ProfileScreen({
             </View>
         );
     }
+
+    const sendNotification = async () => {
+        console.log("send notif");
+        await scheduleNotification({
+            title: "You've got mail! 📬",
+            body: "Here is the notification body",
+            data: { exampleData: "Some data here" },
+            seconds: 2, // optional, defaults to 2
+            repeats: false, // optional, defaults to false
+        });
+    };
 
     return (
         <View style={styles.container}>
@@ -173,15 +229,29 @@ export default function ProfileScreen({
                         }}
                     />
                 </View>
+                <PixelButton
+                    text="Send Notification"
+                    onPress={sendNotification}
+                />
             </View>
 
             <View style={styles.bottomButtonContainer}>
-                <View>
+                <TouchableOpacity
+                    onPress={() => navigation.navigate("Achievements")}
+                    style={{
+                        backgroundColor: "transparent",
+                    }}
+                >
                     <PixelAchievementCard />
-                </View>
+                </TouchableOpacity>
                 <PixelButton
                     text="Log Out"
-                    onPress={() => setModalVisible(true)}
+                    onPress={() => {
+                        setModalAction("logout");
+                        setModalVisible(true);
+                        const message = "You will be logged out.";
+                        setModalMessage(message);
+                    }}
                     color="#f00"
                     containerStyle={{
                         backgroundColor: "#000",
@@ -190,9 +260,9 @@ export default function ProfileScreen({
                 />
                 <PixelModal
                     visible={modalVisible}
-                    title="Are you sure?"
-                    message="You will be logged out."
-                    onConfirm={logoutUser}
+                    title={modalTitleMessage}
+                    message={modalMessage}
+                    onConfirm={handleModalConfirm}
                     onCancel={() => setModalVisible(false)}
                 />
             </View>

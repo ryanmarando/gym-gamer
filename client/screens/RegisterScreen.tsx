@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, StyleSheet, TextInput, Alert } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
+import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import * as SecureStore from "expo-secure-store";
 
 // ⚡️ Use your .env or constants!
@@ -11,6 +12,11 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
     const [email, setEmail] = useState("");
     const [name, setName] = useState("");
     const [password, setPassword] = useState("");
+    const [showConfirmationModal, setShowConfirmationModal] =
+        useState<boolean>(false);
+    const [modalMessage, setModalMessage] = useState<string>("Login failed.");
+    const [modalTitleMessage, setmodalTitleMessage] =
+        useState<string>("Whoa there, gamer!");
 
     const handleRegister = async () => {
         try {
@@ -38,14 +44,19 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
             console.log("🔒 Token saved to SecureStore!");
             await SecureStore.setItemAsync("userId", data.user.id.toString());
 
-            Alert.alert("Success", "Your account has been created!");
+            //Alert.alert("Success", "Your account has been created!");
+            setShowConfirmationModal(true);
+            const message = `Congrats gamer ${data.user.name}. You've got a longer journey ahead..`;
+            setModalMessage(message);
 
-            setIsLoggedIn(true);
-            // Navigate back to Login
-            //navigation.navigate("Profile");
+            setTimeout(() => {
+                setShowConfirmationModal(false);
+                setIsLoggedIn(true);
+            }, 5000);
         } catch (error: any) {
-            console.error("❌ Registration error:", error);
-            Alert.alert("Registration Failed", error.message);
+            setShowConfirmationModal(true);
+            const message = `${error.message}... please enter valid information.`;
+            setModalMessage(message);
         }
     };
 
@@ -102,6 +113,14 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
                     borderColor: "#f00",
                     marginTop: 20,
                 }}
+            />
+
+            <ConfirmationPixelModal
+                visible={showConfirmationModal}
+                onConfirm={() => setShowConfirmationModal(false)}
+                onCancel={() => setShowConfirmationModal(false)}
+                title={modalTitleMessage}
+                message={modalMessage}
             />
         </View>
     );

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, StyleSheet, TextInput, Alert, Image } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
+import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import * as SecureStore from "expo-secure-store";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -9,6 +10,11 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showConfirmationModal, setShowConfirmationModal] =
+        useState<boolean>(false);
+    const [modalMessage, setModalMessage] = useState<string>("Login failed.");
+    const [modalTitleMessage, setmodalTitleMessage] =
+        useState<string>("Whoa there, gamer!");
 
     const handleLogin = async () => {
         try {
@@ -32,16 +38,13 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
             console.log("🔒 Token saved to SecureStore!");
             await SecureStore.setItemAsync("userId", data.user.id.toString());
 
-            Alert.alert("Success", "You are logged in!");
-
-            // Set login state true here
             setIsLoggedIn(true);
 
-            // Navigate back to home
-            //navigation.navigate("Profile");
+            // Set login state true here
         } catch (error: any) {
-            console.error("❌ Login error:", error);
-            Alert.alert("Login Failed", error.message);
+            setShowConfirmationModal(true);
+            const message = `Login failed: ${error.message}`;
+            setModalMessage(message);
         }
     };
 
@@ -100,6 +103,14 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
                     borderColor: "#f00",
                     marginTop: 20,
                 }}
+            />
+
+            <ConfirmationPixelModal
+                visible={showConfirmationModal}
+                onConfirm={() => setShowConfirmationModal(false)}
+                onCancel={() => setShowConfirmationModal(false)}
+                title={modalTitleMessage}
+                message={modalMessage}
             />
         </View>
     );

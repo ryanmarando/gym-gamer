@@ -92,6 +92,7 @@ export const getUserWorkoutsByArchitype = async (
             },
             include: {
                 workout: true,
+                entries: true,
             },
         });
 
