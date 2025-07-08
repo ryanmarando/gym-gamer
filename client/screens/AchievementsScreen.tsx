@@ -11,6 +11,7 @@ import PixelText from "../components/PixelText";
 import ProgressBar from "../components/ProgressBar";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
+import { playPixelSound } from "../utils/playPixelSound";
 
 interface AchievementDetails {
     id: number;
@@ -82,6 +83,7 @@ export default function AchievementsScreen() {
                 }
             );
             setRefreshToggle((prev) => !prev); // triggers re-fetch and UI update
+            playPixelSound();
         } catch (error) {
             Alert.alert("Error", "Failed to add achievement.");
             console.error(error);

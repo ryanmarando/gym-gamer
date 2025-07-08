@@ -31,7 +31,9 @@
     "react-native-screens": "~4.11.1",
     "react-native-vector-icons": "^10.2.0",
     "expo-av": "~15.1.7",
-    "expo-audio": "~0.4.8"
+    "expo-audio": "~0.4.8",
+    "expo-image-picker": "~16.1.4",
+    "expo-media-library": "~17.1.7"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

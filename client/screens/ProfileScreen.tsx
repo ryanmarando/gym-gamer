@@ -227,7 +227,13 @@ export default function ProfileScreen({
                         }}
                     />
                 </View>
+
                 <PixelButton
+                    containerStyle={{
+                        backgroundColor: "#000",
+                        borderColor: "#0ff",
+                        marginTop: 20,
+                    }}
                     text="Send Notification"
                     onPress={sendNotification}
                 />

@@ -11,6 +11,7 @@ import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
 import BottomTabs from "./components/BottomTabs";
 
+const RootStack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
 
 export default function App() {
@@ -36,10 +37,17 @@ export default function App() {
     return (
         <NavigationContainer>
             {isLoggedIn ? (
-                <BottomTabs
-                    isLoggedIn={isLoggedIn}
-                    setIsLoggedIn={setIsLoggedIn}
-                />
+                <RootStack.Navigator screenOptions={{ headerShown: false }}>
+                    <RootStack.Screen name="MainTabs">
+                        {(props) => (
+                            <BottomTabs
+                                {...props}
+                                isLoggedIn={isLoggedIn}
+                                setIsLoggedIn={setIsLoggedIn}
+                            />
+                        )}
+                    </RootStack.Screen>
+                </RootStack.Navigator>
             ) : (
                 <AuthStack.Navigator screenOptions={{ headerShown: false }}>
                     <AuthStack.Screen name="Login">
