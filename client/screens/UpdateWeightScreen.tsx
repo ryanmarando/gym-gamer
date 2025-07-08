@@ -5,13 +5,13 @@ import {
     TextInput,
     ActivityIndicator,
     Alert,
-    Dimensions,
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import { LineChart, Grid, YAxis } from "react-native-svg-charts";
+import { LineChart, Grid, YAxis, XAxis } from "react-native-svg-charts";
 import PixelButton from "../components/PixelButton";
 import PixelText from "../components/PixelText";
-import PixelModal from "../components/PixelModal"; // import your PixelModal here
+import PixelModal from "../components/PixelModal";
+import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import { authFetch } from "../utils/authFetch";
 
 export default function UpdateWeightScreen({ navigation }: any) {
@@ -22,6 +22,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
     const [newWeight, setNewWeight] = useState("");
     const [loading, setLoading] = useState(true); // true until fully ready
     const [modalVisible, setModalVisible] = useState(false); // modal visibility
+    const [invalidModalVisible, setInvalidModalVisible] = useState(false);
 
     // Load userId once
     useEffect(() => {
@@ -67,10 +68,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
     const handleAddWeightPress = () => {
         const weightNum = parseFloat(newWeight);
         if (isNaN(weightNum) || weightNum <= 0) {
-            Alert.alert(
-                "Invalid input",
-                "Please enter a valid positive number."
-            );
+            setInvalidModalVisible(true);
             return;
         }
         setModalVisible(true);
@@ -151,28 +149,66 @@ export default function UpdateWeightScreen({ navigation }: any) {
                     />
 
                     {weightValues.length > 1 && (
-                        <View
-                            style={{
-                                height: 200,
-                                flexDirection: "row",
-                                padding: 10,
-                            }}
-                        >
-                            <YAxis
-                                data={weightValues}
-                                contentInset={{ top: 20, bottom: 20 }}
-                                svg={{ fill: "grey", fontSize: 10 }}
-                                numberOfTicks={6}
-                                formatLabel={(value: any) => value.toFixed(0)}
-                            />
-                            <LineChart
-                                style={{ flex: 1 }}
-                                data={weightValues} // ✅ just an array of numbers!
-                                svg={{ stroke: "#0ff" }}
-                                contentInset={{ top: 20, bottom: 20 }}
-                            >
-                                <Grid />
-                            </LineChart>
+                        <View style={{ height: 250, padding: 10 }}>
+                            <View style={{ flexDirection: "row", flex: 1 }}>
+                                <YAxis
+                                    data={weightValues}
+                                    contentInset={{ top: 20, bottom: 20 }}
+                                    svg={{
+                                        fill: "#0ff",
+                                        fontSize: 8,
+                                        fontFamily: "PressStart2P_400Regular",
+                                    }}
+                                    numberOfTicks={6}
+                                    formatLabel={(value: any) =>
+                                        value.toFixed(1)
+                                    }
+                                />
+
+                                <View style={{ flex: 1, marginLeft: 10 }}>
+                                    <LineChart
+                                        style={{ flex: 1 }}
+                                        data={weightValues}
+                                        svg={{ stroke: "#0ff" }}
+                                        contentInset={{ top: 20, bottom: 30 }} // More bottom space for labels
+                                    >
+                                        <Grid
+                                            svg={{
+                                                stroke: "#333",
+                                                strokeDasharray: [4, 4],
+                                            }}
+                                        />
+                                    </LineChart>
+
+                                    <XAxis
+                                        style={{
+                                            marginTop: 8,
+                                            height: 40,
+                                        }}
+                                        data={weightValues}
+                                        formatLabel={(value, index) => {
+                                            const date = dates[index];
+                                            const [month, day, year] =
+                                                date.split("/");
+                                            return `${month}/${day}/${year}`;
+                                        }}
+                                        contentInset={{ left: 20, right: 20 }}
+                                        svg={{
+                                            fill: "#0ff",
+                                            fontSize: 8,
+                                            y: 15,
+                                            rotation: 0,
+                                            originY: 0,
+                                            fontFamily:
+                                                "PressStart2P_400Regular",
+                                        }}
+                                        numberOfTicks={Math.min(
+                                            dates.length,
+                                            2
+                                        )}
+                                    />
+                                </View>
+                            </View>
                         </View>
                     )}
 
@@ -190,6 +226,13 @@ export default function UpdateWeightScreen({ navigation }: any) {
                         message={`Are you sure you want to add ${newWeight} lbs to your progress?`}
                         onConfirm={handleConfirmAddWeight}
                         onCancel={() => setModalVisible(false)}
+                    />
+                    <ConfirmationPixelModal
+                        visible={invalidModalVisible}
+                        title="Whoa there, gamer!"
+                        message="Please enter a valid positive number!"
+                        onConfirm={() => setInvalidModalVisible(false)}
+                        onCancel={() => setInvalidModalVisible(false)}
                     />
                 </>
             )}
