@@ -24,6 +24,7 @@ export const getUserById = async (
     const userId = Number(req.params.id);
     const user = await prisma.user.findUnique({
         where: { id: userId },
+        include: { weightEntries: true },
     });
 
     if (!user) {
@@ -302,7 +303,11 @@ export const getAllUserWeightEntries = async (req: Request, res: Response) => {
             select: {
                 id: true,
                 name: true,
-                weightEntries: true,
+                weightEntries: {
+                    orderBy: {
+                        enteredAt: "desc",
+                    },
+                },
             },
         });
 

@@ -10,8 +10,10 @@ import * as SplashScreen from "expo-splash-screen";
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
 import BottomTabs from "./components/BottomTabs";
+import UpdateWeightScreen from "./screens/UpdateWeightScreen";
 
 const RootStack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
 
 export default function App() {
@@ -47,6 +49,11 @@ export default function App() {
                             />
                         )}
                     </RootStack.Screen>
+                    <Stack.Screen
+                        name="UpdateWeight"
+                        component={UpdateWeightScreen}
+                        options={{ title: "Update Bodyweight" }}
+                    />
                 </RootStack.Navigator>
             ) : (
                 <AuthStack.Navigator screenOptions={{ headerShown: false }}>

@@ -23,6 +23,14 @@ import {
     scheduleNotification,
 } from "../utils/notification";
 
+interface AchievementDetails {
+    id: number;
+    name: string;
+    xp: number;
+    weeklyReset: boolean;
+    isQuest: boolean;
+}
+
 interface UserData {
     id: number;
     email: string;
@@ -31,6 +39,8 @@ interface UserData {
     level: number;
     levelProgress: number;
     xp: number;
+    achievements: AchievementDetails[];
+    activeQuest: AchievementDetails;
 }
 
 export default function ProfileScreen({
@@ -72,9 +82,26 @@ export default function ProfileScreen({
             setLoading(true);
             const userId = await SecureStore.getItemAsync("userId");
             const data = await authFetch(`/user/${Number(userId)}`);
-            //console.log("✅ User data:", data);
+
+            // Get their user achievements
+            const userAchievements = await authFetch(
+                `/user/getUserAchievements/${Number(userId)}`
+            );
+
+            // Find the active quest achievement
+            const activeQuest =
+                userAchievements.achievements.find(
+                    (ua: any) => ua.achievement?.isQuest
+                )?.achievement || null;
+
+            // Merge into a single object
+            const userDataWithQuest = {
+                ...data,
+                activeQuest,
+            };
+
             console.log("✅ Profile screen loaded");
-            setUserData(data);
+            setUserData(userDataWithQuest);
         } catch (error) {
             console.error("❌ Failed to fetch user data:", error);
         } finally {
@@ -240,14 +267,31 @@ export default function ProfileScreen({
             </View>
 
             <View style={styles.bottomButtonContainer}>
+                <PixelText>Your quest:</PixelText>
                 <TouchableOpacity
                     onPress={() => navigation.navigate("Achievements")}
                     style={{
                         backgroundColor: "transparent",
                     }}
                 >
-                    <PixelAchievementCard />
+                    <PixelAchievementCard
+                        achievement={
+                            userData.activeQuest
+                                ? {
+                                      achievement: {
+                                          name: userData.activeQuest.name,
+                                          xp: userData.activeQuest.xp,
+                                      },
+                                      progress: 0, // Or use real value if you have it!
+                                  }
+                                : undefined
+                        }
+                    />
                 </TouchableOpacity>
+                <PixelButton
+                    text="Update bodyweight"
+                    onPress={() => navigation.navigate("UpdateWeight")}
+                ></PixelButton>
                 <PixelButton
                     text="Log Out"
                     onPress={() => {
@@ -260,6 +304,7 @@ export default function ProfileScreen({
                     containerStyle={{
                         backgroundColor: "#000",
                         borderColor: "#f00",
+                        marginTop: 10,
                     }}
                 />
                 <PixelModal

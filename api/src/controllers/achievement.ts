@@ -23,6 +23,30 @@ export const getAllAchievements = async (
     }
 };
 
+export const getAllQuests = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const quests = await prisma.achievement.findMany({
+            where: {
+                isQuest: true,
+            },
+        });
+
+        if (!quests || quests.length === 0) {
+            res.status(400).json({ message: "No achievements found." });
+            return;
+        }
+
+        res.status(200).json(quests);
+    } catch (error) {
+        console.log(`Error GET of All achievements: ${error}`);
+        res.status(500).json({ message: `Error: ${error}` });
+    }
+};
+
 export const saveToUser = async (
     req: Request,
     res: Response,

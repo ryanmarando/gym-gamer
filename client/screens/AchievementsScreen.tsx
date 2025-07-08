@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import PixelText from "../components/PixelText";
 import ProgressBar from "../components/ProgressBar";
+import PixelModal from "../components/PixelModal";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import { playPixelSound } from "../utils/playPixelSound";
@@ -25,16 +26,36 @@ interface UserAchievement {
     achievementId: number;
     progress: number;
     completed: boolean;
+    isQuest: boolean;
     achievement: AchievementDetails;
 }
 
-export default function AchievementsScreen() {
+interface PixelAchievementCardProps {
+    achievement?: {
+        id: number;
+        name: string;
+        description: string;
+        imageUrl?: string;
+        // any other fields you want
+    };
+}
+
+export default function AchievementsScreen({
+    achievement,
+}: PixelAchievementCardProps) {
     const [achievements, setAchievements] = useState<AchievementDetails[]>([]); // All achievements
     const [userAchievements, setUserAchievements] = useState<UserAchievement[]>(
         []
     ); // User's achievements
+    const [quests, setQuests] = useState<AchievementDetails[]>([]); // Quests
     const [userId, setUserId] = useState<number | null>(null);
     const [refreshToggle, setRefreshToggle] = useState(false); // to trigger refresh
+    const [modalVisible, setModalVisible] = useState(false);
+    const [modalConfig, setModalConfig] = useState({
+        title: "",
+        message: "",
+        onConfirm: () => {},
+    });
 
     useEffect(() => {
         const fetchUserId = async () => {
@@ -62,8 +83,14 @@ export default function AchievementsScreen() {
                 setUserAchievements(data?.achievements || []);
             };
 
+            const fetchQuest = async () => {
+                const data = await authFetch("/achievement/quests");
+                setQuests(data || []);
+            };
+
             fetchAchievements();
             fetchUserAchievements();
+            fetchQuest();
 
             // Optionally return a cleanup function if needed
             return () => {
@@ -71,6 +98,47 @@ export default function AchievementsScreen() {
             };
         }, [userId, refreshToggle])
     );
+
+    const handleAddPress = (questId: number) => {
+        const alreadyHasQuest = userAchievements.some((ua) => ua.isQuest);
+
+        if (alreadyHasQuest) {
+            // Show confirmation to replace
+            setModalConfig({
+                title: "Change Quest",
+                message: "Are you sure you want to change your quest?",
+                onConfirm: async () => {
+                    // Remove old quest
+                    await removeExistingQuest();
+                    // Add new quest
+                    await handleAdd(questId);
+                    setModalVisible(false);
+                },
+            });
+            setModalVisible(true);
+        } else {
+            handleAdd(questId);
+        }
+    };
+
+    const removeExistingQuest = async () => {
+        const questToRemove = userAchievements.find((ua) => ua.isQuest);
+        if (questToRemove) {
+            await handleDelete(questToRemove.achievementId);
+        }
+    };
+
+    const handleDeletePress = (questId: number) => {
+        setModalConfig({
+            title: "Remove Quest",
+            message: "Are you sure you want to remove your quest?",
+            onConfirm: async () => {
+                await handleDelete(questId);
+                setModalVisible(false);
+            },
+        });
+        setModalVisible(true);
+    };
 
     // Add achievement to user
     const handleAdd = async (achievementId: number) => {
@@ -109,7 +177,88 @@ export default function AchievementsScreen() {
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
+            {/* Quests Section */}
+            <PixelText fontSize={18} color="#ff0" style={{ marginBottom: 10 }}>
+                🏆 Conquer With Quests
+            </PixelText>
+
+            {quests.length === 0 ? (
+                <PixelText
+                    fontSize={14}
+                    color="#888"
+                    style={{ marginBottom: 20 }}
+                >
+                    No quests found.
+                </PixelText>
+            ) : (
+                <View style={styles.grid}>
+                    {quests.map((item) => {
+                        const isAdded = userAchievements.some(
+                            (ua) => ua.achievementId === item.id
+                        );
+
+                        return (
+                            <View key={item.id} style={styles.card}>
+                                <View
+                                    style={{
+                                        flex: 1,
+                                        justifyContent: "center",
+                                        width: "110%",
+                                    }}
+                                >
+                                    <PixelText
+                                        fontSize={12}
+                                        color="#fff"
+                                        style={{
+                                            marginBottom: 4,
+                                            width: "100%",
+                                        }}
+                                    >
+                                        {item.name}
+                                    </PixelText>
+                                </View>
+                                <View
+                                    style={{
+                                        flexDirection: "row",
+                                        justifyContent: "space-between",
+                                        marginBottom: 4,
+                                    }}
+                                >
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.button,
+                                            {
+                                                backgroundColor: isAdded
+                                                    ? "#f00"
+                                                    : "#0f0",
+                                            },
+                                        ]}
+                                        onPress={() =>
+                                            isAdded
+                                                ? handleDeletePress(item.id)
+                                                : handleAddPress(item.id)
+                                        }
+                                    >
+                                        <PixelText fontSize={10} color="#000">
+                                            {isAdded ? "Delete" : "Add"}
+                                        </PixelText>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        );
+                    })}
+                    <PixelModal
+                        visible={modalVisible}
+                        title={modalConfig.title}
+                        message={modalConfig.message}
+                        onConfirm={modalConfig.onConfirm}
+                        onCancel={() => setModalVisible(false)}
+                    />
+                </View>
+            )}
+
             {/* User's Achievements Section */}
+            <View style={styles.separator} />
             <PixelText fontSize={20} color="#0ff" style={{ marginBottom: 20 }}>
                 💪 Your Achievements
             </PixelText>

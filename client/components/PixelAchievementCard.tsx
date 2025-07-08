@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
 import PixelText from "./PixelText";
-import ProgressBar from "./ProgressBar";
+import PixelButton from "./PixelButton";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 
@@ -13,12 +13,24 @@ interface Achievement {
     progress: number; // 0 to goal
 }
 
-export default function PixelAchievementCard() {
+interface PixelAchievementCardProps {
+    achievement?: Achievement; // same shape as your state
+}
+
+export default function PixelAchievementCard({
+    achievement: propAchievement,
+}: PixelAchievementCardProps) {
     const [achievement, setAchievement] = useState<Achievement | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchAchievement = async () => {
+            if (propAchievement) {
+                // If prop is provided, skip fetching
+                setAchievement(propAchievement);
+                setLoading(false);
+                return;
+            }
             try {
                 const userId = await SecureStore.getItemAsync("userId");
                 const data = await authFetch(
@@ -35,7 +47,7 @@ export default function PixelAchievementCard() {
             }
         };
         fetchAchievement();
-    }, []);
+    }, [propAchievement]); // ✅ watch the prop
 
     if (loading) {
         return (
@@ -78,14 +90,6 @@ export default function PixelAchievementCard() {
                     {achievement.achievement.xp} XP
                 </PixelText>
             </View>
-            <ProgressBar
-                progress={achievement.progress / 100}
-                width={250}
-                height={15}
-                backgroundColor="#333"
-                progressColor="#0ff"
-                borderColor="#0ff"
-            />
         </View>
     );
 }
