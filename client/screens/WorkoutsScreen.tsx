@@ -500,7 +500,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#111",
         paddingHorizontal: 20,
-        paddingVertical: 20,
         paddingTop: "20%",
     },
     workoutCard: {

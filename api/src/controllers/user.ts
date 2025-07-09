@@ -164,32 +164,42 @@ export const getUserAchievements = async (
     res.status(200).json(userWithAchievements);
 };
 
-export const getMostProgressedAchivement = async (
+export const getUserQuest = async (
     req: Request,
     res: Response,
     next: NextFunction
 ) => {
     const userId = Number(req.params.id);
 
-    const userWithAchievements = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-            achievements: {
-                where: {
-                    completed: false,
+    try {
+        const userQuest = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                achievements: {
+                    where: {
+                        achievement: {
+                            isQuest: true, // ✅ filter on the related achievement
+                        },
+                    },
+                    include: {
+                        achievement: true,
+                    },
+                    orderBy: {
+                        progress: "desc",
+                    },
+                    take: 1, // only one quest per user
                 },
-                include: {
-                    achievement: true,
-                },
-                orderBy: {
-                    progress: "desc",
-                },
-                take: 1,
             },
-        },
-    });
+        });
 
-    res.status(200).json(userWithAchievements);
+        res.status(200).json(userQuest);
+    } catch (error) {
+        console.error("Error fetching user quest:", error);
+        res.status(500).json({ error: "Failed to get user quest." });
+    }
 };
 
 export const resetUserStats = async (

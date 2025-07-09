@@ -10,6 +10,8 @@ import {
 import PixelText from "../components/PixelText";
 import ProgressBar from "../components/ProgressBar";
 import PixelModal from "../components/PixelModal";
+import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
+import UpdateQuestModal from "../components/UpdateQuestModal";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import { playPixelSound } from "../utils/playPixelSound";
@@ -56,6 +58,15 @@ export default function AchievementsScreen({
         message: "",
         onConfirm: () => {},
     });
+    const [modalConfirmationVisible, setModalConfirmationVisible] =
+        useState(false);
+    const [modalConfirmationConfig, setModalConfirmationConfig] = useState({
+        title: "",
+        message: "",
+        onConfirm: () => {},
+    });
+    const [updateModalVisible, setUpdateModalVisible] = useState(false);
+    const [selectedQuestId, setSelectedQuestId] = useState<number | null>(null);
 
     useEffect(() => {
         const fetchUserId = async () => {
@@ -144,17 +155,53 @@ export default function AchievementsScreen({
     const handleAdd = async (achievementId: number) => {
         if (!userId) return;
         try {
-            await authFetch(
+            const response = await authFetch(
                 `/achievement/saveToUser?userId=${userId}&achievementId=${achievementId}`,
                 {
                     method: "PATCH",
                 }
             );
+            console.log("Response", response);
+
+            if (!response?.ok && response?.status === 400) {
+                // Backend sent a 400 — get the message
+                const data = await response.json();
+                if (
+                    data.message &&
+                    data.message.includes("quest achievement")
+                ) {
+                    // Show your modal for quest limit
+                    setModalConfirmationConfig({
+                        title: "Quest Limit",
+                        message:
+                            "You can only have one quest at a time. Complete or remove your current quest first!",
+                        onConfirm: () => setModalConfirmationVisible(false),
+                    });
+                    setModalConfirmationVisible(true);
+                    return;
+                }
+            }
+
             setRefreshToggle((prev) => !prev); // triggers re-fetch and UI update
             playPixelSound();
-        } catch (error) {
-            Alert.alert("Error", "Failed to add achievement.");
-            console.error(error);
+        } catch (error: any) {
+            if (error.message.includes("quest")) {
+                setModalConfirmationConfig({
+                    title: "Quest Limit",
+                    message:
+                        "You can only have one quest at a time. Complete or remove your current quest first!",
+                    onConfirm: () => setModalConfirmationVisible(false),
+                });
+                setModalConfirmationVisible(true);
+                return;
+            }
+
+            setModalConfirmationConfig({
+                title: "Error",
+                message: "Something went wrong. Please try again.",
+                onConfirm: () => setModalConfirmationVisible(false),
+            });
+            setModalConfirmationVisible(true);
         }
     };
 
@@ -173,6 +220,32 @@ export default function AchievementsScreen({
             Alert.alert("Error", "Failed to delete achievement.");
             console.error(error);
         }
+    };
+
+    const handleQuestUpdateConfirm = async (data: {
+        customGoalAmount: number;
+        customDeadline: string;
+    }) => {
+        try {
+            const userId = await SecureStore.getItemAsync("userId");
+            await authFetch(
+                `/achievement/editQuest?userId=${userId}&achievementId=${selectedQuestId}`,
+                {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data),
+                }
+            );
+            console.log("Quest updated!");
+            setUpdateModalVisible(false);
+        } catch (error) {
+            console.error("Failed to update quest:", error);
+        }
+    };
+
+    const handleUpdatePress = (questId: number) => {
+        setSelectedQuestId(questId);
+        setUpdateModalVisible(true);
     };
 
     return (
@@ -199,31 +272,27 @@ export default function AchievementsScreen({
 
                         return (
                             <View key={item.id} style={styles.card}>
+                                {/* NAME */}
                                 <View
                                     style={{
-                                        flex: 1,
-                                        justifyContent: "center",
-                                        width: "110%",
+                                        width: "100%",
+                                        marginBottom: 8,
                                     }}
                                 >
                                     <PixelText
                                         fontSize={12}
                                         color="#fff"
                                         style={{
-                                            marginBottom: 4,
-                                            width: "100%",
+                                            textAlign: "center",
                                         }}
                                     >
                                         {item.name}
                                     </PixelText>
                                 </View>
-                                <View
-                                    style={{
-                                        flexDirection: "row",
-                                        justifyContent: "space-between",
-                                        marginBottom: 4,
-                                    }}
-                                >
+
+                                {/* BUTTONS */}
+                                <View style={{ width: "100%" }}>
+                                    {/* Add/Delete button */}
                                     <TouchableOpacity
                                         style={[
                                             styles.button,
@@ -231,6 +300,7 @@ export default function AchievementsScreen({
                                                 backgroundColor: isAdded
                                                     ? "#f00"
                                                     : "#0f0",
+                                                marginBottom: 6,
                                             },
                                         ]}
                                         onPress={() =>
@@ -243,6 +313,23 @@ export default function AchievementsScreen({
                                             {isAdded ? "Delete" : "Add"}
                                         </PixelText>
                                     </TouchableOpacity>
+
+                                    {/* Update button */}
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.button,
+                                            {
+                                                backgroundColor: "#00f",
+                                            },
+                                        ]}
+                                        onPress={() =>
+                                            handleUpdatePress(item.id)
+                                        }
+                                    >
+                                        <PixelText fontSize={10} color="#fff">
+                                            Update
+                                        </PixelText>
+                                    </TouchableOpacity>
                                 </View>
                             </View>
                         );
@@ -253,6 +340,18 @@ export default function AchievementsScreen({
                         message={modalConfig.message}
                         onConfirm={modalConfig.onConfirm}
                         onCancel={() => setModalVisible(false)}
+                    />
+                    <ConfirmationPixelModal
+                        visible={modalConfirmationVisible}
+                        title={modalConfirmationConfig.title}
+                        message={modalConfirmationConfig.message}
+                        onConfirm={modalConfirmationConfig.onConfirm}
+                        onCancel={() => setModalConfirmationVisible(false)}
+                    />
+                    <UpdateQuestModal
+                        visible={updateModalVisible}
+                        onConfirm={handleQuestUpdateConfirm}
+                        onCancel={() => setUpdateModalVisible(false)}
                     />
                 </View>
             )}
@@ -315,7 +414,9 @@ export default function AchievementsScreen({
                                             marginBottom: 6,
                                         }}
                                         onPress={() =>
-                                            handleDelete(item.achievementId)
+                                            handleDeletePress(
+                                                item.achievementId
+                                            )
                                         }
                                     >
                                         <PixelText fontSize={10} color="#fff">
@@ -425,10 +526,10 @@ const styles = StyleSheet.create({
         padding: 10,
         marginBottom: 12,
         alignItems: "center",
-        height: 140,
     },
     button: {
         flex: 1,
+        width: "100%",
         marginHorizontal: 4,
         paddingVertical: 6,
         borderRadius: 4,

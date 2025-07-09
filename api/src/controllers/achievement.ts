@@ -99,6 +99,26 @@ export const saveToUser = async (
             return;
         }
 
+        // Check if the achievement being added is a quest
+        if (achievementToBeAdded.isQuest) {
+            // Does this user already have any quest achievement?
+            const existingQuest = await prisma.userAchievement.findFirst({
+                where: {
+                    userId: userId,
+                    achievement: {
+                        isQuest: true,
+                    },
+                },
+            });
+
+            if (existingQuest) {
+                res.status(400).json({
+                    message: "User already has a quest achievement.",
+                });
+                return;
+            }
+        }
+
         // Add the link in the join table
         await prisma.userAchievement.create({
             data: {
@@ -224,4 +244,24 @@ export const weeklyAchivementReset = async (req: Request, res: Response) => {
             message: "Something went wrong with the weekly rest.",
         });
     }
+};
+
+export const updateUserQuest = async (req: Request, res: Response) => {
+    const { userId, achievementId } = req.query;
+    const { customGoalAmount, customDeadline } = req.body;
+
+    const updated = await prisma.userAchievement.update({
+        where: {
+            userId_achievementId: {
+                userId: Number(userId),
+                achievementId: Number(achievementId),
+            },
+        },
+        data: {
+            customGoalAmount: customGoalAmount ?? undefined,
+            customDeadline: customDeadline ?? undefined,
+        },
+    });
+
+    res.json(updated);
 };

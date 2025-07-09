@@ -3,6 +3,7 @@ import * as achievementController from "../controllers/achievement.js";
 import {
     validateBody,
     AchievementUpdateInputSchema,
+    UpdateUserQuestionInputSchema,
 } from "../middleware/validation.js";
 
 const router = Router();
@@ -17,6 +18,12 @@ router.post(
 router.delete(
     "/deleteAllAchievements",
     achievementController.deleteAllAchievements
+);
+
+router.patch(
+    "/editQuest",
+    validateBody(UpdateUserQuestionInputSchema),
+    achievementController.updateUserQuest
 );
 
 router.get("/weeklyReset", achievementController.weeklyAchivementReset);

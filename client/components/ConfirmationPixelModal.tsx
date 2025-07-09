@@ -32,7 +32,7 @@ export default function ConfirmationPixelModal({
                         <View style={styles.modalContainer}>
                             {title && (
                                 <PixelText
-                                    fontSize={12}
+                                    fontSize={16}
                                     color="#0ff"
                                     style={{ marginBottom: 10 }}
                                 >
@@ -41,7 +41,7 @@ export default function ConfirmationPixelModal({
                             )}
                             {message && (
                                 <PixelText
-                                    fontSize={10}
+                                    fontSize={14}
                                     color="#fff"
                                     style={{ marginBottom: 20 }}
                                 >

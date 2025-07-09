@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
 import PixelText from "./PixelText";
-import PixelButton from "./PixelButton";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 
@@ -9,8 +8,10 @@ interface Achievement {
     achievement: {
         name: string;
         xp: number;
+        deadline: Date;
     };
-    progress: number; // 0 to goal
+    progress: number;
+    customDeadline: Date;
 }
 
 interface PixelAchievementCardProps {
@@ -25,17 +26,16 @@ export default function PixelAchievementCard({
 
     useEffect(() => {
         const fetchAchievement = async () => {
-            if (propAchievement) {
-                // If prop is provided, skip fetching
-                setAchievement(propAchievement);
-                setLoading(false);
-                return;
-            }
+            // if (propAchievement) {
+            //     // If prop is provided, skip fetching
+            //     setAchievement(propAchievement);
+            //     setLoading(false);
+            //     console.log("no prop achievement");
+            //     return;
+            // }
             try {
                 const userId = await SecureStore.getItemAsync("userId");
-                const data = await authFetch(
-                    `/user/getMostProgressedAchivement/${userId}`
-                );
+                const data = await authFetch(`/user/getUserQuest/${userId}`);
 
                 if (data && data.achievements && data.achievements.length > 0) {
                     setAchievement(data.achievements[0]);
@@ -47,7 +47,15 @@ export default function PixelAchievementCard({
             }
         };
         fetchAchievement();
-    }, [propAchievement]); // ✅ watch the prop
+    }, [propAchievement]);
+
+    function getDaysLeft(deadline: Date | string) {
+        const deadlineDate = new Date(deadline);
+        const today = new Date();
+        const diffMs = deadlineDate.getTime() - today.getTime();
+
+        return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    }
 
     if (loading) {
         return (
@@ -90,6 +98,13 @@ export default function PixelAchievementCard({
                     {achievement.achievement.xp} XP
                 </PixelText>
             </View>
+            <PixelText fontSize={10} color="#fff">
+                Days left:{" "}
+                {getDaysLeft(
+                    achievement.customDeadline ??
+                        achievement.achievement.deadline
+                )}
+            </PixelText>
         </View>
     );
 }

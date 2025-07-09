@@ -46,6 +46,11 @@ export const AchievementUpdateInputSchema = z.object({
     progressToAdd: z.number(),
 });
 
+export const UpdateUserQuestionInputSchema = z.object({
+    customGoalAmount: z.number(),
+    customDeadline: z.string(),
+});
+
 export const validateBody = (schema: ZodSchema) => {
     return (req: Request, res: Response, next: NextFunction) => {
         const validation = schema.safeParse(req.body);

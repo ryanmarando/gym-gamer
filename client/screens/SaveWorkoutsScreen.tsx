@@ -12,6 +12,7 @@ import PixelButton from "../components/PixelButton";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import CustomWorkoutModal from "../components/CustomWorkoutModal";
+import PixelModal from "../components/PixelModal";
 import { playPixelSound } from "../utils/playPixelSound";
 
 export default function SaveWorkoutScreen() {
@@ -20,6 +21,15 @@ export default function SaveWorkoutScreen() {
     const [loading, setLoading] = useState(true);
     const [showCustomWorkoutModal, setShowCustomWorkoutModal] =
         useState<boolean>(false);
+    const [pendingRemoveWorkoutId, setPendingRemoveWorkoutId] = useState<
+        number | null
+    >(null);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [modalConfig, setModalConfig] = useState({
+        title: "Are you sure?",
+        message: "Removing this workout will delete all previous entries.",
+        onConfirm: () => {},
+    });
 
     const fetchWorkouts = async () => {
         try {
@@ -55,14 +65,14 @@ export default function SaveWorkoutScreen() {
         try {
             const userId = Number(await SecureStore.getItemAsync("userId"));
             if (isSaved(workoutId)) {
-                await authFetch(
-                    `/workouts/deleteFromUser?userId=${userId}&workoutId=${workoutId}`,
-                    { method: "DELETE" }
-                );
-                setUserWorkouts((prev) =>
-                    prev.filter((w) => w.id !== workoutId)
-                );
-                fetchWorkouts();
+                setPendingRemoveWorkoutId(workoutId);
+                setModalConfig({
+                    title: "Are you sure?",
+                    message:
+                        "Removing this workout will delete all previous entries.",
+                    onConfirm: confirmRemoveWorkout,
+                });
+                setModalVisible(true);
             } else {
                 await authFetch(
                     `/workouts/saveToUser?userId=${userId}&workoutId=${workoutId}`,
@@ -84,6 +94,29 @@ export default function SaveWorkoutScreen() {
             </View>
         );
     }
+
+    const confirmRemoveWorkout = async () => {
+        if (pendingRemoveWorkoutId === null) return;
+
+        try {
+            const userId = Number(await SecureStore.getItemAsync("userId"));
+
+            await authFetch(
+                `/workouts/deleteFromUser?userId=${userId}&workoutId=${pendingRemoveWorkoutId}`,
+                { method: "DELETE" }
+            );
+
+            setUserWorkouts((prev) =>
+                prev.filter((w) => w.workoutId !== pendingRemoveWorkoutId)
+            );
+            fetchWorkouts();
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setModalVisible(false);
+            setPendingRemoveWorkoutId(null);
+        }
+    };
 
     const toggleCreateWorkout = () => {
         setShowCustomWorkoutModal(true);
@@ -198,6 +231,13 @@ export default function SaveWorkoutScreen() {
                         setShowCustomWorkoutModal(false);
                     }}
                     onCancel={() => setShowCustomWorkoutModal(false)}
+                />
+                <PixelModal
+                    visible={modalVisible}
+                    title={modalConfig.title}
+                    message={modalConfig.message}
+                    onConfirm={modalConfig.onConfirm}
+                    onCancel={() => setModalVisible(false)}
                 />
             </View>
         </View>

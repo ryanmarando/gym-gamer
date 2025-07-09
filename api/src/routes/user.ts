@@ -15,10 +15,7 @@ router.get(
 router.get("/getAllUserPhotos/:id", userController.getAllUserPhotos);
 
 router.get("/getUserAchievements/:id", userController.getUserAchievements);
-router.get(
-    "/getMostProgressedAchivement/:id",
-    userController.getMostProgressedAchivement
-);
+router.get("/getUserQuest/:id", userController.getUserQuest);
 router.get(
     "/getUserWorkoutWeightEntries/:id",
     userController.getUserWorkoutWeightEntries

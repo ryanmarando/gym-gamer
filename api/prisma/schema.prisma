@@ -127,6 +127,11 @@ model UserAchievement {
   progress  Float   @default(0)
   completed Boolean @default(false)
 
+  customGoalAmount  Float?
+  customDeadline    DateTime?
+  customName        String?
+  customDescription String?
+
   @@id([userId, achievementId])
 }
 
