@@ -4,6 +4,7 @@ import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import * as SecureStore from "expo-secure-store";
+import { playLoginSound } from "../utils/playLoginSound";
 
 // ⚡️ Use your .env or constants!
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -17,6 +18,7 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
     const [modalMessage, setModalMessage] = useState<string>("Login failed.");
     const [modalTitleMessage, setmodalTitleMessage] =
         useState<string>("Whoa there, gamer!");
+    const [pendingLogin, setPendingLogin] = useState(false);
 
     const handleRegister = async () => {
         try {
@@ -45,18 +47,18 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
             await SecureStore.setItemAsync("userId", data.user.id.toString());
 
             //Alert.alert("Success", "Your account has been created!");
-            setShowConfirmationModal(true);
-            const message = `Congrats gamer ${data.user.name}. You've got a longer journey ahead..`;
+            playLoginSound();
+            setmodalTitleMessage("Level up!");
+            const message = `Congrats gamer ${data.user.name}. You've got a long journey ahead..`;
             setModalMessage(message);
-
-            setTimeout(() => {
-                setShowConfirmationModal(false);
-                setIsLoggedIn(true);
-            }, 5000);
-        } catch (error: any) {
+            setPendingLogin(true);
             setShowConfirmationModal(true);
+        } catch (error: any) {
+            setmodalTitleMessage("Whoa there, gamer!");
             const message = `${error.message}... please enter valid information.`;
             setModalMessage(message);
+            setPendingLogin(false);
+            setShowConfirmationModal(true);
         }
     };
 
@@ -117,8 +119,20 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
 
             <ConfirmationPixelModal
                 visible={showConfirmationModal}
-                onConfirm={() => setShowConfirmationModal(false)}
-                onCancel={() => setShowConfirmationModal(false)}
+                onConfirm={() => {
+                    setShowConfirmationModal(false);
+                    if (pendingLogin) {
+                        setIsLoggedIn(true);
+                        setPendingLogin(false);
+                    }
+                }}
+                onCancel={() => {
+                    setShowConfirmationModal(false);
+                    if (pendingLogin) {
+                        setIsLoggedIn(true);
+                        setPendingLogin(false);
+                    }
+                }}
                 title={modalTitleMessage}
                 message={modalMessage}
             />

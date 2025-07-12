@@ -171,19 +171,54 @@ export async function SeedAchievements() {
     await prisma.$executeRaw`ALTER SEQUENCE "Achievement_id_seq" RESTART WITH 1`;
 
     const achievements = [
+        // === General Milestones ===
         {
-            name: "First Workout!",
+            name: "First Workout",
             xp: 50,
-            descprtion: "Complete your very first workout session.",
+            descprtion: "Complete your first workout.",
             goalAmount: 1,
             goalType: AchievementType.WORKOUT,
             weeklyReset: false,
         },
         {
-            name: "One Week Streak",
+            name: "Create Your Own Workout",
+            xp: 75,
+            descprtion: "Create a custom workout plan.",
+            goalAmount: 1,
+            goalType: AchievementType.WORKOUT,
+            weeklyReset: false,
+        },
+        {
+            name: "Create Your Own Quest",
+            xp: 75,
+            descprtion: "Create a custom quest.",
+            goalAmount: 1,
+            goalType: AchievementType.SEASONAL,
+            weeklyReset: false,
+        },
+        {
+            name: "Enter First Body Weight Entry",
+            xp: 50,
+            descprtion: "Enter your first body weight record.",
+            goalAmount: 1,
+            goalType: AchievementType.MILESTONE,
+            weeklyReset: false,
+        },
+        {
+            name: "Complete Your First Quest",
             xp: 100,
-            descprtion: "Work out every day for a full week.",
-            goalAmount: 7,
+            descprtion: "Complete your first quest.",
+            goalAmount: 1,
+            goalType: AchievementType.MILESTONE,
+            weeklyReset: false,
+        },
+
+        // === Workout Streaks ===
+        {
+            name: "3 Workouts in a Week",
+            xp: 100,
+            descprtion: "Complete 3 workouts in a single week.",
+            goalAmount: 3,
             goalType: AchievementType.STREAK,
             weeklyReset: true,
         },
@@ -196,90 +231,177 @@ export async function SeedAchievements() {
             weeklyReset: true,
         },
         {
-            name: "10 Workouts in a Month",
-            xp: 250,
-            descprtion: "Complete 10 workouts within one month.",
-            goalAmount: 10,
-            goalType: AchievementType.STREAK,
-            weeklyReset: false,
-        },
-        {
-            name: "Consistency King/Queen",
-            xp: 500,
-            descprtion: "Maintain a workout streak for 30 days.",
-            goalAmount: 30,
-            goalType: AchievementType.STREAK,
-            weeklyReset: false,
-        },
-        {
-            name: "Early Bird - 5 Morning Workouts",
-            xp: 100,
-            descprtion: "Complete 5 morning workouts before 9 AM.",
-            goalAmount: 5,
-            goalType: AchievementType.WORKOUT,
-            weeklyReset: false,
-        },
-        {
-            name: "Leg Day Lover - 5 Leg Workouts",
-            xp: 120,
-            descprtion: "Smash leg day 5 times.",
-            goalAmount: 5,
-            goalType: AchievementType.WORKOUT,
-            weeklyReset: false,
-        },
-        {
-            name: "Personal Best: Bench Press",
-            xp: 200,
-            descprtion: "Set a new personal best on your bench press.",
-            goalAmount: 1,
-            goalType: AchievementType.PERSONAL_BEST,
-            weeklyReset: false,
-        },
-        {
-            name: "Personal Best: Deadlift",
-            xp: 200,
-            descprtion: "Set a new personal best on your deadlift.",
-            goalAmount: 1,
-            goalType: AchievementType.PERSONAL_BEST,
-            weeklyReset: false,
-        },
-        {
-            name: "New Year, New Me - January Challenge",
+            name: "Lift a Total of 10,000 lbs in a Week",
             xp: 300,
-            descprtion: "Complete the January fitness challenge.",
-            goalAmount: 20,
-            goalType: AchievementType.SEASONAL,
-            isQuest: true,
-            weeklyReset: false,
-            deadline: new Date(new Date().getFullYear(), 1, 31), // January 31st of this year
+            descprtion: "Accumulate a total of 10,000 lbs lifted in a week.",
+            goalAmount: 10000,
+            goalType: AchievementType.STREAK,
+            weeklyReset: true,
         },
         {
-            name: "Bring a Friend",
-            xp: 75,
-            descprtion: "Invite a friend to join your workout.",
-            goalAmount: 1,
-            goalType: AchievementType.SOCIAL,
-            weeklyReset: false,
-        },
-        {
-            name: "Fitness Journey: 100 Workouts Completed",
-            xp: 1000,
-            descprtion: "Complete a total of 100 workouts.",
+            name: "Do 100 Pushups in a Week",
+            xp: 200,
+            descprtion: "Complete 100 pushups within a week.",
             goalAmount: 100,
+            goalType: AchievementType.STREAK,
+            weeklyReset: true,
+        },
+
+        // === Time Challenges ===
+        {
+            name: "Complete a Workout Over 90 Minutes",
+            xp: 150,
+            descprtion:
+                "Stay in the gym for over 90 minutes in a single session.",
+            goalAmount: 1,
+            goalType: AchievementType.WORKOUT,
+            weeklyReset: true,
+        },
+        {
+            name: "Complete 5 AM Workouts",
+            xp: 150,
+            descprtion: "Complete 5 workouts in the morning.",
+            goalAmount: 5,
+            goalType: AchievementType.WORKOUT,
+            weeklyReset: true,
+        },
+        {
+            name: "Complete 5 PM Workouts",
+            xp: 150,
+            descprtion: "Complete 5 workouts in the evening.",
+            goalAmount: 5,
+            goalType: AchievementType.WORKOUT,
+            weeklyReset: true,
+        },
+
+        // === Level Milestones ===
+        {
+            name: "Reach Level 5",
+            xp: 50,
+            descprtion: "Reach level 5 in your fitness journey.",
+            goalAmount: 5,
             goalType: AchievementType.MILESTONE,
-            isQuest: true,
             weeklyReset: false,
         },
         {
-            name: "Quest: Gain 10 lbs in 30 days",
-            xp: 1000,
-            descprtion:
-                "Gain 10 pounds in one month as part of your bulk journey.",
+            name: "Reach Level 10",
+            xp: 100,
+            descprtion: "Reach level 10 in your fitness journey.",
             goalAmount: 10,
             goalType: AchievementType.MILESTONE,
-            isQuest: true,
             weeklyReset: false,
-            deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        },
+        {
+            name: "Reach Level 25",
+            xp: 250,
+            descprtion: "Reach level 25 in your fitness journey.",
+            goalAmount: 25,
+            goalType: AchievementType.MILESTONE,
+            weeklyReset: false,
+        },
+        {
+            name: "Reach Level 50",
+            xp: 500,
+            descprtion: "Reach level 50 in your fitness journey.",
+            goalAmount: 50,
+            goalType: AchievementType.MILESTONE,
+            weeklyReset: false,
+        },
+
+        // === Personal Bests ===
+        {
+            name: "Personal Best in Any Lift",
+            xp: 150,
+            descprtion: "Achieve a personal best in any lift (auto-tracked).",
+            goalAmount: 1,
+            goalType: AchievementType.PERSONAL_BEST,
+            weeklyReset: true,
+        },
+        {
+            name: "Reach a New Workout Weight Record",
+            xp: 200,
+            descprtion: "Hit a new personal weight record.",
+            goalAmount: 1,
+            goalType: AchievementType.PERSONAL_BEST,
+            weeklyReset: true,
+        },
+
+        // === Bench Press Goals ===
+        {
+            name: "Bench Press 145 lbs",
+            xp: 100,
+            descprtion: "Bench press at least 145 pounds.",
+            goalAmount: 1,
+            goalType: AchievementType.PERSONAL_BEST,
+            weeklyReset: false,
+        },
+        {
+            name: "Bench Press 225 lbs",
+            xp: 150,
+            descprtion: "Bench press at least 225 pounds.",
+            goalAmount: 1,
+            goalType: AchievementType.PERSONAL_BEST,
+            weeklyReset: false,
+        },
+        {
+            name: "Bench Press 315 lbs",
+            xp: 250,
+            descprtion: "Bench press at least 315 pounds.",
+            goalAmount: 1,
+            goalType: AchievementType.PERSONAL_BEST,
+            weeklyReset: false,
+        },
+
+        // === Squat Goals ===
+        {
+            name: "Squat 225 lbs",
+            xp: 100,
+            descprtion: "Squat at least 225 pounds.",
+            goalAmount: 1,
+            goalType: AchievementType.PERSONAL_BEST,
+            weeklyReset: false,
+        },
+        {
+            name: "Squat 315 lbs",
+            xp: 150,
+            descprtion: "Squat at least 315 pounds.",
+            goalAmount: 1,
+            goalType: AchievementType.PERSONAL_BEST,
+            weeklyReset: false,
+        },
+        {
+            name: "Squat 405 lbs",
+            xp: 250,
+            descprtion: "Squat at least 405 pounds.",
+            goalAmount: 1,
+            goalType: AchievementType.PERSONAL_BEST,
+            weeklyReset: false,
+        },
+
+        // === Deadlift Goals ===
+        {
+            name: "Deadlift 315 lbs",
+            xp: 100,
+            descprtion: "Deadlift at least 315 pounds.",
+            goalAmount: 1,
+            goalType: AchievementType.PERSONAL_BEST,
+            weeklyReset: false,
+        },
+        {
+            name: "Deadlift 405 lbs",
+            xp: 150,
+            descprtion: "Deadlift at least 405 pounds.",
+            goalAmount: 1,
+            goalType: AchievementType.PERSONAL_BEST,
+            weeklyReset: false,
+        },
+        {
+            name: "Deadlift 495 lbs",
+            xp: 250,
+            descprtion: "Deadlift at least 495 pounds.",
+            goalAmount: 1,
+            goalType: AchievementType.PERSONAL_BEST,
+            weeklyReset: false,
         },
     ];
 
@@ -289,8 +411,8 @@ export async function SeedAchievements() {
                 name: ach.name,
                 xp: ach.xp,
                 descprtion: ach.descprtion ?? null,
-                isQuest: ach.isQuest ?? false,
-                deadline: ach.deadline ?? null,
+                isQuest: false,
+                deadline: null,
                 goalAmount: ach.goalAmount ?? null,
                 goalType: ach.goalType,
                 weeklyReset: ach.weeklyReset ?? false,
@@ -301,4 +423,4 @@ export async function SeedAchievements() {
     console.log("✅ Seeded achievements with full model fields!");
 }
 
-//SeedAchievements();
+SeedAchievements();

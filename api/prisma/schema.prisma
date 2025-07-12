@@ -28,6 +28,7 @@ model User {
   progressPhotos  ProgressPhoto[]
   achievements    UserAchievement[]
   workoutSplit    WorkoutSplit[]
+  quest           Quest[]
 
   @@map("user")
 }
@@ -37,6 +38,17 @@ model Password {
   userId Int    @unique
   hash   String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Quest {
+  id       Int      @id @default(autoincrement())
+  type     String   @default("GAIN")
+  goal     Int      @default(10)
+  goalDate DateTime @default(now())
+  name     String
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int  @unique
 }
 
 model WorkoutSplit {
@@ -146,11 +158,6 @@ model UserAchievement {
 
   progress  Float   @default(0)
   completed Boolean @default(false)
-
-  customGoalAmount  Float?
-  customDeadline    DateTime?
-  customName        String?
-  customDescription String?
 
   @@id([userId, achievementId])
 }

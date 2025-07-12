@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 import z, { ZodSchema } from "zod";
-import { string } from "zod/v4";
 
 const WorkoutArchitypeEnum = z.enum([
     "PUSH",
@@ -50,6 +49,12 @@ export const AchievementUpdateInputSchema = z.object({
     userId: z.number(),
     achievementId: z.number(),
     progressToAdd: z.number(),
+});
+
+export const QuestUpdateInputSchema = z.object({
+    customType: z.string(),
+    customGoalAmount: z.number(),
+    customDeadline: z.string(),
 });
 
 export const UpdateUserQuestionInputSchema = z.object({

@@ -89,10 +89,6 @@ export const getUserWorkoutsByArchitype = async (
     }
 
     try {
-        // ✅ 1️⃣ Get all workouts for this user where:
-        // - Workout.architype includes architype OR
-        // - Related WorkoutDay.dayName matches architype
-
         const workouts = await prisma.userWorkout.findMany({
             where: {
                 userId,
@@ -192,31 +188,27 @@ export const getUserQuest = async (
 ) => {
     const userId = Number(req.params.id);
 
+    if (isNaN(userId)) {
+        res.status(400).json({ error: "Invalid user ID" });
+        return;
+    }
+
     try {
-        const userQuest = await prisma.user.findUnique({
-            where: { id: userId },
+        const userQuest = await prisma.quest.findFirst({
+            where: { userId },
             select: {
                 id: true,
+                type: true,
+                goal: true,
+                goalDate: true,
                 name: true,
-                email: true,
-                achievements: {
-                    where: {
-                        achievement: {
-                            isQuest: true, // ✅ filter on the related achievement
-                        },
-                    },
-                    include: {
-                        achievement: true,
-                    },
-                    orderBy: {
-                        progress: "desc",
-                    },
-                    take: 1, // only one quest per user
-                },
             },
         });
 
-        res.status(200).json(userQuest);
+        res.status(200).json({
+            userId,
+            quest: userQuest ?? null,
+        });
     } catch (error) {
         console.error("Error fetching user quest:", error);
         res.status(500).json({ error: "Failed to get user quest." });
@@ -375,12 +367,12 @@ export const getUserWorkoutWeightEntries = async (
         const entries = await prisma.workoutEntry.findMany({
             where: { userId },
             orderBy: {
-                date: "desc", // your schema uses `date` mapped to created_at
+                date: "desc",
             },
             include: {
                 userWorkout: {
                     include: {
-                        workout: true, // include workout details if you want
+                        workout: true,
                     },
                 },
             },

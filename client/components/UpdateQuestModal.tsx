@@ -13,6 +13,7 @@ import PixelButton from "./PixelButton";
 interface UpdateQuestModalProps {
     visible: boolean;
     onConfirm: (data: {
+        customType: "GAIN" | "LOSE" | "MAINTAIN";
         customGoalAmount: number;
         customDeadline: string;
     }) => void;
@@ -26,8 +27,16 @@ export default function UpdateQuestModal({
     onCancel,
     title = "Update Your Quest",
 }: UpdateQuestModalProps) {
+    const [customType, setCustomType] = useState<"GAIN" | "LOSE" | "MAINTAIN">(
+        "GAIN"
+    );
     const [goalAmount, setGoalAmount] = useState<string>("");
     const [deadline, setDeadline] = useState<string>("");
+
+    const parseLocalDate = (dateStr: string) => {
+        const [year, month, day] = dateStr.split("-").map(Number);
+        return new Date(year, month - 1, day);
+    };
 
     const handleConfirm = () => {
         const goal = parseFloat(goalAmount);
@@ -38,16 +47,18 @@ export default function UpdateQuestModal({
             return;
         }
 
-        // Convert deadline to ISO format if needed
-        const deadlineISO = new Date(deadline).toISOString();
+        const deadlineDate = parseLocalDate(deadline);
+        const deadlineISO = deadlineDate.toISOString();
 
         onConfirm({
+            customType,
             customGoalAmount: goal,
             customDeadline: deadlineISO,
         });
 
         setGoalAmount("");
         setDeadline("");
+        setCustomType("GAIN");
     };
 
     return (
@@ -65,6 +76,45 @@ export default function UpdateQuestModal({
                             </PixelText>
 
                             <PixelText fontSize={10} color="#fff">
+                                Select Goal Type:
+                            </PixelText>
+                            <View style={styles.typeSelector}>
+                                {["GAIN", "LOSE", "MAINTAIN"].map((type) => (
+                                    <TouchableOpacity
+                                        key={type}
+                                        style={[
+                                            styles.typeButton,
+                                            customType === type &&
+                                                styles.typeButtonSelected,
+                                        ]}
+                                        onPress={() =>
+                                            setCustomType(
+                                                type as
+                                                    | "GAIN"
+                                                    | "LOSE"
+                                                    | "MAINTAIN"
+                                            )
+                                        }
+                                    >
+                                        <PixelText
+                                            fontSize={12}
+                                            color={
+                                                customType === type
+                                                    ? "#000"
+                                                    : "#0ff"
+                                            }
+                                        >
+                                            {type}
+                                        </PixelText>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <PixelText
+                                fontSize={10}
+                                color="#fff"
+                                style={{ marginTop: 12 }}
+                            >
                                 New Goal Amount:
                             </PixelText>
                             <TextInput
@@ -157,5 +207,23 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "flex-end",
         gap: 12,
+    },
+    typeSelector: {
+        flexDirection: "column",
+        marginTop: 6,
+        marginBottom: 6,
+        justifyContent: "space-around",
+
+        gap: 12,
+    },
+    typeButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 20,
+        borderWidth: 2,
+        borderColor: "#0ff",
+        borderRadius: 6,
+    },
+    typeButtonSelected: {
+        backgroundColor: "#0ff",
     },
 });

@@ -188,6 +188,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
                                         data={weightValues}
                                         formatLabel={(value, index) => {
                                             const date = dates[index];
+                                            if (!date) return ""; // fallback if date is undefined
                                             const [month, day, year] =
                                                 date.split("/");
                                             return `${month}/${day}/${year}`;
@@ -256,5 +257,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         marginBottom: 10,
         color: "#fff",
+        fontFamily: "PressStart2P_400Regular",
     },
 });

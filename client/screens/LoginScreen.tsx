@@ -3,6 +3,7 @@ import { View, StyleSheet, TextInput, Alert, Image } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
+import { playLoginSound } from "../utils/playLoginSound";
 import * as SecureStore from "expo-secure-store";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -39,6 +40,7 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
             await SecureStore.setItemAsync("userId", data.user.id.toString());
 
             setIsLoggedIn(true);
+            playLoginSound();
 
             // Set login state true here
         } catch (error: any) {

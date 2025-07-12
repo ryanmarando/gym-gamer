@@ -23,6 +23,7 @@ const ARCHITYPES = [
     "QUADS",
     "HAMSTRINGS",
     "CALVES",
+    "GLUTES",
 ];
 
 interface CustomWorkoutModalProps {

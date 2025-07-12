@@ -7,8 +7,7 @@ export async function assignDefaultAchievementsAndSplitToUser(userId: number) {
         select: { id: true },
     });
 
-    // 2. Prepare UserAchievement records (if you want, skip duplicates)
-    // Optionally, fetch existing UserAchievements to avoid duplicates
+    // 2. Prepare UserAchievement records (skip duplicates)
     const existingUserAchievements = await prisma.userAchievement.findMany({
         where: { userId },
         select: { achievementId: true },
@@ -26,7 +25,6 @@ export async function assignDefaultAchievementsAndSplitToUser(userId: number) {
             completed: false,
         }));
 
-    // 3. Upsert UserAchievements (bulk create new ones)
     if (newUserAchievements.length > 0) {
         await prisma.userAchievement.createMany({
             data: newUserAchievements,
@@ -34,9 +32,7 @@ export async function assignDefaultAchievementsAndSplitToUser(userId: number) {
         });
     }
 
-    // 4. Assign default workout split PUSH, PULL, LEGS
-
-    // Connect or create workout split for user
+    // 3. Assign default workout split PUSH, PULL, LEGS
     const split = await prisma.workoutSplit.upsert({
         where: { userId },
         update: {},
@@ -44,14 +40,10 @@ export async function assignDefaultAchievementsAndSplitToUser(userId: number) {
         include: { days: true },
     });
 
-    // Figure out existing days to avoid duplicates
     const existingDayNames = new Set(
         split.days.map((d) => d.dayName.toUpperCase())
     );
-
-    // Days to add
     const defaultDays = ["PUSH", "PULL", "LEGS"];
-
     const daysToAdd = defaultDays.filter((day) => !existingDayNames.has(day));
 
     if (daysToAdd.length > 0) {
@@ -64,7 +56,28 @@ export async function assignDefaultAchievementsAndSplitToUser(userId: number) {
         });
     }
 
-    // Optionally return updated user with achievements & split
+    // ✅ 4. Create a default quest for the user
+    const goalDate = new Date();
+    goalDate.setDate(goalDate.getDate() + 30);
+
+    await prisma.quest.upsert({
+        where: { userId: userId },
+        update: {
+            type: "GAIN",
+            goal: 10,
+            goalDate: goalDate,
+            name: `Gain 10 lbs by ${goalDate.toLocaleDateString()}`,
+        },
+        create: {
+            type: "GAIN",
+            goal: 10,
+            goalDate: goalDate,
+            name: `Gain 10 lbs by ${goalDate.toLocaleDateString()}`,
+            userId: userId,
+        },
+    });
+
+    // ✅ Optionally return updated user with achievements & split & quests
     const updatedUser = await prisma.user.findUnique({
         where: { id: userId },
         include: {
@@ -74,8 +87,11 @@ export async function assignDefaultAchievementsAndSplitToUser(userId: number) {
             workoutSplit: {
                 include: { days: true },
             },
+            quest: true,
         },
     });
 
+    console.log("Gave new user achievements, splits, and a goal.");
     return updatedUser;
 }
+//

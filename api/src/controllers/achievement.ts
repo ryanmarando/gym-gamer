@@ -245,23 +245,3 @@ export const weeklyAchivementReset = async (req: Request, res: Response) => {
         });
     }
 };
-
-export const updateUserQuest = async (req: Request, res: Response) => {
-    const { userId, achievementId } = req.query;
-    const { customGoalAmount, customDeadline } = req.body;
-
-    const updated = await prisma.userAchievement.update({
-        where: {
-            userId_achievementId: {
-                userId: Number(userId),
-                achievementId: Number(achievementId),
-            },
-        },
-        data: {
-            customGoalAmount: customGoalAmount ?? undefined,
-            customDeadline: customDeadline ?? undefined,
-        },
-    });
-
-    res.json(updated);
-};

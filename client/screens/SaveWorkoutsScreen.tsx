@@ -7,7 +7,7 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     TextInput,
-    ScrollView,
+    SectionList,
 } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
@@ -23,9 +23,7 @@ export default function SaveWorkoutScreen() {
     const [loading, setLoading] = useState(true);
     const [showCustomWorkoutModal, setShowCustomWorkoutModal] =
         useState<boolean>(false);
-    const [pendingRemoveWorkoutId, setPendingRemoveWorkoutId] = useState<
-        number | null
-    >(null);
+
     const [modalVisible, setModalVisible] = useState(false);
     const [modalConfig, setModalConfig] = useState({
         title: "Are you sure?",
@@ -118,12 +116,11 @@ export default function SaveWorkoutScreen() {
 
             if (isSaved(workoutId)) {
                 // Existing remove logic
-                setPendingRemoveWorkoutId(workoutId);
                 setModalConfig({
                     title: "Are you sure?",
                     message:
                         "Removing this workout will delete all previous entries.",
-                    onConfirm: confirmRemoveWorkout,
+                    onConfirm: () => confirmRemoveWorkout(workoutId),
                 });
                 setModalVisible(true);
             } else {
@@ -171,26 +168,23 @@ export default function SaveWorkoutScreen() {
         );
     }
 
-    const confirmRemoveWorkout = async () => {
-        if (pendingRemoveWorkoutId === null) return;
-
+    const confirmRemoveWorkout = async (workoutId: number) => {
         try {
             const userId = Number(await SecureStore.getItemAsync("userId"));
 
             await authFetch(
-                `/workouts/deleteFromUser?userId=${userId}&workoutId=${pendingRemoveWorkoutId}`,
+                `/workouts/deleteFromUser?userId=${userId}&workoutId=${workoutId}`,
                 { method: "DELETE" }
             );
 
             setUserWorkouts((prev) =>
-                prev.filter((w) => w.workoutId !== pendingRemoveWorkoutId)
+                prev.filter((w) => w.workoutId !== workoutId)
             );
             fetchWorkouts();
         } catch (err) {
             console.error(err);
         } finally {
             setModalVisible(false);
-            setPendingRemoveWorkoutId(null);
         }
     };
 
@@ -254,6 +248,17 @@ export default function SaveWorkoutScreen() {
         </View>
     );
 
+    const sections = workoutCategories.map((category) => {
+        const data = filterWorkoutsByArchitype(category.architype).filter((w) =>
+            w.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
+        return {
+            title: category.label,
+            data,
+        };
+    });
+
     return (
         <View style={styles.container}>
             <PixelText
@@ -273,35 +278,26 @@ export default function SaveWorkoutScreen() {
                 value={searchQuery}
                 onChangeText={setSearchQuery}
             />
-            <ScrollView>
-                {workoutCategories.map((category) => {
-                    const filteredData = filterWorkoutsByArchitype(
-                        category.architype
-                    ).filter((w) =>
-                        w.name.toLowerCase().includes(searchQuery.toLowerCase())
-                    );
+            <SectionList
+                sections={sections}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => renderWorkoutItem(item)}
+                renderSectionHeader={({ section: { title } }) => (
+                    <PixelText
+                        fontSize={20}
+                        color="#0ff"
+                        style={{
+                            marginBottom: 10,
 
-                    return (
-                        <View key={category.architype}>
-                            <PixelText
-                                fontSize={20}
-                                color="#0ff"
-                                style={{ marginBottom: 10, marginTop: 10 }}
-                            >
-                                {category.label}
-                            </PixelText>
-                            <FlatList
-                                data={filteredData}
-                                keyExtractor={(item) => item.id.toString()}
-                                renderItem={({ item }) =>
-                                    renderWorkoutItem(item)
-                                }
-                                contentContainerStyle={{ paddingBottom: 20 }}
-                            />
-                        </View>
-                    );
-                })}
-            </ScrollView>
+                            paddingTop: 10,
+                            backgroundColor: "#111",
+                        }}
+                    >
+                        {title}
+                    </PixelText>
+                )}
+                contentContainerStyle={{ paddingBottom: 80 }}
+            />
 
             {/* Modal for selecting split day when no default match */}
             {splitSelectionModalVisible && (
@@ -372,7 +368,6 @@ export default function SaveWorkoutScreen() {
                 <CustomWorkoutModal
                     visible={showCustomWorkoutModal}
                     onConfirm={(data) => {
-                        // POST to backend with data.userId, data.customName, data.architype (array)
                         confirmCreateWorkout(data);
                         setShowCustomWorkoutModal(false);
                     }}
@@ -424,6 +419,6 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 8,
         marginBottom: 20,
-        fontFamily: "PressStart2P_400Regular", // <- if PixelText uses a custom pixel font
+        fontFamily: "PressStart2P_400Regular",
     },
 });

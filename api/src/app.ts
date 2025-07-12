@@ -5,6 +5,7 @@ import workoutRouter from "./routes/workouts.js";
 import userRouter from "./routes/user.js";
 import progressPhotoRouter from "./routes/progressPhoto.js";
 import achievementRouter from "./routes/achievement.js";
+import questRouter from "./routes/quest.js";
 import xss from "./middleware/xss.js";
 import authenticated from "./middleware/auth.js";
 
@@ -41,3 +42,4 @@ app.use("/workouts", workoutRouter);
 app.use("/user", userRouter);
 app.use("/progressPhoto", progressPhotoRouter);
 app.use("/achievement", achievementRouter);
+app.use("/quest", questRouter);

@@ -6,15 +6,18 @@ import {
     ScrollView,
     TouchableOpacity,
     Alert,
+    SectionList,
+    Text,
 } from "react-native";
 import PixelText from "../components/PixelText";
 import ProgressBar from "../components/ProgressBar";
+import PixelButton from "../components/PixelButton";
 import PixelModal from "../components/PixelModal";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
+import PixelQuestCard from "../components/PixelQuestCard";
 import UpdateQuestModal from "../components/UpdateQuestModal";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
-import { playPixelSound } from "../utils/playPixelSound";
 
 interface AchievementDetails {
     id: number;
@@ -42,14 +45,20 @@ interface PixelAchievementCardProps {
     };
 }
 
-export default function AchievementsScreen({
-    achievement,
-}: PixelAchievementCardProps) {
+interface Quest {
+    id: number;
+    name: string;
+    type: string;
+    goal: number;
+    goalDate: string | Date;
+}
+
+export default function AchievementsScreen({}: PixelAchievementCardProps) {
     const [achievements, setAchievements] = useState<AchievementDetails[]>([]); // All achievements
     const [userAchievements, setUserAchievements] = useState<UserAchievement[]>(
         []
     ); // User's achievements
-    const [quests, setQuests] = useState<AchievementDetails[]>([]); // Quests
+    const [activeQuest, setActiveQuest] = useState<Quest | null>(null);
     const [userId, setUserId] = useState<number | null>(null);
     const [refreshToggle, setRefreshToggle] = useState(false); // to trigger refresh
     const [modalVisible, setModalVisible] = useState(false);
@@ -68,6 +77,18 @@ export default function AchievementsScreen({
     const [updateModalVisible, setUpdateModalVisible] = useState(false);
     const [selectedQuestId, setSelectedQuestId] = useState<number | null>(null);
 
+    // Prepare sections for SectionList
+    const achievementSections = [
+        {
+            title: "Completed Achievements",
+            data: userAchievements.filter((ua) => ua.completed),
+        },
+        {
+            title: "In Progress Achievements",
+            data: userAchievements.filter((ua) => !ua.completed),
+        },
+    ];
+
     useEffect(() => {
         const fetchUserId = async () => {
             const idStr = await SecureStore.getItemAsync("userId");
@@ -75,6 +96,12 @@ export default function AchievementsScreen({
         };
         fetchUserId();
     }, []);
+
+    const fetchActiveQuest = async () => {
+        if (!userId) return;
+        const quest = await authFetch(`/user/getUserQuest/${userId}`);
+        setActiveQuest(quest.quest || null);
+    };
 
     // Fetch both achievements and user achievements whenever userId or refreshToggle changes
     useFocusEffect(
@@ -94,14 +121,9 @@ export default function AchievementsScreen({
                 setUserAchievements(data?.achievements || []);
             };
 
-            const fetchQuest = async () => {
-                const data = await authFetch("/achievement/quests");
-                setQuests(data || []);
-            };
-
             fetchAchievements();
             fetchUserAchievements();
-            fetchQuest();
+            fetchActiveQuest();
 
             // Optionally return a cleanup function if needed
             return () => {
@@ -139,18 +161,6 @@ export default function AchievementsScreen({
         }
     };
 
-    const handleDeletePress = (questId: number) => {
-        setModalConfig({
-            title: "Remove Quest",
-            message: "Are you sure you want to remove your quest?",
-            onConfirm: async () => {
-                await handleDelete(questId);
-                setModalVisible(false);
-            },
-        });
-        setModalVisible(true);
-    };
-
     // Add achievement to user
     const handleAdd = async (achievementId: number) => {
         if (!userId) return;
@@ -183,7 +193,6 @@ export default function AchievementsScreen({
             }
 
             setRefreshToggle((prev) => !prev); // triggers re-fetch and UI update
-            playPixelSound();
         } catch (error: any) {
             if (error.message.includes("quest")) {
                 setModalConfirmationConfig({
@@ -228,16 +237,14 @@ export default function AchievementsScreen({
     }) => {
         try {
             const userId = await SecureStore.getItemAsync("userId");
-            await authFetch(
-                `/achievement/editQuest?userId=${userId}&achievementId=${selectedQuestId}`,
-                {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data),
-                }
-            );
+            await authFetch(`/quest/editQuest/${userId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
             console.log("Quest updated!");
             setUpdateModalVisible(false);
+            fetchActiveQuest();
         } catch (error) {
             console.error("Failed to update quest:", error);
         }
@@ -249,91 +256,43 @@ export default function AchievementsScreen({
     };
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.container}>
             {/* Quests Section */}
             <PixelText fontSize={18} color="#ff0" style={{ marginBottom: 10 }}>
                 🏆 Conquer With Quests
             </PixelText>
 
-            {quests.length === 0 ? (
-                <PixelText
-                    fontSize={14}
-                    color="#888"
-                    style={{ marginBottom: 20 }}
-                >
-                    No quests found.
-                </PixelText>
-            ) : (
-                <View style={styles.grid}>
-                    {quests.map((item) => {
-                        const isAdded = userAchievements.some(
-                            (ua) => ua.achievementId === item.id
-                        );
-
-                        return (
-                            <View key={item.id} style={styles.card}>
-                                {/* NAME */}
-                                <View
-                                    style={{
-                                        width: "100%",
-                                        marginBottom: 8,
-                                    }}
-                                >
-                                    <PixelText
-                                        fontSize={12}
-                                        color="#fff"
-                                        style={{
-                                            textAlign: "center",
-                                        }}
-                                    >
-                                        {item.name}
-                                    </PixelText>
-                                </View>
-
-                                {/* BUTTONS */}
-                                <View style={{ width: "100%" }}>
-                                    {/* Add/Delete button */}
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.button,
-                                            {
-                                                backgroundColor: isAdded
-                                                    ? "#f00"
-                                                    : "#0f0",
-                                                marginBottom: 6,
-                                            },
-                                        ]}
-                                        onPress={() =>
-                                            isAdded
-                                                ? handleDeletePress(item.id)
-                                                : handleAddPress(item.id)
-                                        }
-                                    >
-                                        <PixelText fontSize={10} color="#000">
-                                            {isAdded ? "Delete" : "Add"}
-                                        </PixelText>
-                                    </TouchableOpacity>
-
-                                    {/* Update button */}
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.button,
-                                            {
-                                                backgroundColor: "#00f",
-                                            },
-                                        ]}
-                                        onPress={() =>
-                                            handleUpdatePress(item.id)
-                                        }
-                                    >
-                                        <PixelText fontSize={10} color="#fff">
-                                            Update
-                                        </PixelText>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        );
-                    })}
+            {activeQuest ? (
+                <>
+                    <View
+                        style={{
+                            alignItems: "center",
+                            width: "100%",
+                            marginBottom: 10,
+                        }}
+                    >
+                        <PixelQuestCard
+                            quest={activeQuest}
+                            containerStyle={{ width: "90%", maxWidth: 400 }}
+                        />
+                        <PixelButton
+                            fontSize={15}
+                            color="#fff"
+                            text="Update Quest"
+                            onPress={() => handleUpdatePress(activeQuest.id)}
+                            style={{
+                                alignItems: "center",
+                                backgroundColor: "#00f",
+                                width: "70%",
+                                marginTop: 8,
+                                paddingVertical: 12,
+                                justifyContent: "center",
+                                borderRadius: 6,
+                            }}
+                        >
+                            Update Quest
+                        </PixelButton>
+                    </View>
                     <PixelModal
                         visible={modalVisible}
                         title={modalConfig.title}
@@ -353,11 +312,21 @@ export default function AchievementsScreen({
                         onConfirm={handleQuestUpdateConfirm}
                         onCancel={() => setUpdateModalVisible(false)}
                     />
+                </>
+            ) : (
+                <View style={styles.grid}>
+                    <PixelText
+                        fontSize={14}
+                        color="#888"
+                        style={{ marginBottom: 20 }}
+                    >
+                        You have no active quest.
+                    </PixelText>
                 </View>
             )}
 
             {/* User's Achievements Section */}
-            <View style={styles.separator} />
+
             <PixelText fontSize={20} color="#0ff" style={{ marginBottom: 20 }}>
                 💪 Your Achievements
             </PixelText>
@@ -371,14 +340,37 @@ export default function AchievementsScreen({
                     You haven't earned any achievements yet.
                 </PixelText>
             ) : (
-                <View style={styles.grid}>
-                    {userAchievements.map((item) => (
-                        <View key={item.achievementId} style={styles.card}>
+                <SectionList
+                    sections={achievementSections}
+                    keyExtractor={(item) => item.achievementId.toString()}
+                    renderSectionHeader={({ section: { title } }) => (
+                        <View
+                            style={{
+                                width: "100%",
+                                paddingHorizontal: 10,
+                                paddingBottom: 10,
+                                backgroundColor: "#111",
+                            }}
+                        >
+                            <PixelText
+                                fontSize={14}
+                                color="#0ff"
+                                style={{
+                                    flexShrink: 1,
+                                }}
+                            >
+                                {title}
+                            </PixelText>
+                        </View>
+                    )}
+                    renderItem={({ item }) => (
+                        <View style={styles.card}>
                             <View
                                 style={{
                                     flex: 1,
-                                    justifyContent: "space-between",
-                                    width: "110%",
+                                    width: "100%",
+                                    alignItems: "center",
+                                    gap: 6,
                                 }}
                             >
                                 <PixelText
@@ -386,114 +378,36 @@ export default function AchievementsScreen({
                                     color="#0ff"
                                     style={{ marginBottom: 4, width: "100%" }}
                                 >
-                                    {item.achievement.name}{" "}
-                                    {/* <-- nested here */}
+                                    {item.achievement.name}
                                 </PixelText>
-
                                 <ProgressBar
                                     progress={item.progress / 100}
-                                    width={160}
+                                    width={200}
                                     height={15}
                                     backgroundColor="#333"
                                     progressColor="#0ff"
                                     borderColor="#0ff"
                                 />
-
-                                {/* Delete button */}
-                                {item.completed ? (
-                                    <PixelText fontSize={10} color="#0f0">
-                                        Completed ✅
-                                    </PixelText>
-                                ) : (
-                                    <TouchableOpacity
-                                        style={{
-                                            backgroundColor: "#f00",
-                                            paddingVertical: 6,
-                                            paddingHorizontal: 10,
-                                            borderRadius: 4,
-                                            marginBottom: 6,
-                                        }}
-                                        onPress={() =>
-                                            handleDeletePress(
-                                                item.achievementId
-                                            )
-                                        }
-                                    >
-                                        <PixelText fontSize={10} color="#fff">
-                                            Delete
-                                        </PixelText>
-                                    </TouchableOpacity>
-                                )}
-
                                 {item.achievement.weeklyReset && (
-                                    <PixelText fontSize={10} color="#0ff">
+                                    <PixelText
+                                        fontSize={10}
+                                        color="#0ff"
+                                        style={{ marginTop: 4, width: "100%" }}
+                                    >
                                         Resets weekly 🔄
                                     </PixelText>
                                 )}
-
                                 <PixelText fontSize={10} color="#fff">
-                                    {item.achievement.xp} XP{" "}
-                                    {/* <-- nested here */}
+                                    {item.achievement.xp} XP
                                 </PixelText>
                             </View>
                         </View>
-                    ))}
-                </View>
+                    )}
+                    contentContainerStyle={{ paddingBottom: 100 }}
+                    // You can adjust styling or add stickySectionHeadersEnabled etc.
+                />
             )}
-
-            <View style={styles.separator} />
-
-            {/* Available Achievements Section */}
-            <PixelText fontSize={18} color="#ff0" style={{ marginBottom: 10 }}>
-                🏆 Available Achievements
-            </PixelText>
-
-            <View style={styles.grid}>
-                {achievements.map((item) => (
-                    <View key={item.id} style={styles.card}>
-                        <View
-                            style={{
-                                flex: 1,
-                                justifyContent: "space-between",
-                                width: "110%",
-                            }}
-                        >
-                            <PixelText
-                                fontSize={12}
-                                color="#0ff"
-                                style={{ marginBottom: 4, width: "100%" }}
-                            >
-                                {item.name}
-                            </PixelText>
-
-                            <View
-                                style={{
-                                    flexDirection: "row",
-                                    justifyContent: "space-between",
-                                    marginBottom: 4,
-                                }}
-                            >
-                                <TouchableOpacity
-                                    style={[
-                                        styles.button,
-                                        { backgroundColor: "#0f0" },
-                                    ]}
-                                    onPress={() => handleAdd(item.id)}
-                                >
-                                    <PixelText fontSize={10} color="#000">
-                                        Add
-                                    </PixelText>
-                                </TouchableOpacity>
-                            </View>
-
-                            <PixelText fontSize={10} color="#fff">
-                                {item.xp} XP
-                            </PixelText>
-                        </View>
-                    </View>
-                ))}
-            </View>
-        </ScrollView>
+        </View>
     );
 }
 
@@ -501,7 +415,7 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
         backgroundColor: "#111",
-        alignItems: "center",
+        alignItems: "stretch",
         paddingVertical: "20%",
         paddingHorizontal: 20,
     },
@@ -518,7 +432,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
     },
     card: {
-        width: "48%",
+        width: "100%",
         backgroundColor: "#222",
         borderColor: "#0ff",
         borderWidth: 2,

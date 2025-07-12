@@ -4,8 +4,10 @@ import {
     TouchableOpacityProps,
     StyleSheet,
     ViewStyle,
+    GestureResponderEvent,
 } from "react-native";
 import PixelText from "./PixelText";
+import { playPixelSound } from "../utils/playPixelSound";
 
 interface PixelButtonProps extends TouchableOpacityProps {
     text: string;
@@ -14,6 +16,7 @@ interface PixelButtonProps extends TouchableOpacityProps {
     textAlign?: "center" | "left" | "right";
     paddingHorizontal?: number;
     containerStyle?: ViewStyle;
+    playSound?: boolean;
 }
 
 export default function PixelButton({
@@ -24,11 +27,19 @@ export default function PixelButton({
     textAlign = "center",
     paddingHorizontal,
     containerStyle,
+    playSound = true,
     ...rest
 }: PixelButtonProps) {
+    const handlePress = (event: GestureResponderEvent) => {
+        if (playSound) playPixelSound();
+        if (onPress) {
+            onPress(event); // then call the original onPress
+        }
+    };
+
     return (
         <TouchableOpacity
-            onPress={onPress}
+            onPress={handlePress}
             style={[styles.buttonContainer, containerStyle]}
             activeOpacity={0.8}
             {...rest}

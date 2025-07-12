@@ -10,13 +10,12 @@ import {
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import PixelModal from "../components/PixelModal";
-import PixelAchievementCard from "../components/PixelAchievementCard";
+import PixelQuestCard from "../components/PixelQuestCard";
 import ProgressBar from "../components/ProgressBar";
 import { authFetch } from "../utils/authFetch";
 import { logout } from "../utils/logout";
 import { resetStats } from "../utils/resetStats";
 import * as SecureStore from "expo-secure-store";
-import { playPixelSound } from "../utils/playPixelSound";
 import {
     sendPushNotification,
     registerForPushNotificationsAsync,
@@ -31,6 +30,13 @@ interface AchievementDetails {
     isQuest: boolean;
 }
 
+interface Quest {
+    name: string;
+    type: string;
+    goal: number;
+    goalDate: Date | string;
+}
+
 interface UserData {
     id: number;
     email: string;
@@ -40,7 +46,7 @@ interface UserData {
     levelProgress: number;
     xp: number;
     achievements: AchievementDetails[];
-    activeQuest: AchievementDetails;
+    activeQuest: Quest;
 }
 
 export default function ProfileScreen({
@@ -84,20 +90,14 @@ export default function ProfileScreen({
             const data = await authFetch(`/user/${Number(userId)}`);
 
             // Get their user achievements
-            const userAchievements = await authFetch(
-                `/user/getUserAchievements/${Number(userId)}`
+            const userQuest = await authFetch(
+                `/user/getUserQuest/${Number(userId)}`
             );
-
-            // Find the active quest achievement
-            const activeQuest =
-                userAchievements.achievements.find(
-                    (ua: any) => ua.achievement?.isQuest
-                )?.achievement || null;
 
             // Merge into a single object
             const userDataWithQuest = {
                 ...data,
-                activeQuest,
+                userQuest,
             };
 
             console.log("✅ Profile screen loaded");
@@ -244,7 +244,6 @@ export default function ProfileScreen({
                         text="Start Workout"
                         onPress={() => {
                             navigation.navigate("Workouts");
-                            playPixelSound();
                         }}
                         color="#f0f"
                         containerStyle={{
@@ -274,15 +273,14 @@ export default function ProfileScreen({
                         backgroundColor: "transparent",
                     }}
                 >
-                    <PixelAchievementCard
-                        achievement={
+                    <PixelQuestCard
+                        quest={
                             userData.activeQuest
                                 ? {
-                                      achievement: {
-                                          name: userData.activeQuest.name,
-                                          xp: userData.activeQuest.xp,
-                                      },
-                                      progress: 0, // Or use real value if you have it!
+                                      name: userData.activeQuest.name,
+                                      type: userData.activeQuest.type,
+                                      goal: userData.activeQuest.goal,
+                                      goalDate: userData.activeQuest.goalDate,
                                   }
                                 : undefined
                         }
