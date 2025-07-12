@@ -15,6 +15,9 @@ interface PixelModalProps {
     message?: string;
     onConfirm: () => void;
     onCancel: () => void;
+    confirmText?: string;
+    cancelText?: string;
+    children?: React.ReactNode; // add this
 }
 
 export default function PixelModal({
@@ -23,6 +26,7 @@ export default function PixelModal({
     message,
     onConfirm,
     onCancel,
+    children,
 }: PixelModalProps) {
     return (
         <Modal transparent visible={visible} animationType="fade">
@@ -48,6 +52,10 @@ export default function PixelModal({
                                     {message}
                                 </PixelText>
                             )}
+
+                            {/* Render custom children here */}
+                            {children}
+
                             <View style={styles.buttonRow}>
                                 <PixelButton
                                     text="Yes"

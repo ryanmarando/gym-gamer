@@ -165,7 +165,7 @@ async function SeedWorkouts() {
     console.log("✅ Seed complete with a huge library of workouts!");
 }
 
-SeedWorkouts();
+//SeedWorkouts();
 
 export async function SeedAchievements() {
     await prisma.$executeRaw`ALTER SEQUENCE "Achievement_id_seq" RESTART WITH 1`;

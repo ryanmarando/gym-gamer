@@ -7,6 +7,7 @@ import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import PixelModal from "../components/PixelModal";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
+import WorkoutSplitModal from "../components/WorkoutSplitModal";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import PickWorkoutDay from "../components/PickWorkoutDay";
@@ -44,9 +45,64 @@ export default function WorkoutsScreen({ navigation }: any) {
         null
     );
     const [allWorkoutEntries, setAllWorkoutEntries] = useState<any[]>([]);
-    const [selectedDay, setSelectedDay] = useState<
-        "PUSH" | "PULL" | "LEGS" | null
-    >(null);
+    const [workoutDays, setWorkoutDays] = useState<string[]>([]);
+    const [selectedDay, setSelectedDay] = useState<string | null>(null);
+    const [showSplitModal, setShowSplitModal] = useState(false);
+    const [splitName, setSplitName] = useState("");
+    const [splitDays, setSplitDays] = useState<string[]>(["", "", ""]);
+
+    const addSplitDay = () => {
+        if (splitDays.length < 7) {
+            setSplitDays((prev) => [...prev, ""]);
+        }
+    };
+
+    const removeSplitDay = () => {
+        if (splitDays.length > 3) {
+            setSplitDays((prev) => prev.slice(0, -1));
+        }
+    };
+
+    const updateSplitDay = (index: number, value: string) => {
+        setSplitDays((prev) => {
+            const copy = [...prev];
+            copy[index] = value;
+            return copy;
+        });
+    };
+
+    const handleSplitConfirm = async () => {
+        if (splitDays.some((d) => d.trim() === "")) {
+            alert("Please fill in all day names.");
+            return;
+        }
+
+        const cleanedDays = splitDays.map((day) => day.trim().toUpperCase());
+
+        // TODO: Save or update split logic here
+        console.log("Saving split:", splitName, cleanedDays);
+
+        try {
+            const userIdStr = await SecureStore.getItemAsync("userId");
+            const userId = Number(userIdStr);
+            await authFetch(`/workouts/assignWorkoutSplit/${userId}`, {
+                method: "PATCH",
+                body: JSON.stringify({
+                    days: cleanedDays,
+                }),
+            });
+        } catch (error) {
+            console.error("Couldn't update");
+            return;
+        }
+
+        // Close modal & reset inputs
+        fetchUserData();
+        fetchUserWorkouts();
+        setShowSplitModal(false);
+        setSplitName("");
+        setSplitDays(["", "", ""]);
+    };
 
     const openStartModal = () => {
         setModalAction("start");
@@ -129,6 +185,31 @@ export default function WorkoutsScreen({ navigation }: any) {
         setModalAction(null);
     };
 
+    const fetchUserData = useCallback(async () => {
+        try {
+            const userIdStr = await SecureStore.getItemAsync("userId");
+            if (!userIdStr) return;
+            const userId = Number(userIdStr);
+
+            const userData = await authFetch(`/user/${userId}`);
+
+            if (
+                userData &&
+                userData.workoutSplit &&
+                userData.workoutSplit.length > 0
+            ) {
+                // Get the days array of the first split (assuming one)
+                const days = userData.workoutSplit[0].days
+                    .sort((a: any, b: any) => a.dayIndex - b.dayIndex)
+                    .map((d: any) => d.dayName);
+
+                setWorkoutDays(days);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }, []);
+
     // Fetch user workouts from API
     const fetchUserWorkouts = useCallback(async () => {
         try {
@@ -164,6 +245,7 @@ export default function WorkoutsScreen({ navigation }: any) {
 
     // Fetch workouts on mount
     useEffect(() => {
+        fetchUserData();
         fetchUserWorkouts();
         const restoreStartTime = async () => {
             const savedTime = await AsyncStorage.getItem("workoutStartTime");
@@ -173,7 +255,7 @@ export default function WorkoutsScreen({ navigation }: any) {
             }
         };
         restoreStartTime();
-    }, [fetchUserWorkouts]);
+    }, [fetchUserWorkouts, fetchUserData]);
 
     useFocusEffect(
         useCallback(() => {
@@ -287,7 +369,42 @@ export default function WorkoutsScreen({ navigation }: any) {
     return (
         <View style={styles.container}>
             {!selectedDay ? (
-                <PickWorkoutDay onSelect={setSelectedDay} />
+                <View>
+                    <PickWorkoutDay
+                        days={workoutDays}
+                        onSelect={setSelectedDay}
+                    />
+
+                    <PixelButton
+                        text="Change Workout Split"
+                        color="#0f0"
+                        onPress={() => setShowSplitModal(true)}
+                        containerStyle={{
+                            marginVertical: 16,
+                            borderColor: "#0f0",
+                        }}
+                    />
+
+                    <WorkoutSplitModal
+                        visible={showSplitModal}
+                        onCancel={() => setShowSplitModal(false)}
+                        splitName={splitName}
+                        setSplitName={setSplitName}
+                        splitDays={splitDays}
+                        addDay={addSplitDay}
+                        removeDay={removeSplitDay}
+                        updateDay={updateSplitDay}
+                        onConfirm={handleSplitConfirm}
+                    />
+
+                    <ConfirmationPixelModal
+                        visible={showConfirmationModal}
+                        onConfirm={() => setShowConfirmationModal(false)}
+                        onCancel={() => setShowConfirmationModal(false)}
+                        title={modalConfirmationTitle}
+                        message={modalMessage}
+                    />
+                </View>
             ) : (
                 <>
                     {!workouts || workouts.length === 0 ? (

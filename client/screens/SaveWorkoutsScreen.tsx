@@ -6,6 +6,8 @@ import {
     FlatList,
     TouchableOpacity,
     ActivityIndicator,
+    TextInput,
+    ScrollView,
 } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
@@ -30,6 +32,34 @@ export default function SaveWorkoutScreen() {
         message: "Removing this workout will delete all previous entries.",
         onConfirm: () => {},
     });
+    const [pendingSaveWorkout, setPendingSaveWorkout] = useState<any>(null);
+    const [splitSelectionModalVisible, setSplitSelectionModalVisible] =
+        useState(false);
+    const [splitOptions, setSplitOptions] = useState<
+        { id: number; name: string }[]
+    >([]);
+    const [selectedSplitDay, setSelectedSplitDay] = useState<string | null>(
+        null
+    );
+    const [selectedSplitDayId, setSelectedSplitDayId] = useState<number | null>(
+        null
+    );
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const workoutCategories = [
+        { label: "💪 Push Workouts", architype: "PUSH" },
+        { label: "🏋️ Pull Workouts", architype: "PULL" },
+        { label: "🦵 Legs Workouts", architype: "LEGS" },
+        { label: "🏋️‍♂️ Chest Workouts", architype: "CHEST" },
+        { label: "🏹 Shoulders Workouts", architype: "SHOULDERS" },
+        { label: "💪 Arms Workouts", architype: "ARMS" },
+        { label: "🦍 Back Workouts", architype: "BACK" },
+        { label: "🔥 Abs Workouts", architype: "ABS" },
+        { label: "🦵 Quads Workouts", architype: "QUADS" },
+        { label: "🏃 Hamstrings Workouts", architype: "HAMSTRINGS" },
+        { label: "🍑 Glutes Workouts", architype: "GLUTES" },
+        { label: "🐐 Calves Workouts", architype: "CALVES" },
+    ];
 
     const fetchWorkouts = async () => {
         try {
@@ -61,10 +91,33 @@ export default function SaveWorkoutScreen() {
         return allWorkouts.filter((w) => w.architype.includes(type));
     };
 
+    const saveWorkoutToSplit = async (
+        userId: number,
+        workoutId: number,
+        splitDay: string
+    ) => {
+        await authFetch(
+            `/workouts/saveToUser?userId=${userId}&workoutId=${workoutId}`,
+            {
+                method: "PATCH",
+                body: JSON.stringify({
+                    dayId: selectedSplitDayId,
+                }),
+            }
+        );
+        const added = allWorkouts.find((w) => w.id === workoutId);
+        if (added) setUserWorkouts((prev) => [...prev, added]);
+        fetchWorkouts();
+    };
+
     const toggleWorkout = async (workoutId: number) => {
         try {
             const userId = Number(await SecureStore.getItemAsync("userId"));
+            const workout = allWorkouts.find((w) => w.id === workoutId);
+            if (!workout) return;
+
             if (isSaved(workoutId)) {
+                // Existing remove logic
                 setPendingRemoveWorkoutId(workoutId);
                 setModalConfig({
                     title: "Are you sure?",
@@ -74,13 +127,36 @@ export default function SaveWorkoutScreen() {
                 });
                 setModalVisible(true);
             } else {
-                await authFetch(
-                    `/workouts/saveToUser?userId=${userId}&workoutId=${workoutId}`,
-                    { method: "PATCH" }
+                // ✅ Always let them choose the day, but preselect if there's a match
+                const userData = await authFetch(`/user/${userId}`);
+                const userSplits = userData?.workoutSplit?.[0]?.days || [];
+
+                const matchingDay = workout.architype.find((type: string) =>
+                    userSplits.some((day: any) => day.dayName === type)
                 );
-                const added = allWorkouts.find((w) => w.id === workoutId);
-                if (added) setUserWorkouts((prev) => [...prev, added]);
-                fetchWorkouts();
+
+                const splitOptions = userSplits.map((d: any) => ({
+                    id: d.id,
+                    name: d.dayName,
+                }));
+
+                setSplitOptions(splitOptions);
+                setPendingSaveWorkout(workout);
+
+                if (matchingDay) {
+                    const matchedDay = userSplits.find(
+                        (day: any) => day.dayName === matchingDay
+                    );
+                    if (matchedDay) {
+                        setSelectedSplitDay(matchedDay.dayName);
+                        setSelectedSplitDayId(matchedDay.id);
+                    }
+                } else {
+                    setSelectedSplitDay(null);
+                    setSelectedSplitDayId(null);
+                }
+
+                setSplitSelectionModalVisible(true);
             }
         } catch (err) {
             console.error(err);
@@ -180,43 +256,113 @@ export default function SaveWorkoutScreen() {
 
     return (
         <View style={styles.container}>
-            <PixelText fontSize={20} color="#0ff" style={{ marginBottom: 10 }}>
-                💪 Push Workouts
-            </PixelText>
-            <FlatList
-                data={filterWorkoutsByArchitype("PUSH")}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => renderWorkoutItem(item)}
-                contentContainerStyle={{ paddingBottom: 20 }}
-            />
-
             <PixelText
-                fontSize={20}
+                fontSize={22}
                 color="#0ff"
-                style={{ marginBottom: 10, marginTop: 10 }}
+                style={{ marginBottom: 20, textAlign: "center" }}
             >
-                🏋️ Pull Workouts
+                🛒 Workout Shop
             </PixelText>
-            <FlatList
-                data={filterWorkoutsByArchitype("PULL")}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => renderWorkoutItem(item)}
-                contentContainerStyle={{ paddingBottom: 20 }}
+            <PixelText fontSize={12} color="#0ff" style={{ marginBottom: 6 }}>
+                Search
+            </PixelText>
+            <TextInput
+                style={styles.searchInput}
+                placeholder="Search workouts..."
+                placeholderTextColor="#888"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
             />
+            <ScrollView>
+                {workoutCategories.map((category) => {
+                    const filteredData = filterWorkoutsByArchitype(
+                        category.architype
+                    ).filter((w) =>
+                        w.name.toLowerCase().includes(searchQuery.toLowerCase())
+                    );
 
-            <PixelText
-                fontSize={20}
-                color="#0ff"
-                style={{ marginBottom: 10, marginTop: 10 }}
-            >
-                🦵 Legs Workouts
-            </PixelText>
-            <FlatList
-                data={filterWorkoutsByArchitype("LEGS")}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => renderWorkoutItem(item)}
-                contentContainerStyle={{ paddingBottom: 40 }}
-            />
+                    return (
+                        <View key={category.architype}>
+                            <PixelText
+                                fontSize={20}
+                                color="#0ff"
+                                style={{ marginBottom: 10, marginTop: 10 }}
+                            >
+                                {category.label}
+                            </PixelText>
+                            <FlatList
+                                data={filteredData}
+                                keyExtractor={(item) => item.id.toString()}
+                                renderItem={({ item }) =>
+                                    renderWorkoutItem(item)
+                                }
+                                contentContainerStyle={{ paddingBottom: 20 }}
+                            />
+                        </View>
+                    );
+                })}
+            </ScrollView>
+
+            {/* Modal for selecting split day when no default match */}
+            {splitSelectionModalVisible && (
+                <PixelModal
+                    visible={splitSelectionModalVisible}
+                    title="Select a Split Day"
+                    message="Choose a split day to save this workout to:"
+                    onConfirm={() => {
+                        if (selectedSplitDay && pendingSaveWorkout) {
+                            SecureStore.getItemAsync("userId").then(
+                                (userIdStr) => {
+                                    if (userIdStr) {
+                                        const userId = Number(userIdStr);
+                                        saveWorkoutToSplit(
+                                            userId,
+                                            pendingSaveWorkout.id,
+                                            selectedSplitDay
+                                        );
+                                    }
+                                }
+                            );
+                        }
+                        setSplitSelectionModalVisible(false);
+                        setPendingSaveWorkout(null);
+                        setSelectedSplitDay(null);
+                    }}
+                    onCancel={() => {
+                        setSplitSelectionModalVisible(false);
+                        setPendingSaveWorkout(null);
+                        setSelectedSplitDay(null);
+                    }}
+                    confirmText="Save"
+                    cancelText="Cancel"
+                >
+                    <View style={{ marginBottom: 14 }}>
+                        {splitOptions.map((day) => (
+                            <TouchableOpacity
+                                key={day.id}
+                                onPress={() => {
+                                    setSelectedSplitDay(day.name);
+                                    setSelectedSplitDayId(day.id); // new!
+                                }}
+                                style={{
+                                    padding: 10,
+                                    backgroundColor:
+                                        selectedSplitDay === day.name
+                                            ? "#0ff"
+                                            : "#333",
+                                    marginBottom: 6,
+                                    borderRadius: 6,
+                                }}
+                            >
+                                <PixelText fontSize={14} color="#000">
+                                    {day.name}
+                                </PixelText>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </PixelModal>
+            )}
+
             <View style={styles.bottomButtonContainer}>
                 <PixelButton
                     text="Create your own workout"
@@ -269,6 +415,15 @@ const styles = StyleSheet.create({
     bottomButtonContainer: {
         alignItems: "center",
         justifyContent: "flex-end",
-        marginBottom: "-17%",
+        marginBottom: "-19%",
+        paddingTop: "3%",
+    },
+    searchInput: {
+        backgroundColor: "#222",
+        color: "#fff",
+        padding: 10,
+        borderRadius: 8,
+        marginBottom: 20,
+        fontFamily: "PressStart2P_400Regular", // <- if PixelText uses a custom pixel font
     },
 });

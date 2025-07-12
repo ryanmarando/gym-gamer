@@ -24,7 +24,14 @@ export const getUserById = async (
     const userId = Number(req.params.id);
     const user = await prisma.user.findUnique({
         where: { id: userId },
-        include: { weightEntries: true },
+        include: {
+            weightEntries: true,
+            workoutSplit: {
+                include: {
+                    days: true, // Include the WorkoutDay[] array
+                },
+            },
+        },
     });
 
     if (!user) {
@@ -82,17 +89,31 @@ export const getUserWorkoutsByArchitype = async (
     }
 
     try {
+        // ✅ 1️⃣ Get all workouts for this user where:
+        // - Workout.architype includes architype OR
+        // - Related WorkoutDay.dayName matches architype
+
         const workouts = await prisma.userWorkout.findMany({
             where: {
-                userId: Number(userId),
-                workout: {
-                    architype: {
-                        has: architype,
+                userId,
+                OR: [
+                    {
+                        workout: {
+                            architype: {
+                                has: architype,
+                            },
+                        },
                     },
-                },
+                    {
+                        day: {
+                            dayName: architype,
+                        },
+                    },
+                ],
             },
             include: {
                 workout: true,
+                day: true,
                 entries: true,
             },
         });

@@ -4,6 +4,7 @@ import {
     validateBody,
     WeightEntrySchema,
     CustomWorkoutInputSchema,
+    WorkoutSplitInputSchema,
 } from "../middleware/validation.js";
 
 const router = Router();
@@ -30,6 +31,12 @@ router.post(
     "/createCustomWorkout",
     validateBody(CustomWorkoutInputSchema),
     workoutController.createCustomWorkout
+);
+
+router.patch(
+    "/assignWorkoutSplit/:id",
+    validateBody(WorkoutSplitInputSchema),
+    workoutController.assignWorkoutSplit
 );
 
 router.get("/", workoutController.getAllWorkouts);

@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { prisma, jwtSecret } from "../config.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { assignDefaultAchievementsAndSplitToUser } from "../functions/assignDefaultAchievementsAndSplitToUser.js";
 
 export const login = async (
     req: Request,
@@ -94,6 +95,8 @@ export const register = async (
             },
         });
         console.log("Successful POST Registered User Id:", newUser.id);
+
+        assignDefaultAchievementsAndSplitToUser(newUser.id);
 
         const token = jwt.sign(
             { id: newUser.id, email: newUser.email },

@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import z, { ZodSchema } from "zod";
+import { string } from "zod/v4";
 
 const WorkoutArchitypeEnum = z.enum([
     "PUSH",
@@ -12,8 +13,13 @@ const WorkoutArchitypeEnum = z.enum([
     "ABS",
     "QUADS",
     "HAMSTRINGS",
+    "GLUTES",
     "CALVES",
 ]);
+
+export const WorkoutSplitInputSchema = z.object({
+    days: z.array(z.string()).min(3).max(7),
+});
 
 export const WeightEntrySchema = z.object({
     weight: z.number({ message: "Weight must be a number" }),

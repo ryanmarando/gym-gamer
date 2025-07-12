@@ -4,31 +4,25 @@ import PixelButton from "./PixelButton";
 import PixelText from "./PixelText";
 
 interface Props {
-    onSelect: (day: "PUSH" | "PULL" | "LEGS") => void;
+    days: string[];
+    onSelect: (day: string) => void;
 }
 
-export default function PickWorkoutDay({ onSelect }: Props) {
+export default function PickWorkoutDay({ days, onSelect }: Props) {
     return (
         <View style={styles.container}>
             <PixelText fontSize={18} color="#0ff" style={{ marginBottom: 12 }}>
                 Pick your workout day:
             </PixelText>
 
-            <PixelButton
-                text="Push Day"
-                onPress={() => onSelect("PUSH")}
-                containerStyle={styles.dayButton}
-            />
-            <PixelButton
-                text="Pull Day"
-                onPress={() => onSelect("PULL")}
-                containerStyle={styles.dayButton}
-            />
-            <PixelButton
-                text="Legs Day"
-                onPress={() => onSelect("LEGS")}
-                containerStyle={styles.dayButton}
-            />
+            {days.map((day) => (
+                <PixelButton
+                    key={day}
+                    text={`${day} Day`}
+                    onPress={() => onSelect(day)}
+                    containerStyle={styles.dayButton}
+                />
+            ))}
         </View>
     );
 }

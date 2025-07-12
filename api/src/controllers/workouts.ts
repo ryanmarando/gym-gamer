@@ -3,7 +3,6 @@ import { prisma } from "../config.js";
 import { addXpAndCheckLevelUp } from "../functions/addXPAndCheckLevelUp.js";
 import { checkAndProgressAchievements } from "../functions/checkAndProgressAchivements.js";
 import { AchievementType } from "@prisma/client";
-import { arch } from "os";
 
 const completedWorkoutProgress = 50;
 
@@ -75,67 +74,50 @@ export const saveToUser = async (
     try {
         const workoutId = Number(req.query.workoutId);
         const userId = Number(req.query.userId);
+        const dayId = req.body.dayId ? Number(req.body.dayId) : undefined;
 
-        if (!userId) {
-            console.log("Unsuccessful query... no user id.");
-            res.status(400).json({ message: "Please enter a valid user id." });
+        if (!userId || !workoutId) {
+            res.status(400).json({ message: "Missing userId or workoutId" });
             return;
         }
 
-        const workoutToBeAdded = await prisma.workout.findFirst({
+        const workoutToBeAdded = await prisma.workout.findUnique({
             where: { id: workoutId },
         });
 
         if (!workoutToBeAdded) {
-            console.log("Unsuccessful query... no workout id found.");
-            res.status(400).json({
-                message: "Please enter a valid workout id.",
-            });
-            return;
-        }
-
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-        });
-
-        if (!user) {
-            res.status(400).json({
-                message: "User not found.",
-            });
+            res.status(400).json({ message: "Invalid workoutId" });
             return;
         }
 
         const existing = await prisma.userWorkout.findFirst({
             where: {
-                userId: userId,
-                workoutId: workoutId,
+                userId,
+                workoutId,
             },
         });
 
         if (existing) {
-            res.status(200).json({
-                message: `Workout '${workoutToBeAdded.name}' is already saved for this user.`,
-            });
+            res.status(200).json({ message: "Workout already saved." });
             return;
         }
 
-        // Add the link in the join table
         await prisma.userWorkout.create({
             data: {
-                userId: userId,
-                workoutId: workoutId,
+                userId,
+                workoutId,
+                dayId: dayId || null, // ✅ use provided dayId if present
             },
         });
 
         res.status(200).json({
-            message: `Saved ${workoutToBeAdded.name} to userId: ${userId}`,
+            message: `Saved ${workoutToBeAdded.name} to userId ${userId} ${
+                dayId ? `on dayId ${dayId}` : ""
+            }`,
         });
-        console.log("Successful Save of Workout To User");
     } catch (error) {
-        console.log("Unsuccessful PATCH To Save User Workouts");
-        res.status(500).json({
-            error: `Unsuccessful PATCH To Save User Workouts...${error}`,
-        });
+        console.log("Unsuccessful PATCH:", error);
+        res.status(500).json({ error: `Save failed: ${error}` });
     }
 };
 
@@ -448,4 +430,77 @@ export const createCustomWorkout = async (req: Request, res: Response) => {
             message: "Something went wrong creating a custom workout.",
         });
     }
+};
+
+export const assignWorkoutSplit = async (req: Request, res: Response) => {
+    const userId = Number(req.params.id);
+    const { days } = req.body as { days: string[] };
+
+    if (!days || days.length === 0) {
+        res.status(400).json({
+            error: "Please provide an array of day names.",
+        });
+        return;
+    }
+
+    // 1. Ensure workoutSplit exists
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            workoutSplit: {
+                connectOrCreate: {
+                    where: { userId },
+                    create: {},
+                },
+            },
+        },
+    });
+
+    const split = await prisma.workoutSplit.findUnique({
+        where: { userId },
+        include: { days: true },
+    });
+    if (!split) {
+        res.status(500).json({
+            error: "WorkoutSplit not found after creation",
+        });
+        return;
+    }
+
+    const existingDayNames = split.days.map((d) => d.dayName.toLowerCase());
+    const daysToAdd = days.filter(
+        (d) => !existingDayNames.includes(d.toLowerCase())
+    );
+
+    const newDayNamesLower = days.map((d) => d.toLowerCase());
+    const daysToDeleteIds = split.days
+        .filter((d) => !newDayNamesLower.includes(d.dayName.toLowerCase()))
+        .map((d) => d.id);
+
+    if (daysToAdd.length > 0) {
+        await prisma.workoutDay.createMany({
+            data: daysToAdd.map((dayName, idx) => ({
+                dayIndex: split.days.length + idx + 1,
+                dayName,
+                splitId: split.id,
+            })),
+        });
+    }
+
+    if (daysToDeleteIds.length > 0) {
+        await prisma.workoutDay.deleteMany({
+            where: { id: { in: daysToDeleteIds } },
+        });
+    }
+
+    const updatedSplit = await prisma.workoutSplit.findUnique({
+        where: { userId },
+        include: { days: true },
+    });
+
+    res.status(200).json({
+        message: "Workout split updated!",
+        split: updatedSplit,
+    });
+    return;
 };
