@@ -129,10 +129,12 @@ model ProgressPhoto {
 enum AchievementType {
   WORKOUT
   STREAK
-  PERSONAL_BEST
-  SEASONAL
-  SOCIAL
-  MILESTONE
+  QUEST
+  CREATION
+  BODYWEIGHT
+  LIFTINGWEIGHT
+  EXERCISE
+  LEVEL
 }
 
 model Achievement {

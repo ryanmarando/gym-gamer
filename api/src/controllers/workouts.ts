@@ -331,6 +331,8 @@ export const deleteAllEntriesForUserWorkout = async (
 
 export const completeWorkout = async (req: Request, res: Response) => {
     const userId = Number(req.params.id);
+    const { duration, workoutEndTime } = req.body;
+    let newlyCompleted;
 
     try {
         const result = await prisma.$transaction(async (tx) => {
@@ -338,11 +340,11 @@ export const completeWorkout = async (req: Request, res: Response) => {
             await addXpAndCheckLevelUp(userId, completedWorkoutProgress, tx);
 
             // 2️⃣ Progress any matching achievements
-            await checkAndProgressAchievements(
+            newlyCompleted = await checkAndProgressAchievements(
                 tx,
                 userId,
                 [AchievementType.WORKOUT, AchievementType.STREAK],
-                {}
+                { duration, workoutEndTime }
             );
 
             // 3️⃣ Re-fetch fresh user with updated XP, level, progress, and achievements
@@ -376,6 +378,7 @@ export const completeWorkout = async (req: Request, res: Response) => {
         res.json({
             message: "Progress updated for completing a workout!",
             user: result,
+            newlyCompletedAchievements: newlyCompleted,
         });
     } catch (error) {
         console.error(error);

@@ -70,7 +70,10 @@ export default function ProfileScreen({
     useEffect(() => {
         const registerPush = async () => {
             const token = await registerForPushNotificationsAsync();
-            if (token) setExpoPushToken(token);
+            if (token) {
+                setExpoPushToken(token);
+                await SecureStore.setItemAsync("notifToken", token);
+            }
         };
         registerPush();
     }, []);

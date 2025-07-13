@@ -185,7 +185,7 @@ export async function SeedAchievements() {
             xp: 75,
             descprtion: "Create a custom workout plan.",
             goalAmount: 1,
-            goalType: AchievementType.WORKOUT,
+            goalType: AchievementType.CREATION,
             weeklyReset: false,
         },
         {
@@ -193,7 +193,7 @@ export async function SeedAchievements() {
             xp: 75,
             descprtion: "Create a custom quest.",
             goalAmount: 1,
-            goalType: AchievementType.SEASONAL,
+            goalType: AchievementType.CREATION,
             weeklyReset: false,
         },
         {
@@ -201,7 +201,7 @@ export async function SeedAchievements() {
             xp: 50,
             descprtion: "Enter your first body weight record.",
             goalAmount: 1,
-            goalType: AchievementType.MILESTONE,
+            goalType: AchievementType.BODYWEIGHT,
             weeklyReset: false,
         },
         {
@@ -209,7 +209,7 @@ export async function SeedAchievements() {
             xp: 100,
             descprtion: "Complete your first quest.",
             goalAmount: 1,
-            goalType: AchievementType.MILESTONE,
+            goalType: AchievementType.QUEST,
             weeklyReset: false,
         },
 
@@ -235,7 +235,7 @@ export async function SeedAchievements() {
             xp: 300,
             descprtion: "Accumulate a total of 10,000 lbs lifted in a week.",
             goalAmount: 10000,
-            goalType: AchievementType.STREAK,
+            goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: true,
         },
         {
@@ -243,7 +243,7 @@ export async function SeedAchievements() {
             xp: 200,
             descprtion: "Complete 100 pushups within a week.",
             goalAmount: 100,
-            goalType: AchievementType.STREAK,
+            goalType: AchievementType.EXERCISE,
             weeklyReset: true,
         },
 
@@ -280,7 +280,7 @@ export async function SeedAchievements() {
             xp: 50,
             descprtion: "Reach level 5 in your fitness journey.",
             goalAmount: 5,
-            goalType: AchievementType.MILESTONE,
+            goalType: AchievementType.LEVEL,
             weeklyReset: false,
         },
         {
@@ -288,7 +288,7 @@ export async function SeedAchievements() {
             xp: 100,
             descprtion: "Reach level 10 in your fitness journey.",
             goalAmount: 10,
-            goalType: AchievementType.MILESTONE,
+            goalType: AchievementType.LEVEL,
             weeklyReset: false,
         },
         {
@@ -296,7 +296,7 @@ export async function SeedAchievements() {
             xp: 250,
             descprtion: "Reach level 25 in your fitness journey.",
             goalAmount: 25,
-            goalType: AchievementType.MILESTONE,
+            goalType: AchievementType.LEVEL,
             weeklyReset: false,
         },
         {
@@ -304,7 +304,7 @@ export async function SeedAchievements() {
             xp: 500,
             descprtion: "Reach level 50 in your fitness journey.",
             goalAmount: 50,
-            goalType: AchievementType.MILESTONE,
+            goalType: AchievementType.LEVEL,
             weeklyReset: false,
         },
 
@@ -314,7 +314,7 @@ export async function SeedAchievements() {
             xp: 150,
             descprtion: "Achieve a personal best in any lift (auto-tracked).",
             goalAmount: 1,
-            goalType: AchievementType.PERSONAL_BEST,
+            goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: true,
         },
         {
@@ -322,7 +322,7 @@ export async function SeedAchievements() {
             xp: 200,
             descprtion: "Hit a new personal weight record.",
             goalAmount: 1,
-            goalType: AchievementType.PERSONAL_BEST,
+            goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: true,
         },
 
@@ -332,7 +332,7 @@ export async function SeedAchievements() {
             xp: 100,
             descprtion: "Bench press at least 145 pounds.",
             goalAmount: 1,
-            goalType: AchievementType.PERSONAL_BEST,
+            goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: false,
         },
         {
@@ -340,7 +340,7 @@ export async function SeedAchievements() {
             xp: 150,
             descprtion: "Bench press at least 225 pounds.",
             goalAmount: 1,
-            goalType: AchievementType.PERSONAL_BEST,
+            goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: false,
         },
         {
@@ -348,7 +348,7 @@ export async function SeedAchievements() {
             xp: 250,
             descprtion: "Bench press at least 315 pounds.",
             goalAmount: 1,
-            goalType: AchievementType.PERSONAL_BEST,
+            goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: false,
         },
 
@@ -358,7 +358,7 @@ export async function SeedAchievements() {
             xp: 100,
             descprtion: "Squat at least 225 pounds.",
             goalAmount: 1,
-            goalType: AchievementType.PERSONAL_BEST,
+            goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: false,
         },
         {
@@ -366,7 +366,7 @@ export async function SeedAchievements() {
             xp: 150,
             descprtion: "Squat at least 315 pounds.",
             goalAmount: 1,
-            goalType: AchievementType.PERSONAL_BEST,
+            goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: false,
         },
         {
@@ -374,7 +374,7 @@ export async function SeedAchievements() {
             xp: 250,
             descprtion: "Squat at least 405 pounds.",
             goalAmount: 1,
-            goalType: AchievementType.PERSONAL_BEST,
+            goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: false,
         },
 
@@ -384,7 +384,7 @@ export async function SeedAchievements() {
             xp: 100,
             descprtion: "Deadlift at least 315 pounds.",
             goalAmount: 1,
-            goalType: AchievementType.PERSONAL_BEST,
+            goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: false,
         },
         {
@@ -392,7 +392,7 @@ export async function SeedAchievements() {
             xp: 150,
             descprtion: "Deadlift at least 405 pounds.",
             goalAmount: 1,
-            goalType: AchievementType.PERSONAL_BEST,
+            goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: false,
         },
         {
@@ -400,7 +400,7 @@ export async function SeedAchievements() {
             xp: 250,
             descprtion: "Deadlift at least 495 pounds.",
             goalAmount: 1,
-            goalType: AchievementType.PERSONAL_BEST,
+            goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: false,
         },
     ];
@@ -423,4 +423,4 @@ export async function SeedAchievements() {
     console.log("✅ Seeded achievements with full model fields!");
 }
 
-SeedAchievements();
+//SeedAchievements();

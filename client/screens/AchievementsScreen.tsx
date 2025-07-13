@@ -18,6 +18,7 @@ import PixelQuestCard from "../components/PixelQuestCard";
 import UpdateQuestModal from "../components/UpdateQuestModal";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface AchievementDetails {
     id: number;
@@ -256,167 +257,187 @@ export default function AchievementsScreen({}: PixelAchievementCardProps) {
     };
 
     return (
-        <View style={styles.container}>
-            {/* Quests Section */}
-            <PixelText fontSize={18} color="#ff0" style={{ marginBottom: 10 }}>
-                🏆 Conquer With Quests
-            </PixelText>
+        <SafeAreaView style={styles.safeArea}>
+            <View style={styles.container}>
+                {/* Quests Section */}
+                <PixelText
+                    fontSize={18}
+                    color="#ff0"
+                    style={{ marginBottom: 10 }}
+                >
+                    🏆 Conquer With Quests
+                </PixelText>
 
-            {activeQuest ? (
-                <>
-                    <View
-                        style={{
-                            alignItems: "center",
-                            width: "100%",
-                            marginBottom: 10,
-                        }}
-                    >
-                        <PixelQuestCard
-                            quest={activeQuest}
-                            containerStyle={{ width: "90%", maxWidth: 400 }}
-                        />
-                        <PixelButton
-                            fontSize={15}
-                            color="#fff"
-                            text="Update Quest"
-                            onPress={() => handleUpdatePress(activeQuest.id)}
+                {activeQuest ? (
+                    <>
+                        <View
                             style={{
                                 alignItems: "center",
-                                backgroundColor: "#00f",
-                                width: "70%",
-                                marginTop: 8,
-                                paddingVertical: 12,
-                                justifyContent: "center",
-                                borderRadius: 6,
+                                width: "100%",
+                                marginBottom: 10,
                             }}
                         >
-                            Update Quest
-                        </PixelButton>
+                            <PixelQuestCard
+                                quest={activeQuest}
+                                containerStyle={{ width: "90%", maxWidth: 400 }}
+                            />
+                            <PixelButton
+                                fontSize={15}
+                                color="#fff"
+                                text="Update Quest"
+                                onPress={() =>
+                                    handleUpdatePress(activeQuest.id)
+                                }
+                                style={{
+                                    alignItems: "center",
+                                    backgroundColor: "#00f",
+                                    width: "70%",
+                                    marginTop: 8,
+                                    paddingVertical: 12,
+                                    justifyContent: "center",
+                                    borderRadius: 6,
+                                }}
+                            >
+                                Update Quest
+                            </PixelButton>
+                        </View>
+                        <PixelModal
+                            visible={modalVisible}
+                            title={modalConfig.title}
+                            message={modalConfig.message}
+                            onConfirm={modalConfig.onConfirm}
+                            onCancel={() => setModalVisible(false)}
+                        />
+                        <ConfirmationPixelModal
+                            visible={modalConfirmationVisible}
+                            title={modalConfirmationConfig.title}
+                            message={modalConfirmationConfig.message}
+                            onConfirm={modalConfirmationConfig.onConfirm}
+                            onCancel={() => setModalConfirmationVisible(false)}
+                        />
+                        <UpdateQuestModal
+                            visible={updateModalVisible}
+                            onConfirm={handleQuestUpdateConfirm}
+                            onCancel={() => setUpdateModalVisible(false)}
+                        />
+                    </>
+                ) : (
+                    <View style={styles.grid}>
+                        <PixelText
+                            fontSize={14}
+                            color="#888"
+                            style={{ marginBottom: 20 }}
+                        >
+                            You have no active quest.
+                        </PixelText>
                     </View>
-                    <PixelModal
-                        visible={modalVisible}
-                        title={modalConfig.title}
-                        message={modalConfig.message}
-                        onConfirm={modalConfig.onConfirm}
-                        onCancel={() => setModalVisible(false)}
-                    />
-                    <ConfirmationPixelModal
-                        visible={modalConfirmationVisible}
-                        title={modalConfirmationConfig.title}
-                        message={modalConfirmationConfig.message}
-                        onConfirm={modalConfirmationConfig.onConfirm}
-                        onCancel={() => setModalConfirmationVisible(false)}
-                    />
-                    <UpdateQuestModal
-                        visible={updateModalVisible}
-                        onConfirm={handleQuestUpdateConfirm}
-                        onCancel={() => setUpdateModalVisible(false)}
-                    />
-                </>
-            ) : (
-                <View style={styles.grid}>
+                )}
+
+                {/* User's Achievements Section */}
+
+                <PixelText
+                    fontSize={20}
+                    color="#0ff"
+                    style={{ marginBottom: 20 }}
+                >
+                    💪 Your Achievements
+                </PixelText>
+
+                {userAchievements.length === 0 ? (
                     <PixelText
                         fontSize={14}
                         color="#888"
                         style={{ marginBottom: 20 }}
                     >
-                        You have no active quest.
+                        You haven't earned any achievements yet.
                     </PixelText>
-                </View>
-            )}
-
-            {/* User's Achievements Section */}
-
-            <PixelText fontSize={20} color="#0ff" style={{ marginBottom: 20 }}>
-                💪 Your Achievements
-            </PixelText>
-
-            {userAchievements.length === 0 ? (
-                <PixelText
-                    fontSize={14}
-                    color="#888"
-                    style={{ marginBottom: 20 }}
-                >
-                    You haven't earned any achievements yet.
-                </PixelText>
-            ) : (
-                <SectionList
-                    sections={achievementSections}
-                    keyExtractor={(item) => item.achievementId.toString()}
-                    renderSectionHeader={({ section: { title } }) => (
-                        <View
-                            style={{
-                                width: "100%",
-                                paddingHorizontal: 10,
-                                paddingBottom: 10,
-                                backgroundColor: "#111",
-                            }}
-                        >
-                            <PixelText
-                                fontSize={14}
-                                color="#0ff"
-                                style={{
-                                    flexShrink: 1,
-                                }}
-                            >
-                                {title}
-                            </PixelText>
-                        </View>
-                    )}
-                    renderItem={({ item }) => (
-                        <View style={styles.card}>
+                ) : (
+                    <SectionList
+                        sections={achievementSections}
+                        keyExtractor={(item) => item.achievementId.toString()}
+                        renderSectionHeader={({ section: { title } }) => (
                             <View
                                 style={{
-                                    flex: 1,
                                     width: "100%",
-                                    alignItems: "center",
-                                    gap: 6,
+                                    paddingHorizontal: 10,
+                                    paddingBottom: 10,
+                                    backgroundColor: "#111",
                                 }}
                             >
                                 <PixelText
-                                    fontSize={12}
+                                    fontSize={14}
                                     color="#0ff"
-                                    style={{ marginBottom: 4, width: "100%" }}
+                                    style={{
+                                        flexShrink: 1,
+                                    }}
                                 >
-                                    {item.achievement.name}
-                                </PixelText>
-                                <ProgressBar
-                                    progress={item.progress / 100}
-                                    width={200}
-                                    height={15}
-                                    backgroundColor="#333"
-                                    progressColor="#0ff"
-                                    borderColor="#0ff"
-                                />
-                                {item.achievement.weeklyReset && (
-                                    <PixelText
-                                        fontSize={10}
-                                        color="#0ff"
-                                        style={{ marginTop: 4, width: "100%" }}
-                                    >
-                                        Resets weekly 🔄
-                                    </PixelText>
-                                )}
-                                <PixelText fontSize={10} color="#fff">
-                                    {item.achievement.xp} XP
+                                    {title}
                                 </PixelText>
                             </View>
-                        </View>
-                    )}
-                    contentContainerStyle={{ paddingBottom: 100 }}
-                    // You can adjust styling or add stickySectionHeadersEnabled etc.
-                />
-            )}
-        </View>
+                        )}
+                        renderItem={({ item }) => (
+                            <View style={styles.card}>
+                                <View
+                                    style={{
+                                        flex: 1,
+                                        width: "100%",
+                                        alignItems: "center",
+                                        gap: 6,
+                                    }}
+                                >
+                                    <PixelText
+                                        fontSize={12}
+                                        color="#0ff"
+                                        style={{
+                                            marginBottom: 4,
+                                            width: "100%",
+                                        }}
+                                    >
+                                        {item.achievement.name}
+                                    </PixelText>
+                                    <ProgressBar
+                                        progress={item.progress / 100}
+                                        width={200}
+                                        height={15}
+                                        backgroundColor="#333"
+                                        progressColor="#0ff"
+                                        borderColor="#0ff"
+                                    />
+                                    {item.achievement.weeklyReset && (
+                                        <PixelText
+                                            fontSize={10}
+                                            color="#0ff"
+                                            style={{
+                                                marginTop: 4,
+                                                width: "100%",
+                                            }}
+                                        >
+                                            Resets weekly 🔄
+                                        </PixelText>
+                                    )}
+                                    <PixelText fontSize={10} color="#fff">
+                                        {item.achievement.xp} XP
+                                    </PixelText>
+                                </View>
+                            </View>
+                        )}
+                        contentContainerStyle={{ paddingBottom: 300 }}
+                    />
+                )}
+            </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: "#111",
+    },
     container: {
         flexGrow: 1,
         backgroundColor: "#111",
         alignItems: "stretch",
-        paddingVertical: "20%",
         paddingHorizontal: 20,
     },
     separator: {

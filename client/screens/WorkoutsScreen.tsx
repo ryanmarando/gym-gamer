@@ -12,6 +12,10 @@ import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import PickWorkoutDay from "../components/PickWorkoutDay";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+    sendPushNotification,
+    registerForPushNotificationsAsync,
+} from "../utils/notification";
 
 interface Workout {
     userId: number;
@@ -164,9 +168,33 @@ export default function WorkoutsScreen({ navigation }: any) {
                 }
 
                 // Now call complete workout endpoint
-                await authFetch(`/workouts/completeWorkout/${userId}`, {
-                    method: "PATCH",
-                });
+                const workoutEndTime = new Date().toISOString();
+                const workoutProgressData = await authFetch(
+                    `/workouts/completeWorkout/${userId}`,
+                    {
+                        method: "PATCH",
+                        body: JSON.stringify({
+                            duration: timer,
+                            workoutEndTime: workoutEndTime,
+                        }),
+                    }
+                );
+
+                if (workoutProgressData.newlyCompletedAchievements?.length) {
+                    // Send notification
+                    sendNotification(
+                        workoutProgressData.newlyCompletedAchievements?.length
+                    );
+
+                    workoutProgressData.newlyCompletedAchievements.forEach(
+                        (ach: any) => {
+                            console.log(
+                                `🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`
+                            );
+                            // Show modal, play sound, push notification, etc.
+                        }
+                    );
+                }
 
                 setWorkoutStarted(false);
                 setWorkoutStartTime(null);
@@ -183,6 +211,22 @@ export default function WorkoutsScreen({ navigation }: any) {
         }
 
         setModalAction(null);
+    };
+
+    const sendNotification = async (numberOfNew: number) => {
+        const expoPushToken = await SecureStore.getItemAsync("notifToken");
+        console.log("Push token:", expoPushToken);
+        if (!expoPushToken) {
+            return;
+        }
+        const title = "Hey, Gym Gamer!";
+        let body: string;
+        if (numberOfNew === 1) {
+            body = `You completed an achievement!`;
+        } else {
+            body = `You completed ${numberOfNew} achievements!`;
+        }
+        await sendPushNotification({ expoPushToken, title, body });
     };
 
     const fetchUserData = useCallback(async () => {
@@ -239,7 +283,8 @@ export default function WorkoutsScreen({ navigation }: any) {
                 return copy;
             });
         } catch (err) {
-            console.error(err);
+            console.log("No workouts found.");
+            //console.error(err);
         }
     }, [selectedDay]);
 

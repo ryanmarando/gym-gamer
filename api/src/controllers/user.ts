@@ -223,34 +223,49 @@ export const resetUserStats = async (
     try {
         const userId = Number(req.params.id);
 
-        const resetUser = await prisma.user.findFirst({
+        const userExists = await prisma.user.findFirst({
             where: { id: userId },
         });
 
-        if (!resetUser) {
+        if (!userExists) {
             res.status(404).json({ message: "User not found" });
             return;
         }
 
-        const updatedUser = await prisma.user.update({
-            where: { id: userId },
-            data: {
-                xp: 0,
-                level: 1,
-                levelProgress: 0,
-            },
-            select: {
-                id: true,
-                name: true,
-                xp: true,
-                level: true,
-                levelProgress: true,
-            },
+        // ✅ Wrap everything in a transaction for safety
+        const updated = await prisma.$transaction(async (tx) => {
+            // 1) Reset user stats
+            const updatedUser = await tx.user.update({
+                where: { id: userId },
+                data: {
+                    xp: 0,
+                    level: 1,
+                    levelProgress: 0,
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    xp: true,
+                    level: true,
+                    levelProgress: true,
+                },
+            });
+
+            // 2) Reset all user achievements
+            await tx.userAchievement.updateMany({
+                where: { userId },
+                data: {
+                    progress: 0,
+                    completed: false,
+                },
+            });
+
+            return updatedUser;
         });
 
         res.json({
-            message: "User stats have been reset.",
-            user: updatedUser,
+            message: "User stats and achievements have been reset.",
+            user: updated,
         });
 
         return;

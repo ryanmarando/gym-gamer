@@ -16,74 +16,43 @@ export async function progressAchievement(
 
     if (!ua) throw new Error("UserAchievement not found");
 
-    if (ua.completed && ua.progress >= (ua.achievement.goalAmount || 100)) {
+    if (ua.completed) {
         console.log(
-            `⚠️  Achievement '${ua.achievement.name}' for userId ${userId} is already completed.`
+            `⚠️  Achievement '${ua.achievement.name}' already completed for userId ${userId}.`
         );
-        throw new Error("Achievement already completed");
+        return ua; // Return as-is if already done
     }
 
-    const goal = 100;
     let newProgress = ua.progress + progressToAdd;
+    const goal = 100;
 
-    console.log(
-        `🔄 Progressing Achievement '${ua.achievement.name}' for userId ${userId}: +${progressToAdd}% (was ${ua.progress}%)`
-    );
-
+    let completed = false;
     if (newProgress >= goal) {
         newProgress = goal;
-
-        await tx.userAchievement.update({
-            where: {
-                userId_achievementId: { userId, achievementId },
-            },
-            data: {
-                progress: newProgress,
-                completed: true,
-            },
-        });
-
-        console.log(
-            `🏆 Achievement '${ua.achievement.name}' COMPLETED by userId ${userId} — awarding ${ua.achievement.xp} XP!`
-        );
-
-        return addXpAndCheckLevelUp(userId, ua.achievement.xp, tx);
-    } else {
-        await tx.userAchievement.update({
-            where: {
-                userId_achievementId: { userId, achievementId },
-            },
-            data: {
-                progress: newProgress,
-            },
-        });
-
-        console.log(
-            `✅ Updated progress for '${ua.achievement.name}' to ${newProgress}% for userId ${userId}`
-        );
-
-        return tx.user.findUnique({
-            where: { id: userId },
-            select: {
-                id: true,
-                name: true,
-                xp: true,
-                level: true,
-                levelProgress: true,
-                achievements: {
-                    select: {
-                        achievementId: true,
-                        progress: true,
-                        completed: true,
-                        achievement: {
-                            select: {
-                                name: true,
-                                xp: true,
-                            },
-                        },
-                    },
-                },
-            },
-        });
+        completed = true;
     }
+
+    const updatedUA = await tx.userAchievement.update({
+        where: {
+            userId_achievementId: { userId, achievementId },
+        },
+        data: {
+            progress: newProgress,
+            completed: completed,
+        },
+        include: { achievement: true },
+    });
+
+    if (completed) {
+        console.log(
+            `🏆 Achievement '${ua.achievement.name}' COMPLETED — awarding ${ua.achievement.xp} XP`
+        );
+        await addXpAndCheckLevelUp(userId, ua.achievement.xp, tx);
+    } else {
+        console.log(
+            `✅ Progressed '${ua.achievement.name}' to ${newProgress}% for userId ${userId}`
+        );
+    }
+
+    return updatedUA; // ✅ Always return the updated UserAchievement
 }

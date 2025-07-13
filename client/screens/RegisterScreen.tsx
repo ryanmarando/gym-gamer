@@ -49,7 +49,7 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
             //Alert.alert("Success", "Your account has been created!");
             playLoginSound();
             setmodalTitleMessage("Level up!");
-            const message = `Congrats gamer ${data.user.name}. You've got a long journey ahead..`;
+            const message = `Congrats gamer ${data.user.name}. You've got a long journey ahead...`;
             setModalMessage(message);
             setPendingLogin(true);
             setShowConfirmationModal(true);

@@ -16,6 +16,11 @@ const WorkoutArchitypeEnum = z.enum([
     "CALVES",
 ]);
 
+export const CompleteWorkoutInputSchema = z.object({
+    duration: z.number(),
+    workoutEndTime: z.string(),
+});
+
 export const WorkoutSplitInputSchema = z.object({
     days: z.array(z.string()).min(3).max(7),
 });

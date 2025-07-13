@@ -5,6 +5,7 @@ import {
     WeightEntrySchema,
     CustomWorkoutInputSchema,
     WorkoutSplitInputSchema,
+    CompleteWorkoutInputSchema,
 } from "../middleware/validation.js";
 
 const router = Router();
@@ -25,7 +26,11 @@ router.delete(
     workoutController.deleteAllEntriesForUserWorkout
 );
 
-router.patch("/completeWorkout/:id", workoutController.completeWorkout);
+router.patch(
+    "/completeWorkout/:id",
+    validateBody(CompleteWorkoutInputSchema),
+    workoutController.completeWorkout
+);
 
 router.post(
     "/createCustomWorkout",

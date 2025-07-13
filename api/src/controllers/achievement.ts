@@ -193,35 +193,41 @@ export const updateAchievementProgress = async (
     res: Response
 ) => {
     const { userId, achievementId, progressToAdd } = req.body;
+
     try {
-        const updatedUser = await prisma.$transaction(async (tx) => {
-            return progressAchievement(
-                tx,
-                userId,
-                achievementId,
-                progressToAdd
-            );
+        await prisma.$transaction(async (tx) => {
+            await progressAchievement(tx, userId, achievementId, progressToAdd);
+        });
+
+        // ✅ Now get the full updated user for the response
+        const updatedUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                name: true,
+                xp: true,
+                level: true,
+                levelProgress: true,
+                achievements: {
+                    select: {
+                        achievementId: true,
+                        progress: true,
+                        completed: true,
+                        achievement: {
+                            select: {
+                                name: true,
+                                xp: true,
+                            },
+                        },
+                    },
+                },
+            },
         });
 
         res.json({
             message: "Progress updated!",
-            updatedUser: {
-                id: updatedUser?.id,
-                name: updatedUser?.name,
-                xp: updatedUser?.xp,
-                level: updatedUser?.level,
-                levelProgress: updatedUser?.levelProgress,
-                achievements: updatedUser?.achievements.map((ua: any) => ({
-                    achievementId: ua.achievementId,
-                    name: ua.achievement.name,
-                    progress: ua.progress,
-                    completed: ua.completed,
-                    xp: ua.achievement.xp,
-                })),
-            },
+            updatedUser,
         });
-
-        return;
     } catch (err) {
         if (err instanceof Error && err.message.includes("already completed")) {
             res.status(409).json({
