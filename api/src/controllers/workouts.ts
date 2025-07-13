@@ -4,7 +4,7 @@ import { addXpAndCheckLevelUp } from "../functions/addXPAndCheckLevelUp.js";
 import { checkAndProgressAchievements } from "../functions/checkAndProgressAchivements.js";
 import { AchievementType } from "@prisma/client";
 
-const completedWorkoutProgress = 50;
+const completedWorkoutProgress = 70000;
 
 export const getAllWorkouts = async (
     req: Request,
@@ -360,15 +360,25 @@ export const completeWorkout = async (req: Request, res: Response) => {
     try {
         const result = await prisma.$transaction(async (tx) => {
             // 1️⃣ Award XP for the workout itself
-            await addXpAndCheckLevelUp(userId, completedWorkoutProgress, tx);
+            const levelUpResult = await addXpAndCheckLevelUp(
+                userId,
+                completedWorkoutProgress,
+                tx
+            );
 
             // 2️⃣ Progress any matching achievements
-            newlyCompleted = await checkAndProgressAchievements(
-                tx,
-                userId,
-                [AchievementType.WORKOUT, AchievementType.STREAK],
-                { duration, workoutEndTime }
-            );
+            const workoutAndStreakAchievements =
+                await checkAndProgressAchievements(
+                    tx,
+                    userId,
+                    [AchievementType.WORKOUT, AchievementType.STREAK],
+                    { duration, workoutEndTime }
+                );
+
+            newlyCompleted = [
+                ...(levelUpResult.newlyCompletedAchievements || []),
+                ...(workoutAndStreakAchievements || []),
+            ];
 
             // 3️⃣ Re-fetch fresh user with updated XP, level, progress, and achievements
             const freshUser = await tx.user.findUnique({
@@ -438,17 +448,31 @@ export const createCustomWorkout = async (req: Request, res: Response) => {
             return;
         }
 
-        const customWorkout = await prisma.workout.create({
-            data: {
-                name: customName,
-                createdByUserId: userId,
-                architype: architype,
-            },
+        const result = await prisma.$transaction(async (tx) => {
+            const customWorkout = await tx.workout.create({
+                data: {
+                    name: customName.trim(),
+                    createdByUserId: userId,
+                    architype: architype,
+                },
+            });
+
+            // ✅ Progress any CREATION-type achievements for this user
+            const newlyCompletedAchievements =
+                await checkAndProgressAchievements(
+                    tx,
+                    userId,
+                    AchievementType.CREATION,
+                    { creationType: "createWorkout" }
+                );
+
+            return { customWorkout, newlyCompletedAchievements };
         });
 
         res.status(201).json({
             message: "New workout created!",
-            customWorkout,
+            workout: result.customWorkout,
+            newlyCompletedAchievements: result.newlyCompletedAchievements,
         });
     } catch (error) {
         console.error(error);

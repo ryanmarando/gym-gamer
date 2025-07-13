@@ -13,4 +13,6 @@ router.patch(
     questController.updateUserQuest
 );
 
+router.get("/completeQuest/:id", questController.completeQuest);
+
 export default router;

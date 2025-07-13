@@ -5,7 +5,7 @@ import { AchievementType } from "@prisma/client";
 const checkWorkoutDuration = (duration: number, achievementId: number) => {
     if (duration && duration <= 5400 && achievementId === 10) {
         // 90 min duration {
-        console.log("not enough duration in id:", achievementId);
+        console.log("Not enough duration in id:", achievementId);
         return false;
     }
     return true;
@@ -37,6 +37,21 @@ const checkWorkoutTimeOfDay = (
     return false;
 };
 
+const checkCreationWorkoutType = (creationType: string) => {
+    if (creationType === "createWorkout") {
+        console.log("found workout create true");
+        return true;
+    }
+    return false;
+};
+
+const checkCreationQuestType = (creationType: string) => {
+    if (creationType === "updateQuest") {
+        return true;
+    }
+    return false;
+};
+
 export async function checkAndProgressAchievements(
     tx: Prisma.TransactionClient,
     userId: number,
@@ -60,6 +75,10 @@ export async function checkAndProgressAchievements(
 
     const updates = [];
     const newlyCompleted = [];
+
+    console.log(
+        `🔍 Checking ${active.length} active achievements for goal type(s): ${goalTypeArray}`
+    );
 
     for (const ua of active) {
         let goalAmount = ua.achievement.goalAmount;
@@ -102,12 +121,39 @@ export async function checkAndProgressAchievements(
             // case AchievementType.STREAK:
             //     assessAndProgressAchievement(goalAmount, progressToAdd);
             //     break;
-            // case AchievementType.QUEST:
-            //     assessAndProgressAchievement(goalAmount, progressToAdd);
-            //     break;
-            // case AchievementType.CREATION:
-            //     assessAndProgressAchievement(goalAmount, progressToAdd);
-            //     break;
+            case AchievementType.QUEST:
+                if (goalAmount === 1) {
+                    progressToAdd = 100;
+                } else {
+                    progressToAdd = 100 / goalAmount;
+                }
+                break;
+                break;
+            case AchievementType.CREATION:
+                const creationType = context.creationType;
+
+                const isWorkout = checkCreationWorkoutType(creationType);
+                const isQuest = checkCreationQuestType(creationType);
+
+                if (isWorkout && ua.achievementId === 2) {
+                    if (goalAmount === 1) {
+                        progressToAdd = 100;
+                    } else {
+                        progressToAdd = 100 / goalAmount;
+                    }
+                    break;
+                }
+
+                if (isQuest && ua.achievementId === 3) {
+                    if (goalAmount === 1) {
+                        progressToAdd = 100;
+                    } else {
+                        progressToAdd = 100 / goalAmount;
+                    }
+                    break;
+                }
+
+                break;
             // case AchievementType.BODYWEIGHT:
             //     assessAndProgressAchievement(goalAmount, progressToAdd);
             //     break;
@@ -119,9 +165,19 @@ export async function checkAndProgressAchievements(
             // case AchievementType.EXERCISE:
             //     assessAndProgressAchievement(goalAmount, progressToAdd);
             //     break;
-            // case AchievementType.LEVEL:
-            //     assessAndProgressAchievement(goalAmount, progressToAdd);
-            //     break;
+            case AchievementType.LEVEL:
+                const userLevel = context.level;
+
+                if (userLevel >= goalAmount) {
+                    progressToAdd = 100 - ua.progress;
+                } else {
+                    const targetProgress = Math.min(
+                        100,
+                        (userLevel / goalAmount) * 100
+                    );
+                    progressToAdd = targetProgress - ua.progress;
+                }
+                break;
             default:
                 continue; // skip if we don't know how to handle it
         }

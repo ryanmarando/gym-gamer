@@ -1,4 +1,5 @@
-import { Prisma } from "@prisma/client";
+import { AchievementType, Prisma } from "@prisma/client";
+import { checkAndProgressAchievements } from "./checkAndProgressAchivements.js";
 
 function getRequiredXp(level: number): number {
     const baseXP = 100;
@@ -27,11 +28,31 @@ export async function addXpAndCheckLevelUp(
     let newXp = user.xp + xpToAdd;
     let newLevel = user.level;
 
+    const allNewlyCompleted = [];
+
     while (true) {
         const requiredXp = getRequiredXp(newLevel);
         if (newXp >= requiredXp) {
             newXp -= requiredXp;
             newLevel += 1;
+
+            // Check for Level Up Achievements
+
+            const newLevelUpAchievements = await checkAndProgressAchievements(
+                tx,
+                user.id,
+                AchievementType.LEVEL,
+                { level: newLevel }
+            );
+
+            if (newLevelUpAchievements.length > 0) {
+                console.log(
+                    `🏆 ${user.name} just unlocked:`,
+                    newLevelUpAchievements.map((a) => a.name)
+                );
+                allNewlyCompleted.push(...newLevelUpAchievements);
+            }
+
             console.log(
                 `✨ ${user.name} (id: ${user.id}) leveled up! New Level: ${newLevel}`
             );
@@ -79,5 +100,5 @@ export async function addXpAndCheckLevelUp(
         `✅ ${user.name} now has ${updatedUser.xp} XP, Level ${updatedUser.level} (${updatedUser.levelProgress}% to next level)`
     );
 
-    return updatedUser;
+    return { updatedUser, newlyCompletedAchievements: allNewlyCompleted };
 }

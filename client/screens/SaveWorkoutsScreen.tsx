@@ -15,7 +15,7 @@ import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import CustomWorkoutModal from "../components/CustomWorkoutModal";
 import PixelModal from "../components/PixelModal";
-import { playPixelSound } from "../utils/playPixelSound";
+import { sendPushNotification } from "../utils/notification";
 
 export default function SaveWorkoutScreen() {
     const [userWorkouts, setUserWorkouts] = useState<any[]>([]);
@@ -58,6 +58,22 @@ export default function SaveWorkoutScreen() {
         { label: "🍑 Glutes Workouts", architype: "GLUTES" },
         { label: "🐐 Calves Workouts", architype: "CALVES" },
     ];
+
+    const sendNotification = async (numberOfNew: number) => {
+        const expoPushToken = await SecureStore.getItemAsync("notifToken");
+        console.log("Push token:", expoPushToken);
+        if (!expoPushToken) {
+            return;
+        }
+        const title = "Hey, Gym Gamer!";
+        let body: string;
+        if (numberOfNew === 1) {
+            body = `You completed an achievement!`;
+        } else {
+            body = `You completed ${numberOfNew} achievements!`;
+        }
+        await sendPushNotification({ expoPushToken, title, body });
+    };
 
     const fetchWorkouts = async () => {
         try {
@@ -224,6 +240,17 @@ export default function SaveWorkoutScreen() {
                 method: "POST",
                 body,
             });
+            console.log(result);
+
+            if (result.newlyCompletedAchievements?.length) {
+                // Send notification
+                sendNotification(result.newlyCompletedAchievements?.length);
+
+                result.newlyCompletedAchievements.forEach((ach: any) => {
+                    console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
+                    // Show modal, play sound, push notification, etc.
+                });
+            }
 
             console.log("Workout created:", result);
             fetchWorkouts();
@@ -247,7 +274,6 @@ export default function SaveWorkoutScreen() {
                     color="#000"
                     onPress={() => {
                         toggleWorkout(item.id);
-                        playPixelSound();
                     }}
                     style={[
                         styles.button,

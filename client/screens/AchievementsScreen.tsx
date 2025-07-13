@@ -19,6 +19,7 @@ import UpdateQuestModal from "../components/UpdateQuestModal";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { sendPushNotification } from "../utils/notification";
 
 interface AchievementDetails {
     id: number;
@@ -104,23 +105,21 @@ export default function AchievementsScreen({}: PixelAchievementCardProps) {
         setActiveQuest(quest.quest || null);
     };
 
+    const fetchAchievements = async () => {
+        const data = await authFetch("/achievement");
+        setAchievements(data || []);
+    };
+
+    const fetchUserAchievements = async () => {
+        const data = await authFetch(`/user/getUserAchievements/${userId}`);
+        setUserAchievements(data?.achievements || []);
+    };
+
     // Fetch both achievements and user achievements whenever userId or refreshToggle changes
     useFocusEffect(
         useCallback(() => {
             console.log("✅ Achivements loaded");
             if (userId === null) return;
-
-            const fetchAchievements = async () => {
-                const data = await authFetch("/achievement");
-                setAchievements(data || []);
-            };
-
-            const fetchUserAchievements = async () => {
-                const data = await authFetch(
-                    `/user/getUserAchievements/${userId}`
-                );
-                setUserAchievements(data?.achievements || []);
-            };
 
             fetchAchievements();
             fetchUserAchievements();
@@ -133,85 +132,26 @@ export default function AchievementsScreen({}: PixelAchievementCardProps) {
         }, [userId, refreshToggle])
     );
 
-    const handleAddPress = (questId: number) => {
-        const alreadyHasQuest = userAchievements.some((ua) => ua.isQuest);
-
-        if (alreadyHasQuest) {
-            // Show confirmation to replace
-            setModalConfig({
-                title: "Change Quest",
-                message: "Are you sure you want to change your quest?",
-                onConfirm: async () => {
-                    // Remove old quest
-                    await removeExistingQuest();
-                    // Add new quest
-                    await handleAdd(questId);
-                    setModalVisible(false);
-                },
-            });
-            setModalVisible(true);
-        } else {
-            handleAdd(questId);
+    const sendNotification = async (numberOfNew: number) => {
+        const expoPushToken = await SecureStore.getItemAsync("notifToken");
+        console.log("Push token:", expoPushToken);
+        if (!expoPushToken) {
+            return;
         }
+        const title = "Hey, Gym Gamer!";
+        let body: string;
+        if (numberOfNew === 1) {
+            body = `You completed an achievement!`;
+        } else {
+            body = `You completed ${numberOfNew} achievements!`;
+        }
+        await sendPushNotification({ expoPushToken, title, body });
     };
 
     const removeExistingQuest = async () => {
         const questToRemove = userAchievements.find((ua) => ua.isQuest);
         if (questToRemove) {
             await handleDelete(questToRemove.achievementId);
-        }
-    };
-
-    // Add achievement to user
-    const handleAdd = async (achievementId: number) => {
-        if (!userId) return;
-        try {
-            const response = await authFetch(
-                `/achievement/saveToUser?userId=${userId}&achievementId=${achievementId}`,
-                {
-                    method: "PATCH",
-                }
-            );
-            console.log("Response", response);
-
-            if (!response?.ok && response?.status === 400) {
-                // Backend sent a 400 — get the message
-                const data = await response.json();
-                if (
-                    data.message &&
-                    data.message.includes("quest achievement")
-                ) {
-                    // Show your modal for quest limit
-                    setModalConfirmationConfig({
-                        title: "Quest Limit",
-                        message:
-                            "You can only have one quest at a time. Complete or remove your current quest first!",
-                        onConfirm: () => setModalConfirmationVisible(false),
-                    });
-                    setModalConfirmationVisible(true);
-                    return;
-                }
-            }
-
-            setRefreshToggle((prev) => !prev); // triggers re-fetch and UI update
-        } catch (error: any) {
-            if (error.message.includes("quest")) {
-                setModalConfirmationConfig({
-                    title: "Quest Limit",
-                    message:
-                        "You can only have one quest at a time. Complete or remove your current quest first!",
-                    onConfirm: () => setModalConfirmationVisible(false),
-                });
-                setModalConfirmationVisible(true);
-                return;
-            }
-
-            setModalConfirmationConfig({
-                title: "Error",
-                message: "Something went wrong. Please try again.",
-                onConfirm: () => setModalConfirmationVisible(false),
-            });
-            setModalConfirmationVisible(true);
         }
     };
 
@@ -238,14 +178,26 @@ export default function AchievementsScreen({}: PixelAchievementCardProps) {
     }) => {
         try {
             const userId = await SecureStore.getItemAsync("userId");
-            await authFetch(`/quest/editQuest/${userId}`, {
+            const result = await authFetch(`/quest/editQuest/${userId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
+
+            if (result.newlyCompletedAchievements?.length) {
+                // Send notification
+                sendNotification(result.newlyCompletedAchievements?.length);
+
+                result.newlyCompletedAchievements.forEach((ach: any) => {
+                    console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
+                    // Show modal, play sound, push notification, etc.
+                });
+            }
             console.log("Quest updated!");
             setUpdateModalVisible(false);
             fetchActiveQuest();
+            fetchUserAchievements();
+            fetchAchievements();
         } catch (error) {
             console.error("Failed to update quest:", error);
         }
@@ -254,6 +206,33 @@ export default function AchievementsScreen({}: PixelAchievementCardProps) {
     const handleUpdatePress = (questId: number) => {
         setSelectedQuestId(questId);
         setUpdateModalVisible(true);
+    };
+
+    const confirmCompleteQuest = (questId: number) => {
+        setModalConfig({
+            title: "Wow, Gamer!",
+            message: "Are your sure you want to complete your quest!",
+            onConfirm: () => handleCompleteQuest(questId),
+        });
+        setModalVisible(true);
+    };
+
+    const handleCompleteQuest = async (questId: number) => {
+        const result = await authFetch(`/quest/completeQuest/${userId}`);
+        console.log(result);
+
+        if (result.newlyCompletedAchievements?.length) {
+            // Send notification
+            sendNotification(result.newlyCompletedAchievements?.length);
+
+            result.newlyCompletedAchievements.forEach((ach: any) => {
+                console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
+                // Show modal, play sound, push notification, etc.
+            });
+        }
+        fetchAchievements();
+        fetchUserAchievements();
+        setModalVisible(false);
     };
 
     return (
@@ -297,9 +276,24 @@ export default function AchievementsScreen({}: PixelAchievementCardProps) {
                                     justifyContent: "center",
                                     borderRadius: 6,
                                 }}
-                            >
-                                Update Quest
-                            </PixelButton>
+                            ></PixelButton>
+                            <PixelButton
+                                fontSize={15}
+                                color="#fff"
+                                text="Complete Quest"
+                                onPress={() =>
+                                    confirmCompleteQuest(activeQuest.id)
+                                }
+                                style={{
+                                    alignItems: "center",
+                                    backgroundColor: "#f0f",
+                                    width: "70%",
+                                    marginTop: 8,
+                                    paddingVertical: 12,
+                                    justifyContent: "center",
+                                    borderRadius: 6,
+                                }}
+                            ></PixelButton>
                         </View>
                         <PixelModal
                             visible={modalVisible}
@@ -421,7 +415,7 @@ export default function AchievementsScreen({}: PixelAchievementCardProps) {
                                 </View>
                             </View>
                         )}
-                        contentContainerStyle={{ paddingBottom: 300 }}
+                        contentContainerStyle={{ paddingBottom: 400 }}
                     />
                 )}
             </View>

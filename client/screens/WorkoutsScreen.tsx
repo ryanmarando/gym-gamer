@@ -30,7 +30,7 @@ interface Workout {
     entries: any[]; // Adjust as you expand entries shape
 }
 
-type WeightEntries = Record<number, number[]>; // workoutId -> array of weights
+type WeightEntries = Record<number, string[]>; // workoutId -> array of weights
 
 export default function WorkoutsScreen({ navigation }: any) {
     const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -159,6 +159,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                 for (const workout of workouts) {
                     const entries = weightEntries[workout.workoutId];
                     if (!entries || entries.length === 0) continue;
+
                     const maxWeight = Math.max(...entries.map(Number));
 
                     // Only send if lastWeight > 0 (optional)
@@ -298,7 +299,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                     const copy = { ...prev };
                     filtered.forEach((w: Workout) => {
                         if (!copy[w.workoutId]) {
-                            copy[w.workoutId] = [0, 0, 0];
+                            copy[w.workoutId] = ["0", "0", "0"];
                         }
                     });
                     return copy;
@@ -317,7 +318,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                 (data.workouts || []).forEach((w: Workout) => {
                     if (!copy[w.workoutId]) {
                         // Only initialize if missing
-                        copy[w.workoutId] = [0, 0, 0];
+                        copy[w.workoutId] = ["0", "0", "0"];
                     }
                 });
 
@@ -389,8 +390,7 @@ export default function WorkoutsScreen({ navigation }: any) {
         setWeightEntries((prev) => {
             const copy = { ...prev };
             const weights = copy[workoutId] ? [...copy[workoutId]] : [];
-            const num = Number(value);
-            weights[index] = isNaN(num) ? 0 : num;
+            weights[index] = value;
             copy[workoutId] = weights;
             return copy;
         });
@@ -401,7 +401,7 @@ export default function WorkoutsScreen({ navigation }: any) {
         setWeightEntries((prev) => {
             const copy = { ...prev };
             const arr = copy[workoutId] ? [...copy[workoutId]] : [];
-            arr.push(0);
+            arr.push("0");
             copy[workoutId] = arr;
             return copy;
         });
@@ -636,7 +636,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                                                     ).map((weight, i) => (
                                                         <TextInput
                                                             key={i}
-                                                            keyboardType="numeric"
+                                                            keyboardType="decimal-pad"
                                                             value={weight.toString()}
                                                             onChangeText={(v) =>
                                                                 handleWeightChange(
