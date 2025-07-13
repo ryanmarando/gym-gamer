@@ -411,7 +411,6 @@ export async function SeedAchievements() {
                 name: ach.name,
                 xp: ach.xp,
                 descprtion: ach.descprtion ?? null,
-                isQuest: false,
                 deadline: null,
                 goalAmount: ach.goalAmount ?? null,
                 goalType: ach.goalType,

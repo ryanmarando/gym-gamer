@@ -4,8 +4,8 @@ import PixelButton from "./PixelButton";
 import PixelText from "./PixelText";
 
 interface Props {
-    days: string[];
-    onSelect: (day: string) => void;
+    days: { id: number; name: string }[];
+    onSelect: (day: { id: number; name: string }) => void;
 }
 
 export default function PickWorkoutDay({ days, onSelect }: Props) {
@@ -17,8 +17,8 @@ export default function PickWorkoutDay({ days, onSelect }: Props) {
 
             {days.map((day) => (
                 <PixelButton
-                    key={day}
-                    text={`${day} Day`}
+                    key={day.id}
+                    text={`${day.name} Day`}
                     onPress={() => onSelect(day)}
                     containerStyle={styles.dayButton}
                 />

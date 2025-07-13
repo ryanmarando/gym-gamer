@@ -21,8 +21,6 @@ router.delete(
 
 router.get("/weeklyReset", achievementController.weeklyAchivementReset);
 
-router.get("/quests", achievementController.getAllQuests);
-
 router.get("/", achievementController.getAllAchievements);
 router.delete("/", achievementController.deleteAchievementByIdFromUser);
 

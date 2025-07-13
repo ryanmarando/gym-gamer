@@ -12,7 +12,30 @@ export const getAllWorkouts = async (
     next: NextFunction
 ) => {
     try {
-        const workouts = await prisma.workout.findMany();
+        const all = req.query.all !== "false";
+        const userId = req.query.userId;
+
+        if (!all && !userId) {
+            res.status(400).json({
+                message: "Missing userId when 'all' is false.",
+            });
+            return;
+        }
+
+        let workouts;
+
+        if (all) {
+            workouts = await prisma.workout.findMany();
+        } else {
+            workouts = await prisma.workout.findMany({
+                where: {
+                    OR: [
+                        { createdByUserId: null },
+                        { createdByUserId: Number(userId) },
+                    ],
+                },
+            });
+        }
 
         if (!workouts || workouts.length <= 0) {
             res.status(404).json({ message: "No workouts found." });

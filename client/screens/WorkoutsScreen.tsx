@@ -2,7 +2,13 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { View, StyleSheet, FlatList, TextInput } from "react-native";
+import {
+    View,
+    StyleSheet,
+    FlatList,
+    TextInput,
+    ScrollView,
+} from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import PixelModal from "../components/PixelModal";
@@ -12,10 +18,7 @@ import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import PickWorkoutDay from "../components/PickWorkoutDay";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-    sendPushNotification,
-    registerForPushNotificationsAsync,
-} from "../utils/notification";
+import { sendPushNotification } from "../utils/notification";
 
 interface Workout {
     userId: number;
@@ -49,8 +52,13 @@ export default function WorkoutsScreen({ navigation }: any) {
         null
     );
     const [allWorkoutEntries, setAllWorkoutEntries] = useState<any[]>([]);
-    const [workoutDays, setWorkoutDays] = useState<string[]>([]);
-    const [selectedDay, setSelectedDay] = useState<string | null>(null);
+    const [workoutDays, setWorkoutDays] = useState<
+        { id: number; name: string }[]
+    >([]);
+    const [selectedDay, setSelectedDay] = useState<{
+        id: number;
+        name: string;
+    } | null>(null);
     const [showSplitModal, setShowSplitModal] = useState(false);
     const [splitName, setSplitName] = useState("");
     const [splitDays, setSplitDays] = useState<string[]>(["", "", ""]);
@@ -245,7 +253,10 @@ export default function WorkoutsScreen({ navigation }: any) {
                 // Get the days array of the first split (assuming one)
                 const days = userData.workoutSplit[0].days
                     .sort((a: any, b: any) => a.dayIndex - b.dayIndex)
-                    .map((d: any) => d.dayName);
+                    .map((d: any) => ({
+                        id: d.id, // ✅ include day ID
+                        name: d.dayName, // ✅ include day name
+                    }));
 
                 setWorkoutDays(days);
             }
@@ -263,8 +274,38 @@ export default function WorkoutsScreen({ navigation }: any) {
             if (!selectedDay) return;
 
             const data = await authFetch(
-                `/user/getUserWorkoutsByArchitype/${userIdStr}/${selectedDay}`
+                `/user/getUserWorkoutsByArchitype/${userIdStr}/${selectedDay.name}`
             );
+
+            //console.log(data.message === "No architype found.");
+
+            if (data.message === "No architype found.") {
+                const userWorkouts = await authFetch(
+                    `/user/getUserWorkouts/${userIdStr}`
+                );
+                console.log(userWorkouts.workouts[1].dayId, selectedDay);
+
+                const filtered = userWorkouts.workouts.filter(
+                    (w: any) => w.dayId === selectedDay?.id
+                );
+
+                // Set your state
+                setWorkouts(filtered);
+                setAllWorkoutEntries(filtered);
+
+                // Reset weight entries too
+                setWeightEntries((prev) => {
+                    const copy = { ...prev };
+                    filtered.forEach((w: Workout) => {
+                        if (!copy[w.workoutId]) {
+                            copy[w.workoutId] = [0, 0, 0];
+                        }
+                    });
+                    return copy;
+                });
+
+                return;
+            }
 
             setWorkouts(data.workouts || []);
             setAllWorkoutEntries(data.workouts);
@@ -370,8 +411,10 @@ export default function WorkoutsScreen({ navigation }: any) {
     const deleteEntry = (workoutId: number): void => {
         setWeightEntries((prev) => {
             const copy = { ...prev };
-            if (copy[workoutId] && copy[workoutId].length > 0) {
+            if (copy[workoutId] && copy[workoutId].length > 1) {
                 copy[workoutId] = copy[workoutId].slice(0, -1);
+            } else {
+                console.log("Cannot delete last entry");
             }
             return copy;
         });
@@ -467,7 +510,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                                     textAlign: "center",
                                 }}
                             >
-                                {selectedDay} Day
+                                {selectedDay?.name} Day
                             </PixelText>
                             <View
                                 style={{
@@ -503,7 +546,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                                     textAlign: "center",
                                 }}
                             >
-                                {selectedDay} Day
+                                {selectedDay?.name} Day
                             </PixelText>
                             <PixelText
                                 fontSize={18}
@@ -574,37 +617,43 @@ export default function WorkoutsScreen({ navigation }: any) {
                                                     item.workoutId
                                                 )} lbs`}
                                             </PixelText>
-
-                                            <View
-                                                style={{
-                                                    flexDirection: "row",
-                                                    gap: 8,
-                                                }}
+                                            <ScrollView
+                                                horizontal
+                                                showsHorizontalScrollIndicator={
+                                                    false
+                                                }
                                             >
-                                                {(
-                                                    weightEntries[
-                                                        item.workoutId
-                                                    ] || []
-                                                ).map((weight, i) => (
-                                                    <TextInput
-                                                        key={i}
-                                                        keyboardType="numeric"
-                                                        value={weight.toString()}
-                                                        onChangeText={(v) =>
-                                                            handleWeightChange(
-                                                                item.workoutId,
-                                                                i,
-                                                                v
-                                                            )
-                                                        }
-                                                        style={
-                                                            styles.weightInput
-                                                        }
-                                                        placeholder="0"
-                                                        placeholderTextColor="#555"
-                                                    />
-                                                ))}
-                                            </View>
+                                                <View
+                                                    style={{
+                                                        flexDirection: "row",
+                                                        gap: 8,
+                                                    }}
+                                                >
+                                                    {(
+                                                        weightEntries[
+                                                            item.workoutId
+                                                        ] || []
+                                                    ).map((weight, i) => (
+                                                        <TextInput
+                                                            key={i}
+                                                            keyboardType="numeric"
+                                                            value={weight.toString()}
+                                                            onChangeText={(v) =>
+                                                                handleWeightChange(
+                                                                    item.workoutId,
+                                                                    i,
+                                                                    v
+                                                                )
+                                                            }
+                                                            style={
+                                                                styles.weightInput
+                                                            }
+                                                            placeholder="0"
+                                                            placeholderTextColor="#555"
+                                                        />
+                                                    ))}
+                                                </View>
+                                            </ScrollView>
                                         </View>
 
                                         <View style={styles.buttonsColumn}>

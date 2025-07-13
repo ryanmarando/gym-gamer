@@ -64,7 +64,9 @@ export default function SaveWorkoutScreen() {
             const userId = await SecureStore.getItemAsync("userId");
 
             const userData = await authFetch(`/user/getUserWorkouts/${userId}`);
-            const allData = await authFetch(`/workouts`);
+            const allData = await authFetch(
+                `/workouts?userId=${userId}&all=false`
+            );
 
             console.log("✅ Workout shop loaded");
             setUserWorkouts(userData.workouts);
@@ -119,7 +121,7 @@ export default function SaveWorkoutScreen() {
                 setModalConfig({
                     title: "Are you sure?",
                     message:
-                        "Removing this workout will delete all previous entries.",
+                        "This will remove the exercise from your catalog and will remove your weight entries.",
                     onConfirm: () => confirmRemoveWorkout(workoutId),
                 });
                 setModalVisible(true);
@@ -188,6 +190,16 @@ export default function SaveWorkoutScreen() {
         }
     };
 
+    const deleteCustomWorkout = async (workoutId: number) => {
+        try {
+            await authFetch(`/workouts/${workoutId}`, { method: "DELETE" });
+            console.log("Deleted workoutId:", workoutId);
+            fetchWorkouts();
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     const toggleCreateWorkout = () => {
         setShowCustomWorkoutModal(true);
     };
@@ -229,22 +241,51 @@ export default function SaveWorkoutScreen() {
             >
                 {item.name}
             </PixelText>
-            <TouchableOpacity
-                onPress={() => {
-                    toggleWorkout(item.id);
-                    playPixelSound();
-                }}
-                style={[
-                    styles.button,
-                    {
-                        backgroundColor: isSaved(item.id) ? "#f55" : "#0f0",
-                    },
-                ]}
-            >
-                <PixelText fontSize={12} color="#000">
-                    {isSaved(item.id) ? "Remove" : "Save"}
-                </PixelText>
-            </TouchableOpacity>
+            <View style={{ flexDirection: "column", gap: 8 }}>
+                <PixelButton
+                    text={isSaved(item.id) ? "Remove" : "Save"}
+                    color="#000"
+                    onPress={() => {
+                        toggleWorkout(item.id);
+                        playPixelSound();
+                    }}
+                    style={[
+                        styles.button,
+                        {
+                            backgroundColor: isSaved(item.id) ? "#f55" : "#0f0",
+                        },
+                    ]}
+                >
+                    <PixelText fontSize={12} color="#000">
+                        {isSaved(item.id) ? "Remove" : "Save"}
+                    </PixelText>
+                </PixelButton>
+
+                {item.createdByUserId !== null && (
+                    <PixelButton
+                        text="Delete"
+                        color="#000"
+                        onPress={() => {
+                            setModalConfig({
+                                title: "Are you sure?",
+                                message:
+                                    "Deleting this custom workout entirely removes the exercise.",
+                                onConfirm: () => {
+                                    deleteCustomWorkout(item.id);
+                                    setModalVisible(false);
+                                },
+                            });
+                            setModalVisible(true);
+                        }}
+                        style={[
+                            styles.button,
+                            {
+                                backgroundColor: "#f00",
+                            },
+                        ]}
+                    ></PixelButton>
+                )}
+            </View>
         </View>
     );
 

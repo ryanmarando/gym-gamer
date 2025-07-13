@@ -142,7 +142,6 @@ model Achievement {
   name        String
   xp          Int
   descprtion  String?
-  isQuest     Boolean         @default(false)
   deadline    DateTime?
   goalAmount  Float?
   goalType    AchievementType

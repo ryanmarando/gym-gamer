@@ -3,7 +3,6 @@ import { prisma } from "../config.js";
 export async function assignDefaultAchievementsAndSplitToUser(userId: number) {
     // 1. Fetch all achievement IDs from Achievement table
     const achievements = await prisma.achievement.findMany({
-        where: { isQuest: false },
         select: { id: true },
     });
 

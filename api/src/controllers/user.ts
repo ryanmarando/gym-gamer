@@ -84,7 +84,7 @@ export const getUserWorkoutsByArchitype = async (
     const architype = WorkoutArchitype[architypeParam];
 
     if (!architype) {
-        res.status(400).json({ error: "Invalid architype" });
+        res.status(200).json({ message: "No architype found." });
         return;
     }
 
@@ -173,6 +173,9 @@ export const getUserAchievements = async (
             achievements: {
                 include: {
                     achievement: true,
+                },
+                orderBy: {
+                    progress: "desc",
                 },
             },
         },
