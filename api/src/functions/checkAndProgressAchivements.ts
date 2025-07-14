@@ -128,7 +128,6 @@ export async function checkAndProgressAchievements(
                     progressToAdd = 100 / goalAmount;
                 }
                 break;
-                break;
             case AchievementType.CREATION:
                 const creationType = context.creationType;
 
@@ -154,14 +153,40 @@ export async function checkAndProgressAchievements(
                 }
 
                 break;
-            // case AchievementType.BODYWEIGHT:
-            //     assessAndProgressAchievement(goalAmount, progressToAdd);
-            //     break;
-            // case AchievementType.LIFTINGWEIGHT:
-            //     if (context.weight && context.weight > ua.progress) {
-            //         progressToAdd = context.weight - ua.progress;
-            //     }
-            //     break;
+            case AchievementType.BODYWEIGHT:
+                if (goalAmount === 1) {
+                    progressToAdd = 100;
+                } else {
+                    progressToAdd = 100 / goalAmount;
+                }
+                break;
+            case AchievementType.LIFTINGWEIGHT:
+                const weight = context.weight;
+                const workoutName = context.workoutName?.toLowerCase();
+                const previousMax = context.previousMax;
+                const previousMaxWeight = previousMax._max.weight;
+
+                const targetLift = ua.achievement.name.toLowerCase();
+
+                if (
+                    ua.achievement.targetValue &&
+                    weight > ua.achievement.targetValue &&
+                    workoutName &&
+                    targetLift.includes(workoutName.split(" ")[0])
+                ) {
+                    progressToAdd = 100;
+                } else if (
+                    !ua.achievement.targetValue &&
+                    ua.achievement.name.toLowerCase().includes("personal best")
+                ) {
+                    console.log(weight);
+                    console.log(previousMax._max.weight);
+                    if (weight > previousMaxWeight) {
+                        console.log("here");
+                        progressToAdd = 100;
+                    }
+                }
+                break;
             // case AchievementType.EXERCISE:
             //     assessAndProgressAchievement(goalAmount, progressToAdd);
             //     break;

@@ -3,7 +3,7 @@ import { checkAndProgressAchievements } from "./checkAndProgressAchivements.js";
 
 function getRequiredXp(level: number): number {
     const baseXP = 100;
-    const factor = 1.2; // tweak this to make leveling slower/faster
+    const factor = 1.2;
     return Math.floor(baseXP * level * factor);
 }
 

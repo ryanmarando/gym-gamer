@@ -60,6 +60,7 @@ export const QuestUpdateInputSchema = z.object({
     customType: z.string(),
     customGoalAmount: z.number(),
     customDeadline: z.string(),
+    initialWeight: z.number(),
 });
 
 export const UpdateUserQuestionInputSchema = z.object({

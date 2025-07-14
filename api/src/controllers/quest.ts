@@ -4,12 +4,11 @@ import { checkAndProgressAchievements } from "../functions/checkAndProgressAchiv
 import { addXpAndCheckLevelUp } from "../functions/addXPAndCheckLevelUp.js";
 import { AchievementType } from "@prisma/client";
 
-const completedQuestProgressBase = 500;
-
 export const updateUserQuest = async (req: Request, res: Response) => {
     try {
         const userId = req.params.id;
-        const { customType, customGoalAmount, customDeadline } = req.body;
+        const { customType, customGoalAmount, customDeadline, initialWeight } =
+            req.body;
 
         if (!userId) {
             res.status(400).json({ error: "Missing userId" });
@@ -29,6 +28,7 @@ export const updateUserQuest = async (req: Request, res: Response) => {
         const result = await prisma.$transaction(async (tx) => {
             // Upsert Quest
             const goalDate = new Date(customDeadline);
+
             const formattedType =
                 customType.charAt(0).toUpperCase() +
                 customType.slice(1).toLowerCase();
@@ -39,6 +39,7 @@ export const updateUserQuest = async (req: Request, res: Response) => {
                     type: customType,
                     goal: customGoalAmount,
                     goalDate: goalDate,
+                    initialWeight: initialWeight,
                     name: `${formattedType} ${customGoalAmount} lbs by ${goalDate.toLocaleDateString()}`,
                 },
                 create: {
@@ -77,14 +78,26 @@ export const updateUserQuest = async (req: Request, res: Response) => {
 
 export const completeQuest = async (req: Request, res: Response) => {
     const userId = Number(req.params.id);
-    let newlyCompleted;
 
     try {
         const result = await prisma.$transaction(async (tx) => {
-            // 1️⃣ Award XP for the workout itself
+            // Fetch the user's quest to get baseXP and goal
+            const quest = await tx.quest.findUnique({
+                where: { userId },
+                select: { baseXP: true, goal: true },
+            });
+
+            if (!quest) {
+                throw new Error("Quest not found for user");
+            }
+
+            // Calculate XP to award = baseXP * goal
+            const xpToAward = quest.baseXP * quest.goal;
+
+            // 1️⃣ Award XP for completing the quest
             const completeQuestResult = await addXpAndCheckLevelUp(
                 userId,
-                completedQuestProgressBase,
+                xpToAward,
                 tx
             );
 
@@ -94,12 +107,13 @@ export const completeQuest = async (req: Request, res: Response) => {
                     AchievementType.QUEST,
                 ]);
 
-            newlyCompleted = [
+            // Combine newly completed achievements
+            const newlyCompleted = [
                 ...(completeQuestResult.newlyCompletedAchievements || []),
                 ...(questCompletedAchievements || []),
             ];
 
-            // 3️⃣ Re-fetch fresh user with updated XP, level, progress, and achievements
+            // 3️⃣ Re-fetch fresh user data
             const freshUser = await tx.user.findUnique({
                 where: { id: userId },
                 select: {
@@ -124,18 +138,19 @@ export const completeQuest = async (req: Request, res: Response) => {
                     },
                 },
             });
-            return freshUser;
+
+            return { freshUser, newlyCompleted };
         });
 
         res.json({
             message: "Progress updated for completing a quest!",
-            user: result,
-            newlyCompletedAchievements: newlyCompleted,
+            user: result.freshUser,
+            newlyCompletedAchievements: result.newlyCompleted,
         });
     } catch (error) {
         console.error(error);
         res.status(500).json({
-            message: "Something went wrong completing the workout",
+            message: "Something went wrong completing the quest",
         });
     }
 };

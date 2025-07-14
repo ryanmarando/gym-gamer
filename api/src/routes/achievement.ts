@@ -7,7 +7,7 @@ import {
 
 const router = Router();
 
-router.patch("/saveToUser", achievementController.saveToUser);
+router.patch("/saveToUser", achievementController.saveAllAchievementsToUser);
 router.post(
     "/updateAchievementProgress",
     validateBody(AchievementUpdateInputSchema),

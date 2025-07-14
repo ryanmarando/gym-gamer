@@ -13,6 +13,7 @@ import PixelText from "../components/PixelText";
 import PixelModal from "../components/PixelModal";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import { authFetch } from "../utils/authFetch";
+import { sendPushNotification } from "../utils/notification";
 
 export default function UpdateWeightScreen({ navigation }: any) {
     const [userId, setUserId] = useState<number | null>(null);
@@ -21,8 +22,18 @@ export default function UpdateWeightScreen({ navigation }: any) {
     >([]);
     const [newWeight, setNewWeight] = useState("");
     const [loading, setLoading] = useState(true); // true until fully ready
-    const [modalVisible, setModalVisible] = useState(false); // modal visibility
     const [invalidModalVisible, setInvalidModalVisible] = useState(false);
+    const [modalConfig, setModalConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+    }>({
+        visible: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+    });
 
     // Load userId once
     useEffect(() => {
@@ -71,20 +82,53 @@ export default function UpdateWeightScreen({ navigation }: any) {
             setInvalidModalVisible(true);
             return;
         }
-        setModalVisible(true);
+        setModalConfig({
+            visible: true,
+            title: "Confirm Weight Entry",
+            message: `Are you sure you want to add ${weightNum} lbs to your progress?`,
+            onConfirm: handleConfirmAddWeight,
+        });
+    };
+
+    const sendNotification = async (numberOfNew: number) => {
+        const expoPushToken = await SecureStore.getItemAsync("notifToken");
+        console.log("Push token:", expoPushToken);
+        if (!expoPushToken) {
+            return;
+        }
+        const title = "Hey, Gym Gamer!";
+        let body: string;
+        if (numberOfNew === 1) {
+            body = `You completed an achievement!`;
+        } else {
+            body = `You completed ${numberOfNew} achievements!`;
+        }
+        await sendPushNotification({ expoPushToken, title, body });
     };
 
     // Called when user confirms modal
     const handleConfirmAddWeight = async () => {
-        setModalVisible(false);
+        setModalConfig((prev) => ({ ...prev, visible: false }));
         const weightNum = parseFloat(newWeight);
         try {
             setLoading(true);
-            await authFetch(`/user/addUserWeightEntry/${userId}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ weight: weightNum }),
-            });
+            const result = await authFetch(
+                `/user/addUserWeightEntry/${userId}`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ weight: weightNum }),
+                }
+            );
+            if (result.newlyCompletedAchievements?.length) {
+                // Send notification
+                sendNotification(result.newlyCompletedAchievements?.length);
+
+                result.newlyCompletedAchievements.forEach((ach: any) => {
+                    console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
+                    // Show modal, play sound, push notification, etc.
+                });
+            }
             setNewWeight("");
             await fetchWeights();
         } catch (err) {
@@ -92,6 +136,55 @@ export default function UpdateWeightScreen({ navigation }: any) {
             Alert.alert("Error", "Failed to add weight entry.");
             setLoading(false);
         }
+    };
+
+    const handleDeleteLastBodyWeightEntry = async () => {
+        setModalConfig({
+            visible: true,
+            title: "Delete Last Entry",
+            message:
+                "Are you sure you want to delete your last bodyweight entry?",
+            onConfirm: async () => {
+                try {
+                    await authFetch(
+                        `/user/deleteLastUserWeightEntry/${userId}`,
+                        {
+                            method: "DELETE",
+                        }
+                    );
+                    await fetchWeights();
+                } catch (err) {
+                    console.error(err);
+                    Alert.alert("Error", "Failed to delete last entry.");
+                } finally {
+                    setModalConfig((prev) => ({ ...prev, visible: false }));
+                }
+            },
+        });
+    };
+
+    const handleDeleteAllBodyWeightEntries = async () => {
+        setModalConfig({
+            visible: true,
+            title: "Delete All Entries",
+            message: "Are you sure you want to delete ALL bodyweight entries?",
+            onConfirm: async () => {
+                try {
+                    await authFetch(
+                        `/user/deleteAllUserWeightEntries/${userId}`,
+                        {
+                            method: "DELETE",
+                        }
+                    );
+                    await fetchWeights();
+                } catch (err) {
+                    console.error(err);
+                    Alert.alert("Error", "Failed to delete all entries.");
+                } finally {
+                    setModalConfig((prev) => ({ ...prev, visible: false }));
+                }
+            },
+        });
     };
 
     // Safe data prep — guard against empty weights
@@ -117,6 +210,16 @@ export default function UpdateWeightScreen({ navigation }: any) {
                     Latest Weight:{" "}
                     {sortedWeights[sortedWeights.length - 1].weight.toFixed(1)}{" "}
                     lbs
+                </PixelText>
+            )}
+
+            {!loading && sortedWeights.length === 1 && (
+                <PixelText
+                    fontSize={10}
+                    color="#0ff"
+                    style={{ marginBottom: 10 }}
+                >
+                    Please enter two entries for a chart.
                 </PixelText>
             )}
 
@@ -213,6 +316,23 @@ export default function UpdateWeightScreen({ navigation }: any) {
                         </View>
                     )}
 
+                    {!loading && sortedWeights.length > 0 && (
+                        <PixelButton
+                            text="Delete Last Bodyweight Entry"
+                            onPress={handleDeleteLastBodyWeightEntry}
+                            color="#0f0"
+                            containerStyle={{ marginBottom: 2 }}
+                        />
+                    )}
+                    {!loading && sortedWeights.length > 1 && (
+                        <PixelButton
+                            text="Delete All Bodyweight Entries"
+                            onPress={handleDeleteAllBodyWeightEntries}
+                            color="#0f0"
+                            containerStyle={{ marginBottom: 20 }}
+                        />
+                    )}
+
                     <PixelButton
                         text="Go Back"
                         onPress={() => navigation.goBack()}
@@ -222,11 +342,16 @@ export default function UpdateWeightScreen({ navigation }: any) {
 
                     {/* Confirmation Modal */}
                     <PixelModal
-                        visible={modalVisible}
-                        title="Confirm Weight Entry"
-                        message={`Are you sure you want to add ${newWeight} lbs to your progress?`}
-                        onConfirm={handleConfirmAddWeight}
-                        onCancel={() => setModalVisible(false)}
+                        visible={modalConfig.visible}
+                        title={modalConfig.title}
+                        message={modalConfig.message}
+                        onConfirm={modalConfig.onConfirm}
+                        onCancel={() =>
+                            setModalConfig((prev) => ({
+                                ...prev,
+                                visible: false,
+                            }))
+                        }
                     />
                     <ConfirmationPixelModal
                         visible={invalidModalVisible}

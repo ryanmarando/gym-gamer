@@ -23,74 +23,75 @@ export const getAllAchievements = async (
     }
 };
 
-export const saveToUser = async (
+export const saveAllAchievementsToUser = async (
     req: Request,
     res: Response,
     next: NextFunction
 ) => {
     try {
-        const achievementId = Number(req.query.achievementId);
         const userId = Number(req.query.userId);
 
         if (!userId) {
-            console.log("Unsuccessful query... no user id.");
+            console.log("❌ No user id provided.");
             res.status(400).json({ message: "Please enter a valid user id." });
             return;
         }
 
-        const achievementToBeAdded = await prisma.achievement.findFirst({
-            where: { id: achievementId },
-        });
-
-        if (!achievementToBeAdded) {
-            console.log("Unsuccessful query... no achievement id found.");
-            res.status(400).json({
-                message: "Please enter a valid achievement id.",
-            });
-            return;
-        }
-
+        // Make sure user exists
         const user = await prisma.user.findUnique({
             where: { id: userId },
         });
 
         if (!user) {
-            res.status(400).json({
-                message: "User not found.",
-            });
+            res.status(404).json({ message: "User not found." });
             return;
         }
 
-        const existing = await prisma.userAchievement.findFirst({
-            where: {
-                userId: userId,
-                achievementId: achievementId,
-            },
+        // Get all achievements
+        const allAchievements = await prisma.achievement.findMany();
+
+        // Get all existing user achievements
+        const existingUserAchievements = await prisma.userAchievement.findMany({
+            where: { userId },
         });
 
-        if (existing) {
+        const existingIds = new Set(
+            existingUserAchievements.map((ua) => ua.achievementId)
+        );
+
+        // Filter only the missing ones
+        const missingAchievements = allAchievements.filter(
+            (ach) => !existingIds.has(ach.id)
+        );
+
+        if (missingAchievements.length === 0) {
             res.status(200).json({
-                message: `Workout '${achievementToBeAdded.name}' is already saved for this user.`,
+                message: "✅ User already has all achievements saved.",
             });
             return;
         }
 
-        // Add the link in the join table
-        await prisma.userAchievement.create({
-            data: {
-                userId: userId,
-                achievementId: achievementId,
-            },
+        // Bulk create all missing ones
+        const createData = missingAchievements.map((ach) => ({
+            userId: userId,
+            achievementId: ach.id,
+        }));
+
+        await prisma.userAchievement.createMany({
+            data: createData,
+            skipDuplicates: true, // extra safety!
         });
 
         res.status(200).json({
-            message: `Saved ${achievementToBeAdded.name} to userId: ${userId}`,
+            message: `✅ Added ${missingAchievements.length} achievements to userId ${userId}.`,
         });
+        return;
     } catch (error) {
-        console.log("Unsuccessful PATCH To Save User Achievements");
+        console.error("❌ Error saving all achievements for user:", error);
         res.status(500).json({
-            error: `Unsuccessful PATCH To Save User Achievements...${error}`,
+            error: `Unsuccessful PATCH to save all user achievements: ${error}`,
         });
+        return;
     }
 };
 

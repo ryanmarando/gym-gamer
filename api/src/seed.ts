@@ -175,7 +175,7 @@ export async function SeedAchievements() {
         {
             name: "First Workout",
             xp: 50,
-            descprtion: "Complete your first workout.",
+            description: "Complete your first workout.",
             goalAmount: 1,
             goalType: AchievementType.WORKOUT,
             weeklyReset: false,
@@ -183,7 +183,7 @@ export async function SeedAchievements() {
         {
             name: "Create Your Own Workout",
             xp: 75,
-            descprtion: "Create a custom workout plan.",
+            description: "Create a custom workout plan.",
             goalAmount: 1,
             goalType: AchievementType.CREATION,
             weeklyReset: false,
@@ -191,7 +191,7 @@ export async function SeedAchievements() {
         {
             name: "Create Your Own Quest",
             xp: 75,
-            descprtion: "Create a custom quest.",
+            description: "Create a custom quest.",
             goalAmount: 1,
             goalType: AchievementType.CREATION,
             weeklyReset: false,
@@ -199,7 +199,7 @@ export async function SeedAchievements() {
         {
             name: "Enter First Body Weight Entry",
             xp: 50,
-            descprtion: "Enter your first body weight record.",
+            description: "Enter your first body weight record.",
             goalAmount: 1,
             goalType: AchievementType.BODYWEIGHT,
             weeklyReset: false,
@@ -207,7 +207,7 @@ export async function SeedAchievements() {
         {
             name: "Complete Your First Quest",
             xp: 100,
-            descprtion: "Complete your first quest.",
+            description: "Complete your first quest.",
             goalAmount: 1,
             goalType: AchievementType.QUEST,
             weeklyReset: false,
@@ -217,7 +217,7 @@ export async function SeedAchievements() {
         {
             name: "3 Workouts in a Week",
             xp: 100,
-            descprtion: "Complete 3 workouts in a single week.",
+            description: "Complete 3 workouts in a single week.",
             goalAmount: 3,
             goalType: AchievementType.STREAK,
             weeklyReset: true,
@@ -225,7 +225,7 @@ export async function SeedAchievements() {
         {
             name: "5 Workouts in a Week",
             xp: 150,
-            descprtion: "Complete 5 workouts in a single week.",
+            description: "Complete 5 workouts in a single week.",
             goalAmount: 5,
             goalType: AchievementType.STREAK,
             weeklyReset: true,
@@ -233,7 +233,7 @@ export async function SeedAchievements() {
         {
             name: "Lift a Total of 10,000 lbs in a Week",
             xp: 300,
-            descprtion: "Accumulate a total of 10,000 lbs lifted in a week.",
+            description: "Accumulate a total of 10,000 lbs lifted in a week.",
             goalAmount: 10000,
             goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: true,
@@ -241,7 +241,7 @@ export async function SeedAchievements() {
         {
             name: "Do 100 Pushups in a Week",
             xp: 200,
-            descprtion: "Complete 100 pushups within a week.",
+            description: "Complete 100 pushups within a week.",
             goalAmount: 100,
             goalType: AchievementType.EXERCISE,
             weeklyReset: true,
@@ -251,7 +251,7 @@ export async function SeedAchievements() {
         {
             name: "Complete a Workout Over 90 Minutes",
             xp: 150,
-            descprtion:
+            description:
                 "Stay in the gym for over 90 minutes in a single session.",
             goalAmount: 1,
             goalType: AchievementType.WORKOUT,
@@ -260,7 +260,7 @@ export async function SeedAchievements() {
         {
             name: "Complete 5 AM Workouts",
             xp: 150,
-            descprtion: "Complete 5 workouts in the morning.",
+            description: "Complete 5 workouts in the morning.",
             goalAmount: 5,
             goalType: AchievementType.WORKOUT,
             weeklyReset: true,
@@ -268,7 +268,7 @@ export async function SeedAchievements() {
         {
             name: "Complete 5 PM Workouts",
             xp: 150,
-            descprtion: "Complete 5 workouts in the evening.",
+            description: "Complete 5 workouts in the evening.",
             goalAmount: 5,
             goalType: AchievementType.WORKOUT,
             weeklyReset: true,
@@ -278,7 +278,7 @@ export async function SeedAchievements() {
         {
             name: "Reach Level 5",
             xp: 50,
-            descprtion: "Reach level 5 in your fitness journey.",
+            description: "Reach level 5 in your fitness journey.",
             goalAmount: 5,
             goalType: AchievementType.LEVEL,
             weeklyReset: false,
@@ -286,7 +286,7 @@ export async function SeedAchievements() {
         {
             name: "Reach Level 10",
             xp: 100,
-            descprtion: "Reach level 10 in your fitness journey.",
+            description: "Reach level 10 in your fitness journey.",
             goalAmount: 10,
             goalType: AchievementType.LEVEL,
             weeklyReset: false,
@@ -294,7 +294,7 @@ export async function SeedAchievements() {
         {
             name: "Reach Level 25",
             xp: 250,
-            descprtion: "Reach level 25 in your fitness journey.",
+            description: "Reach level 25 in your fitness journey.",
             goalAmount: 25,
             goalType: AchievementType.LEVEL,
             weeklyReset: false,
@@ -302,7 +302,7 @@ export async function SeedAchievements() {
         {
             name: "Reach Level 50",
             xp: 500,
-            descprtion: "Reach level 50 in your fitness journey.",
+            description: "Reach level 50 in your fitness journey.",
             goalAmount: 50,
             goalType: AchievementType.LEVEL,
             weeklyReset: false,
@@ -312,7 +312,7 @@ export async function SeedAchievements() {
         {
             name: "Personal Best in Any Lift",
             xp: 150,
-            descprtion: "Achieve a personal best in any lift (auto-tracked).",
+            description: "Achieve a personal best in any lift (auto-tracked).",
             goalAmount: 1,
             goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: true,
@@ -320,7 +320,7 @@ export async function SeedAchievements() {
         {
             name: "Reach a New Workout Weight Record",
             xp: 200,
-            descprtion: "Hit a new personal weight record.",
+            description: "Hit a new personal weight record.",
             goalAmount: 1,
             goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: true,
@@ -330,25 +330,28 @@ export async function SeedAchievements() {
         {
             name: "Bench Press 145 lbs",
             xp: 100,
-            descprtion: "Bench press at least 145 pounds.",
+            description: "Bench press at least 145 pounds.",
             goalAmount: 1,
             goalType: AchievementType.LIFTINGWEIGHT,
+            targetValue: 145,
             weeklyReset: false,
         },
         {
             name: "Bench Press 225 lbs",
             xp: 150,
-            descprtion: "Bench press at least 225 pounds.",
+            description: "Bench press at least 225 pounds.",
             goalAmount: 1,
             goalType: AchievementType.LIFTINGWEIGHT,
+            targetValue: 225,
             weeklyReset: false,
         },
         {
             name: "Bench Press 315 lbs",
             xp: 250,
-            descprtion: "Bench press at least 315 pounds.",
+            description: "Bench press at least 315 pounds.",
             goalAmount: 1,
             goalType: AchievementType.LIFTINGWEIGHT,
+            targetValue: 315,
             weeklyReset: false,
         },
 
@@ -356,25 +359,28 @@ export async function SeedAchievements() {
         {
             name: "Squat 225 lbs",
             xp: 100,
-            descprtion: "Squat at least 225 pounds.",
+            description: "Squat at least 225 pounds.",
             goalAmount: 1,
             goalType: AchievementType.LIFTINGWEIGHT,
+            targetValue: 225,
             weeklyReset: false,
         },
         {
             name: "Squat 315 lbs",
             xp: 150,
-            descprtion: "Squat at least 315 pounds.",
+            description: "Squat at least 315 pounds.",
             goalAmount: 1,
             goalType: AchievementType.LIFTINGWEIGHT,
+            targetValue: 315,
             weeklyReset: false,
         },
         {
             name: "Squat 405 lbs",
             xp: 250,
-            descprtion: "Squat at least 405 pounds.",
+            description: "Squat at least 405 pounds.",
             goalAmount: 1,
             goalType: AchievementType.LIFTINGWEIGHT,
+            targetValue: 405,
             weeklyReset: false,
         },
 
@@ -382,25 +388,28 @@ export async function SeedAchievements() {
         {
             name: "Deadlift 315 lbs",
             xp: 100,
-            descprtion: "Deadlift at least 315 pounds.",
+            description: "Deadlift at least 315 pounds.",
             goalAmount: 1,
             goalType: AchievementType.LIFTINGWEIGHT,
+            targetValue: 315,
             weeklyReset: false,
         },
         {
             name: "Deadlift 405 lbs",
             xp: 150,
-            descprtion: "Deadlift at least 405 pounds.",
+            description: "Deadlift at least 405 pounds.",
             goalAmount: 1,
             goalType: AchievementType.LIFTINGWEIGHT,
+            targetValue: 405,
             weeklyReset: false,
         },
         {
             name: "Deadlift 495 lbs",
             xp: 250,
-            descprtion: "Deadlift at least 495 pounds.",
+            description: "Deadlift at least 495 pounds.",
             goalAmount: 1,
             goalType: AchievementType.LIFTINGWEIGHT,
+            targetValue: 495,
             weeklyReset: false,
         },
     ];
@@ -410,10 +419,11 @@ export async function SeedAchievements() {
             data: {
                 name: ach.name,
                 xp: ach.xp,
-                descprtion: ach.descprtion ?? null,
+                description: ach.description ?? null,
                 deadline: null,
                 goalAmount: ach.goalAmount ?? null,
                 goalType: ach.goalType,
+                targetValue: ach.targetValue ?? null,
                 weeklyReset: ach.weeklyReset ?? false,
             },
         });
@@ -422,4 +432,4 @@ export async function SeedAchievements() {
     console.log("✅ Seeded achievements with full model fields!");
 }
 
-//SeedAchievements();
+SeedAchievements();

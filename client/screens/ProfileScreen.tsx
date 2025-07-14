@@ -16,11 +16,7 @@ import { authFetch } from "../utils/authFetch";
 import { logout } from "../utils/logout";
 import { resetStats } from "../utils/resetStats";
 import * as SecureStore from "expo-secure-store";
-import {
-    sendPushNotification,
-    registerForPushNotificationsAsync,
-    scheduleNotification,
-} from "../utils/notification";
+import { registerForPushNotificationsAsync } from "../utils/notification";
 
 interface AchievementDetails {
     id: number;
@@ -182,15 +178,6 @@ export default function ProfileScreen({
         );
     }
 
-    const sendNotification = async () => {
-        if (!expoPushToken) {
-            return;
-        }
-        const title = "Hey Gamer!";
-        const body = "You completed an achievement!";
-        await sendPushNotification({ expoPushToken, title, body });
-    };
-
     return (
         <View style={styles.container}>
             <View style={styles.content}>
@@ -253,27 +240,17 @@ export default function ProfileScreen({
                             backgroundColor: "#000",
                             borderColor: "#f0f",
                             marginTop: 10,
+                            marginBottom: 20,
                         }}
                     />
                 </View>
-
-                <PixelButton
-                    containerStyle={{
-                        backgroundColor: "#000",
-                        borderColor: "#0ff",
-                        marginTop: 20,
-                    }}
-                    text="Send Notification"
-                    onPress={sendNotification}
-                />
-            </View>
-
-            <View style={styles.bottomButtonContainer}>
                 <PixelText>Your quest:</PixelText>
                 <TouchableOpacity
                     onPress={() => navigation.navigate("Achievements")}
                     style={{
                         backgroundColor: "transparent",
+                        width: "100%",
+                        alignItems: "center",
                     }}
                 >
                     <PixelQuestCard
@@ -287,8 +264,12 @@ export default function ProfileScreen({
                                   }
                                 : undefined
                         }
+                        containerStyle={{ width: "90%" }}
                     />
                 </TouchableOpacity>
+            </View>
+
+            <View style={styles.bottomButtonContainer}>
                 <PixelButton
                     text="Update bodyweight"
                     onPress={() => navigation.navigate("UpdateWeight")}
@@ -326,11 +307,13 @@ const styles = StyleSheet.create({
         backgroundColor: "#111",
         paddingHorizontal: "5%",
         paddingVertical: "20%",
+        width: "100%",
     },
     content: {
         flex: 1,
         alignItems: "center",
         justifyContent: "flex-start",
+        width: "100%",
     },
     bottomButtonContainer: {
         alignItems: "center",

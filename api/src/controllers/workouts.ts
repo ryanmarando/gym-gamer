@@ -4,7 +4,7 @@ import { addXpAndCheckLevelUp } from "../functions/addXPAndCheckLevelUp.js";
 import { checkAndProgressAchievements } from "../functions/checkAndProgressAchivements.js";
 import { AchievementType } from "@prisma/client";
 
-const completedWorkoutProgress = 70000;
+const completedWorkoutProgress = 100;
 
 export const getAllWorkouts = async (
     req: Request,
@@ -215,46 +215,68 @@ export const addWorkoutEntry = async (
             return;
         }
 
-        // Make sure the user has this workout saved
-        const userWorkout = await prisma.userWorkout.findUnique({
-            where: {
-                userId_workoutId: {
-                    userId,
-                    workoutId,
+        const result = await prisma.$transaction(async (tx) => {
+            // Make sure the user has this workout saved
+            const userWorkout = await prisma.userWorkout.findUnique({
+                where: {
+                    userId_workoutId: {
+                        userId,
+                        workoutId,
+                    },
                 },
-            },
-        });
-
-        if (!userWorkout) {
-            res.status(400).json({
-                message: "User does not have this workout saved.",
             });
-            return;
-        }
 
-        const workoutToAddEntryOn = await prisma.workout.findFirst({
-            where: { id: workoutId },
-        });
+            if (!userWorkout) {
+                res.status(400).json({
+                    message: "User does not have this workout saved.",
+                });
+                return;
+            }
 
-        if (!workoutToAddEntryOn) {
-            console.log("Unsuccessful query... no workout id found.");
-            res.status(400).json({
-                message: "Please enter a valid workout id.",
+            const workoutToAddEntryOn = await prisma.workout.findFirst({
+                where: { id: workoutId },
             });
-            return;
-        }
 
-        const entry = await prisma.workoutEntry.create({
-            data: {
-                userId: userId,
-                workoutId: workoutId,
-                weight: weight,
-            },
+            if (!workoutToAddEntryOn) {
+                console.log("Unsuccessful query... no workout id found.");
+                res.status(400).json({
+                    message: "Please enter a valid workout id.",
+                });
+                return;
+            }
+
+            const previousMax = await tx.workoutEntry.aggregate({
+                _max: { weight: true },
+                where: {
+                    userId: userId,
+                    workoutId: workoutId,
+                },
+            });
+
+            const entry = await prisma.workoutEntry.create({
+                data: {
+                    userId: userId,
+                    workoutId: workoutId,
+                    weight: weight,
+                },
+            });
+
+            const workoutName = workoutToAddEntryOn.name;
+            const newLiftingWeightAchievements =
+                await checkAndProgressAchievements(
+                    tx,
+                    userId,
+                    [AchievementType.LIFTINGWEIGHT],
+                    { weight, workoutName, previousMax }
+                );
+
+            return { entry, newLiftingWeightAchievements };
         });
 
         res.status(201).json({
             message: "Workout entry added successfully!",
-            entry,
+            entry: result?.entry,
+            newlyCompletedAchievements: result?.newLiftingWeightAchievements,
         });
         return;
     } catch (error) {

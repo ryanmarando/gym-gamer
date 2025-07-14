@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, StyleSheet, TextInput, Alert, Image } from "react-native";
+import {
+    View,
+    StyleSheet,
+    TextInput,
+    Alert,
+    Image,
+    ActivityIndicator,
+} from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
@@ -11,13 +18,20 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [showConfirmationModal, setShowConfirmationModal] =
-        useState<boolean>(false);
-    const [modalMessage, setModalMessage] = useState<string>("Login failed.");
-    const [modalTitleMessage, setmodalTitleMessage] =
-        useState<string>("Whoa there, gamer!");
+    const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+    const [modalMessage, setModalMessage] = useState("Login failed.");
+    const [modalTitleMessage, setModalTitleMessage] =
+        useState("Whoa there, gamer!");
+    const [loading, setLoading] = useState(false); // New loading state
 
     const handleLogin = async () => {
+        if (!email.trim() || !password.trim()) {
+            setModalMessage("Please enter both email and password.");
+            setModalTitleMessage("Oops!");
+            setShowConfirmationModal(true);
+            return; // stop further execution
+        }
+        setLoading(true); // Start loading
         try {
             const response = await fetch(API_URL + "/auth/login", {
                 method: "POST",
@@ -34,19 +48,17 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
             const data = await response.json();
             console.log("✅ Login success:", data);
 
-            // Save user data
             await SecureStore.setItemAsync("userToken", data.token);
-            console.log("🔒 Token saved to SecureStore!");
             await SecureStore.setItemAsync("userId", data.user.id.toString());
 
             setIsLoggedIn(true);
             playLoginSound();
-
-            // Set login state true here
         } catch (error: any) {
-            setShowConfirmationModal(true);
             const message = `Login failed: ${error.message}`;
             setModalMessage(message);
+            setShowConfirmationModal(true);
+        } finally {
+            setLoading(false); // Stop loading in all cases
         }
     };
 
@@ -85,16 +97,25 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
                 secureTextEntry
             />
 
-            <PixelButton
-                text="Log In"
-                onPress={handleLogin}
-                color="#0ff"
-                containerStyle={{
-                    backgroundColor: "#000",
-                    borderColor: "#0ff",
-                    marginTop: 20,
-                }}
-            />
+            {loading ? (
+                <ActivityIndicator
+                    size="large"
+                    color="#0ff"
+                    style={{ marginTop: 20 }}
+                />
+            ) : (
+                <PixelButton
+                    text="Log In"
+                    onPress={handleLogin}
+                    color="#0ff"
+                    containerStyle={{
+                        backgroundColor: "#000",
+                        borderColor: "#0ff",
+                        marginTop: 20,
+                    }}
+                    disabled={loading} // disable button when loading
+                />
+            )}
 
             <PixelButton
                 text="Sign Up"

@@ -164,7 +164,7 @@ export default function WorkoutsScreen({ navigation }: any) {
 
                     // Only send if lastWeight > 0 (optional)
                     if (maxWeight > 0) {
-                        await authFetch(
+                        const result = await authFetch(
                             `/workouts/addWorkoutEntry?userId=${userId}&workoutId=${workout.workoutId}`,
                             {
                                 method: "POST",
@@ -173,6 +173,22 @@ export default function WorkoutsScreen({ navigation }: any) {
                                 }),
                             }
                         );
+
+                        if (result.newlyCompletedAchievements?.length) {
+                            // Send notification
+                            sendNotification(
+                                result.newlyCompletedAchievements?.length
+                            );
+
+                            result.newlyCompletedAchievements.forEach(
+                                (ach: any) => {
+                                    console.log(
+                                        `🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`
+                                    );
+                                    // Show modal, play sound, push notification, etc.
+                                }
+                            );
+                        }
                     }
                 }
 

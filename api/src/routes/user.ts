@@ -32,6 +32,14 @@ router.get(
     "/getAllUserWeightEntries/:id",
     userController.getAllUserWeightEntries
 );
+router.delete(
+    "/deleteLastUserWeightEntry/:id",
+    userController.deleteLastUserWeightEntry
+);
+router.delete(
+    "/deleteAllUserWeightEntries/:id",
+    userController.deleteAllUserWeightEntries
+);
 
 router.get("/:id", userController.getUserById);
 

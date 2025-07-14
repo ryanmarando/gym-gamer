@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, ActivityIndicator, ViewStyle } from "react-native";
+import {
+    View,
+    StyleSheet,
+    ActivityIndicator,
+    ViewStyle,
+    DevMenu,
+} from "react-native";
 import PixelText from "./PixelText";
+import ProgressBar from "./ProgressBar";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 
@@ -9,6 +16,12 @@ interface Quest {
     type: string; // "GAIN" or "LOSE"
     goal: number;
     goalDate: Date | string;
+    initialWeight?: number | null;
+}
+
+interface WeightEntry {
+    enteredAt: string;
+    weight: number;
 }
 
 interface PixelQuestCardProps {
@@ -22,21 +35,56 @@ export default function PixelQuestCard({
 }: PixelQuestCardProps) {
     const [quest, setQuest] = useState<Quest | null>(null);
     const [loading, setLoading] = useState(true);
+    const [currentWeight, setCurrentWeight] = useState<number | null>(null);
+
+    const fetchWeights = async (userId: string) => {
+        try {
+            const data = await authFetch(
+                `/user/getAllUserWeightEntries/${userId}`
+            );
+            if (
+                data?.user?.weightEntries &&
+                data.user.weightEntries.length > 0
+            ) {
+                // Sort descending by enteredAt to get latest first
+                const sorted = data.user.weightEntries.sort(
+                    (a: WeightEntry, b: WeightEntry) =>
+                        new Date(b.enteredAt).getTime() -
+                        new Date(a.enteredAt).getTime()
+                );
+                setCurrentWeight(sorted[0].weight);
+            } else {
+                setCurrentWeight(null);
+            }
+        } catch (err) {
+            console.error("Error fetching weights:", err);
+            setCurrentWeight(null);
+        }
+    };
 
     useEffect(() => {
-        const fetchQuest = async () => {
+        const fetchQuestAndWeights = async () => {
             if (propQuest) {
                 setQuest(propQuest);
+                if (propQuest.initialWeight != null) {
+                    const userId = await SecureStore.getItemAsync("userId");
+                    if (userId) await fetchWeights(userId);
+                }
                 setLoading(false);
                 return;
             }
 
             try {
                 const userId = await SecureStore.getItemAsync("userId");
-                const data = await authFetch(`/user/getUserQuest/${userId}`);
+                if (!userId) throw new Error("Missing userId");
 
+                const data = await authFetch(`/user/getUserQuest/${userId}`);
                 if (data && data.quest) {
                     setQuest(data.quest);
+
+                    if (data.quest.initialWeight != null) {
+                        await fetchWeights(userId);
+                    }
                 }
             } catch (err) {
                 console.error("Error fetching quest:", err);
@@ -44,8 +92,28 @@ export default function PixelQuestCard({
                 setLoading(false);
             }
         };
-        fetchQuest();
+        fetchQuestAndWeights();
     }, [propQuest]);
+
+    function getProgress() {
+        if (!quest || quest.initialWeight == null || currentWeight == null)
+            return null;
+
+        const isGain = quest.type === "GAIN";
+        const isLose = quest.type === "LOSE";
+
+        const goal = quest.goal;
+
+        if (goal === 0) return 0;
+
+        const numerator = isGain
+            ? currentWeight - quest.initialWeight
+            : isLose
+            ? quest.initialWeight - currentWeight
+            : 0;
+
+        return Math.max(0, Math.min(1, numerator / goal));
+    }
 
     function getDaysLeft(goalDate: Date | string) {
         const date = new Date(goalDate);
@@ -92,6 +160,88 @@ export default function PixelQuestCard({
                     🎯 {quest.name}
                 </PixelText>
             </View>
+            {quest.initialWeight == null ? (
+                <PixelText
+                    fontSize={10}
+                    color="#fff"
+                    style={{ marginBottom: 4 }}
+                >
+                    Enter bodyweight to track progress
+                </PixelText>
+            ) : getProgress() === null ? (
+                <PixelText
+                    fontSize={10}
+                    color="#fff"
+                    style={{ marginBottom: 4 }}
+                >
+                    No weight entries found to track progress
+                </PixelText>
+            ) : (
+                <>
+                    {quest.type !== "MAINTAIN" && (
+                        <>
+                            <PixelText
+                                fontSize={10}
+                                color="#fff"
+                                style={{ marginBottom: 4 }}
+                            >
+                                Weight Goal:{" "}
+                                {quest.type === "GAIN"
+                                    ? quest.initialWeight + quest.goal
+                                    : quest.initialWeight - quest.goal}{" "}
+                                lbs
+                            </PixelText>
+
+                            {currentWeight !== null && (
+                                <PixelText
+                                    fontSize={10}
+                                    color="#fff"
+                                    style={{ marginBottom: 4 }}
+                                >
+                                    {Math.max(
+                                        0,
+                                        quest.type === "GAIN"
+                                            ? quest.initialWeight +
+                                                  quest.goal -
+                                                  currentWeight
+                                            : currentWeight -
+                                                  (quest.initialWeight -
+                                                      quest.goal)
+                                    ).toFixed(1)}{" "}
+                                    lbs to go!
+                                </PixelText>
+                            )}
+
+                            <PixelText
+                                fontSize={10}
+                                color="#fff"
+                                style={{ marginTop: 4, marginBottom: 4 }}
+                            >
+                                Quest Progress:
+                            </PixelText>
+
+                            <View style={{ marginBottom: 4, width: "100%" }}>
+                                <ProgressBar
+                                    progress={getProgress()!}
+                                    width="100%"
+                                    height={12}
+                                />
+                            </View>
+                        </>
+                    )}
+
+                    {quest.type === "MAINTAIN" && (
+                        <PixelText
+                            fontSize={10}
+                            color="#fff"
+                            style={{ marginBottom: 4 }}
+                        >
+                            Maintain your weight around {quest.initialWeight}{" "}
+                            lbs
+                        </PixelText>
+                    )}
+                </>
+            )}
             <PixelText fontSize={10} color="#fff">
                 Days left: {getDaysLeft(quest.goalDate)}
             </PixelText>

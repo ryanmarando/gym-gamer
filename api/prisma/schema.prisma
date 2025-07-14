@@ -41,11 +41,14 @@ model Password {
 }
 
 model Quest {
-  id       Int      @id @default(autoincrement())
-  type     String   @default("GAIN")
-  goal     Int      @default(10)
-  goalDate DateTime @default(now())
-  name     String
+  id            Int       @id @default(autoincrement())
+  type          String    @default("GAIN")
+  goal          Int       @default(10)
+  goalDate      DateTime  @default(now())
+  name          String
+  baseXP        Int       @default(500)
+  updatedAt     DateTime? @updatedAt
+  initialWeight Float?
 
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int  @unique
@@ -141,11 +144,12 @@ model Achievement {
   id          Int             @id @default(autoincrement())
   name        String
   xp          Int
-  descprtion  String?
+  description String?
   deadline    DateTime?
   goalAmount  Float?
   goalType    AchievementType
   weeklyReset Boolean         @default(false)
+  targetValue Float?
 
   users UserAchievement[]
 }

@@ -26,6 +26,7 @@ interface AchievementDetails {
     name: string;
     xp: number;
     weeklyReset: boolean;
+    description: string;
 }
 
 interface UserAchievement {
@@ -148,30 +149,6 @@ export default function AchievementsScreen({}: PixelAchievementCardProps) {
         await sendPushNotification({ expoPushToken, title, body });
     };
 
-    const removeExistingQuest = async () => {
-        const questToRemove = userAchievements.find((ua) => ua.isQuest);
-        if (questToRemove) {
-            await handleDelete(questToRemove.achievementId);
-        }
-    };
-
-    // Delete achievement from user
-    const handleDelete = async (achievementId: number) => {
-        if (!userId) return;
-        try {
-            await authFetch(
-                `/achievement?userId=${userId}&achievementId=${achievementId}`,
-                {
-                    method: "DELETE",
-                }
-            );
-            setRefreshToggle((prev) => !prev); // triggers re-fetch and UI update
-        } catch (error) {
-            Alert.alert("Error", "Failed to delete achievement.");
-            console.error(error);
-        }
-    };
-
     const handleQuestUpdateConfirm = async (data: {
         customGoalAmount: number;
         customDeadline: string;
@@ -211,7 +188,7 @@ export default function AchievementsScreen({}: PixelAchievementCardProps) {
     const confirmCompleteQuest = (questId: number) => {
         setModalConfig({
             title: "Wow, Gamer!",
-            message: "Are your sure you want to complete your quest!",
+            message: "Are your sure you want to complete your quest!?",
             onConfirm: () => handleCompleteQuest(questId),
         });
         setModalVisible(true);
@@ -388,6 +365,16 @@ export default function AchievementsScreen({}: PixelAchievementCardProps) {
                                         }}
                                     >
                                         {item.achievement.name}
+                                    </PixelText>
+                                    <PixelText
+                                        fontSize={10}
+                                        color="#0ff"
+                                        style={{
+                                            marginBottom: 4,
+                                            width: "100%",
+                                        }}
+                                    >
+                                        {item.achievement.description}
                                     </PixelText>
                                     <ProgressBar
                                         progress={item.progress / 100}

@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { WorkoutArchitype } from "@prisma/client";
 import { prisma } from "../config.js";
+import { AchievementType } from "@prisma/client";
+import { checkAndProgressAchievements } from "../functions/checkAndProgressAchivements.js";
 
 export const getAllUsers = async (
     req: Request,
@@ -199,13 +201,6 @@ export const getUserQuest = async (
     try {
         const userQuest = await prisma.quest.findFirst({
             where: { userId },
-            select: {
-                id: true,
-                type: true,
-                goal: true,
-                goalDate: true,
-                name: true,
-            },
         });
 
         res.status(200).json({
@@ -292,7 +287,6 @@ export const addUserWeightEntry = async (req: Request, res: Response) => {
             res.status(400).json({
                 message: "Please provide a valid userId and weight.",
             });
-
             return;
         }
 
@@ -305,24 +299,39 @@ export const addUserWeightEntry = async (req: Request, res: Response) => {
             res.status(404).json({
                 message: "User not found.",
             });
-
             return;
         }
 
-        // Create the weight entry
-        const weightEntry = await prisma.userWeightEntry.create({
-            data: {
-                weight: weight,
-                userId: userId,
-            },
+        let newlyCompletedAchievements;
+
+        const result = await prisma.$transaction(async (tx) => {
+            // 1️⃣ Create weight entry
+            const weightEntry = await tx.userWeightEntry.create({
+                data: {
+                    weight,
+                    userId,
+                },
+            });
+
+            // 2️⃣ Progress any matching achievements (e.g., for logging weight)
+            const completedAchievements = await checkAndProgressAchievements(
+                tx,
+                userId,
+                [AchievementType.BODYWEIGHT]
+            );
+
+            newlyCompletedAchievements = completedAchievements || [];
+
+            return {
+                weightEntry,
+            };
         });
 
         res.status(201).json({
             message: "Weight entry added successfully!",
-            weightEntry,
+            weightEntry: result.weightEntry,
+            newlyCompletedAchievements,
         });
-
-        return;
     } catch (error) {
         console.error("Error adding user weight entry:", error);
 
@@ -330,8 +339,6 @@ export const addUserWeightEntry = async (req: Request, res: Response) => {
             message: "An error occurred while adding the weight entry.",
             error: error instanceof Error ? error.message : String(error),
         });
-
-        return;
     }
 };
 
@@ -400,5 +407,64 @@ export const getUserWorkoutWeightEntries = async (
     } catch (error) {
         console.error("❌ Failed to get user workout entries:", error);
         res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const deleteLastUserWeightEntry = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const userId = parseInt(req.params.id);
+
+    try {
+        // 1️⃣ Find the most recent weight entry for this user
+        const lastEntry = await prisma.userWeightEntry.findFirst({
+            where: { userId },
+            orderBy: { enteredAt: "desc" }, // latest first
+        });
+
+        if (!lastEntry) {
+            res.status(404).json({
+                message: `No weight entries found for user ${userId}.`,
+            });
+            return;
+        }
+
+        // 2️⃣ Delete the most recent entry
+        await prisma.userWeightEntry.delete({
+            where: { id: lastEntry.id },
+        });
+
+        res.status(200).json({
+            message: `Deleted the most recent weight entry with ID ${lastEntry.id} for user ${userId}.`,
+        });
+    } catch (error) {
+        console.error("Error deleting last weight entry:", error);
+        res.status(500).json({ error: "Internal server error." });
+    }
+};
+
+export const deleteAllUserWeightEntries = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const userId = parseInt(req.params.id);
+
+    try {
+        // Delete all weight entries for the given userId
+        const deleted = await prisma.userWeightEntry.deleteMany({
+            where: {
+                userId: userId,
+            },
+        });
+
+        res.status(200).json({
+            message: `Deleted ${deleted.count} weight entries for user ${userId}.`,
+        });
+    } catch (error) {
+        console.error("Error deleting weight entries:", error);
+        res.status(500).json({ error: "Internal server error." });
     }
 };

@@ -6,9 +6,12 @@ import {
     TouchableOpacity,
     TouchableWithoutFeedback,
     TextInput,
+    Keyboard,
 } from "react-native";
 import PixelText from "./PixelText";
 import PixelButton from "./PixelButton";
+import * as SecureStore from "expo-secure-store";
+import { authFetch } from "../utils/authFetch";
 
 interface UpdateQuestModalProps {
     visible: boolean;
@@ -16,6 +19,7 @@ interface UpdateQuestModalProps {
         customType: "GAIN" | "LOSE" | "MAINTAIN";
         customGoalAmount: number;
         customDeadline: string;
+        initialWeight: number;
     }) => void;
     onCancel: () => void;
     title?: string;
@@ -32,6 +36,41 @@ export default function UpdateQuestModal({
     );
     const [goalAmount, setGoalAmount] = useState<string>("");
     const [deadline, setDeadline] = useState<string>("");
+    const [initialWeight, setInitialWeight] = useState<string>("");
+
+    React.useEffect(() => {
+        const fetchLatestWeight = async () => {
+            try {
+                const userId = await SecureStore.getItemAsync("userId");
+                const data = await authFetch(
+                    `/user/getAllUserWeightEntries/${userId}`
+                );
+                if (
+                    data &&
+                    Array.isArray(data.user.weightEntries) &&
+                    data.user.weightEntries.length > 0
+                ) {
+                    const sorted = [...data.user.weightEntries].sort(
+                        (a, b) =>
+                            new Date(b.enteredAt).getTime() -
+                            new Date(a.enteredAt).getTime()
+                    );
+                    const latestWeight = sorted[0].weight;
+                    setInitialWeight(latestWeight.toString());
+                } else {
+                    console.log(
+                        "No bodyweight entries found. User must enter initial weight manually."
+                    );
+                }
+            } catch (err) {
+                console.error("Error fetching weight entries:", err);
+            }
+        };
+
+        if (visible) {
+            fetchLatestWeight();
+        }
+    }, [visible]);
 
     const parseLocalDate = (dateStr: string) => {
         const [year, month, day] = dateStr.split("-").map(Number);
@@ -40,9 +79,14 @@ export default function UpdateQuestModal({
 
     const handleConfirm = () => {
         const goal = parseFloat(goalAmount);
-        if (isNaN(goal) || deadline.trim() === "") {
+        if (
+            isNaN(goal) ||
+            isNaN(parseFloat(initialWeight)) ||
+            deadline.trim() === "" ||
+            goal === 0
+        ) {
             alert(
-                "Please enter a valid goal amount and deadline (YYYY-MM-DD)."
+                "Please enter a valid goal amount, initial weight, and deadline (YYYY-MM-DD)."
             );
             return;
         }
@@ -54,16 +98,22 @@ export default function UpdateQuestModal({
             customType,
             customGoalAmount: goal,
             customDeadline: deadlineISO,
+            initialWeight: parseFloat(initialWeight),
         });
 
         setGoalAmount("");
         setDeadline("");
+        setInitialWeight("");
         setCustomType("GAIN");
     };
 
     return (
         <Modal transparent visible={visible} animationType="fade">
-            <TouchableWithoutFeedback onPress={onCancel}>
+            <TouchableWithoutFeedback
+                onPress={() => {
+                    Keyboard.dismiss();
+                }}
+            >
                 <View style={styles.overlay}>
                     <TouchableWithoutFeedback>
                         <View style={styles.modalContainer}>
@@ -139,6 +189,21 @@ export default function UpdateQuestModal({
                                 value={deadline}
                                 onChangeText={setDeadline}
                                 style={styles.input}
+                            />
+                            <PixelText
+                                fontSize={10}
+                                color="#fff"
+                                style={{ marginTop: 12 }}
+                            >
+                                Initial Weight:
+                            </PixelText>
+                            <TextInput
+                                placeholder="e.g. 160"
+                                placeholderTextColor="#555"
+                                value={initialWeight}
+                                onChangeText={setInitialWeight}
+                                style={styles.input}
+                                keyboardType="numeric"
                             />
 
                             <View style={styles.buttonRow}>
