@@ -5,6 +5,9 @@ import {
     TextInput,
     ActivityIndicator,
     Alert,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard,
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { LineChart, Grid, YAxis, XAxis } from "react-native-svg-charts";
@@ -14,6 +17,9 @@ import PixelModal from "../components/PixelModal";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import { authFetch } from "../utils/authFetch";
 import { sendPushNotification } from "../utils/notification";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { playBadMoveSound } from "../utils/playBadMoveSound";
+import { playDeleteSound } from "../utils/playDeleteSound";
 
 export default function UpdateWeightScreen({ navigation }: any) {
     const [userId, setUserId] = useState<number | null>(null);
@@ -79,6 +85,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
     const handleAddWeightPress = () => {
         const weightNum = parseFloat(newWeight);
         if (isNaN(weightNum) || weightNum <= 0) {
+            playBadMoveSound();
             setInvalidModalVisible(true);
             return;
         }
@@ -156,6 +163,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
                             method: "DELETE",
                         }
                     );
+                    playDeleteSound();
                     await fetchWeights();
                 } catch (err) {
                     console.error(err);
@@ -180,6 +188,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
                             method: "DELETE",
                         }
                     );
+                    playDeleteSound();
                     await fetchWeights();
                 } catch (err) {
                     console.error(err);
@@ -202,181 +211,211 @@ export default function UpdateWeightScreen({ navigation }: any) {
     );
 
     return (
-        <View style={styles.container}>
-            {loading && <ActivityIndicator color="#0ff" size="large" />}
-
-            {!loading && sortedWeights.length > 0 && (
-                <PixelText
-                    fontSize={18}
-                    color="#0ff"
-                    style={{ marginBottom: 10 }}
-                >
-                    Latest Weight:{" "}
-                    {sortedWeights[sortedWeights.length - 1].weight.toFixed(1)}{" "}
-                    lbs
-                </PixelText>
-            )}
-
-            {!loading && sortedWeights.length === 1 && (
-                <PixelText
-                    fontSize={10}
-                    color="#0ff"
-                    style={{ marginBottom: 10 }}
-                >
-                    Please enter two entries for a chart.
-                </PixelText>
-            )}
-
-            {!loading && sortedWeights.length === 0 && (
-                <PixelText
-                    fontSize={14}
-                    color="#888"
-                    style={{ marginBottom: 10 }}
-                >
-                    No weight entries found.
-                </PixelText>
-            )}
-
-            {!loading && (
-                <>
-                    <TextInput
-                        placeholder="Enter your weight"
-                        keyboardType="numeric"
-                        value={newWeight}
-                        onChangeText={setNewWeight}
-                        placeholderTextColor="#999"
-                        style={styles.input}
-                    />
-
-                    <PixelButton
-                        text="Add Weight"
-                        onPress={handleAddWeightPress}
-                        color="#0f0"
-                        containerStyle={{ marginBottom: 20 }}
-                    />
-
-                    {weightValues.length > 1 && (
-                        <View style={{ height: 250, padding: 10 }}>
-                            <View style={{ flexDirection: "row", flex: 1 }}>
-                                <YAxis
-                                    data={weightValues}
-                                    contentInset={{ top: 20, bottom: 20 }}
-                                    svg={{
-                                        fill: "#0ff",
-                                        fontSize: 8,
-                                        fontFamily: "PressStart2P_400Regular",
-                                    }}
-                                    numberOfTicks={6}
-                                    formatLabel={(value: any) =>
-                                        value.toFixed(1)
-                                    }
-                                />
-
-                                <View style={{ flex: 1, marginLeft: 10 }}>
-                                    <LineChart
-                                        style={{ flex: 1 }}
-                                        data={weightValues}
-                                        svg={{ stroke: "#0ff" }}
-                                        contentInset={{ top: 20, bottom: 30 }} // More bottom space for labels
-                                    >
-                                        <Grid
-                                            svg={{
-                                                stroke: "#333",
-                                                strokeDasharray: [4, 4],
-                                            }}
-                                        />
-                                    </LineChart>
-
-                                    <XAxis
-                                        style={{
-                                            marginTop: 8,
-                                            height: 40,
-                                        }}
-                                        data={weightValues}
-                                        formatLabel={(value, index) => {
-                                            const date = dates[index];
-                                            if (!date) return ""; // fallback if date is undefined
-                                            const [month, day, year] =
-                                                date.split("/");
-                                            return `${month}/${day}/${year}`;
-                                        }}
-                                        contentInset={{ left: 20, right: 20 }}
-                                        svg={{
-                                            fill: "#0ff",
-                                            fontSize: 8,
-                                            y: 15,
-                                            rotation: 0,
-                                            originY: 0,
-                                            fontFamily:
-                                                "PressStart2P_400Regular",
-                                        }}
-                                        numberOfTicks={Math.min(
-                                            dates.length,
-                                            2
-                                        )}
-                                    />
-                                </View>
-                            </View>
-                        </View>
-                    )}
+        <SafeAreaView style={styles.safeArea}>
+            <TouchableWithoutFeedback
+                onPress={Keyboard.dismiss}
+                accessible={false}
+            >
+                <View style={styles.container}>
+                    {loading && <ActivityIndicator color="#0ff" size="large" />}
 
                     {!loading && sortedWeights.length > 0 && (
-                        <PixelButton
-                            text="Delete Last Bodyweight Entry"
-                            onPress={handleDeleteLastBodyWeightEntry}
-                            color="#0f0"
-                            containerStyle={{ marginBottom: 2 }}
-                        />
-                    )}
-                    {!loading && sortedWeights.length > 1 && (
-                        <PixelButton
-                            text="Delete All Bodyweight Entries"
-                            onPress={handleDeleteAllBodyWeightEntries}
-                            color="#0f0"
-                            containerStyle={{ marginBottom: 20 }}
-                        />
+                        <PixelText
+                            fontSize={18}
+                            color="#0ff"
+                            style={{ marginBottom: 10 }}
+                        >
+                            Latest Weight:{" "}
+                            {sortedWeights[
+                                sortedWeights.length - 1
+                            ].weight.toFixed(1)}{" "}
+                            lbs
+                        </PixelText>
                     )}
 
-                    <PixelButton
-                        text="Go Back"
-                        onPress={() => navigation.goBack()}
-                        color="#00f"
-                        containerStyle={{ marginTop: 20 }}
-                    />
+                    {!loading && sortedWeights.length === 1 && (
+                        <PixelText
+                            fontSize={10}
+                            color="#0ff"
+                            style={{ marginBottom: 10 }}
+                        >
+                            Please enter two entries for a chart.
+                        </PixelText>
+                    )}
 
-                    {/* Confirmation Modal */}
-                    <PixelModal
-                        visible={modalConfig.visible}
-                        title={modalConfig.title}
-                        message={modalConfig.message}
-                        onConfirm={modalConfig.onConfirm}
-                        onCancel={() =>
-                            setModalConfig((prev) => ({
-                                ...prev,
-                                visible: false,
-                            }))
-                        }
-                    />
-                    <ConfirmationPixelModal
-                        visible={invalidModalVisible}
-                        title="Whoa there, gamer!"
-                        message="Please enter a valid positive number!"
-                        onConfirm={() => setInvalidModalVisible(false)}
-                        onCancel={() => setInvalidModalVisible(false)}
-                    />
-                </>
-            )}
-        </View>
+                    {!loading && sortedWeights.length === 0 && (
+                        <PixelText
+                            fontSize={14}
+                            color="#888"
+                            style={{ marginBottom: 10 }}
+                        >
+                            No weight entries found.
+                        </PixelText>
+                    )}
+
+                    {!loading && (
+                        <>
+                            <TextInput
+                                placeholder="Enter your weight"
+                                keyboardType="numeric"
+                                value={newWeight}
+                                onChangeText={setNewWeight}
+                                placeholderTextColor="#999"
+                                style={styles.input}
+                            />
+
+                            <PixelButton
+                                text="Add Weight"
+                                onPress={handleAddWeightPress}
+                                color="#0f0"
+                                containerStyle={{ marginBottom: 20 }}
+                            />
+
+                            {weightValues.length > 1 && (
+                                <View style={{ height: 250, padding: 10 }}>
+                                    <View
+                                        style={{
+                                            flexDirection: "row",
+                                            flex: 1,
+                                        }}
+                                    >
+                                        <YAxis
+                                            data={weightValues}
+                                            contentInset={{
+                                                top: 20,
+                                                bottom: 20,
+                                            }}
+                                            svg={{
+                                                fill: "#0ff",
+                                                fontSize: 8,
+                                                fontFamily:
+                                                    "PressStart2P_400Regular",
+                                            }}
+                                            numberOfTicks={6}
+                                            formatLabel={(value: any) =>
+                                                value.toFixed(1)
+                                            }
+                                        />
+
+                                        <View
+                                            style={{ flex: 1, marginLeft: 10 }}
+                                        >
+                                            <LineChart
+                                                style={{ flex: 1 }}
+                                                data={weightValues}
+                                                svg={{ stroke: "#0ff" }}
+                                                contentInset={{
+                                                    top: 20,
+                                                    bottom: 30,
+                                                }} // More bottom space for labels
+                                            >
+                                                <Grid
+                                                    svg={{
+                                                        stroke: "#333",
+                                                        strokeDasharray: [4, 4],
+                                                    }}
+                                                />
+                                            </LineChart>
+
+                                            <XAxis
+                                                style={{
+                                                    marginTop: 8,
+                                                    height: 40,
+                                                }}
+                                                data={weightValues}
+                                                formatLabel={(value, index) => {
+                                                    const date = dates[index];
+                                                    if (!date) return ""; // fallback if date is undefined
+                                                    const [month, day, year] =
+                                                        date.split("/");
+                                                    return `${month}/${day}/${year}`;
+                                                }}
+                                                contentInset={{
+                                                    left: 20,
+                                                    right: 20,
+                                                }}
+                                                svg={{
+                                                    fill: "#0ff",
+                                                    fontSize: 8,
+                                                    y: 15,
+                                                    rotation: 0,
+                                                    originY: 0,
+                                                    fontFamily:
+                                                        "PressStart2P_400Regular",
+                                                }}
+                                                numberOfTicks={Math.min(
+                                                    dates.length,
+                                                    2
+                                                )}
+                                            />
+                                        </View>
+                                    </View>
+                                </View>
+                            )}
+
+                            {!loading && sortedWeights.length > 0 && (
+                                <PixelButton
+                                    text="Delete Last Bodyweight Entry"
+                                    onPress={handleDeleteLastBodyWeightEntry}
+                                    color="#0f0"
+                                    containerStyle={{ marginBottom: 2 }}
+                                />
+                            )}
+                            {!loading && sortedWeights.length > 1 && (
+                                <PixelButton
+                                    text="Delete All Bodyweight Entries"
+                                    onPress={handleDeleteAllBodyWeightEntries}
+                                    color="#0f0"
+                                    containerStyle={{ marginBottom: 20 }}
+                                />
+                            )}
+
+                            <PixelButton
+                                text="Go Back"
+                                onPress={() => navigation.goBack()}
+                                color="#00f"
+                                containerStyle={{ marginTop: 20 }}
+                            />
+
+                            {/* Confirmation Modal */}
+                            <PixelModal
+                                visible={modalConfig.visible}
+                                title={modalConfig.title}
+                                message={modalConfig.message}
+                                onConfirm={modalConfig.onConfirm}
+                                onCancel={() =>
+                                    setModalConfig((prev) => ({
+                                        ...prev,
+                                        visible: false,
+                                    }))
+                                }
+                            />
+                            <ConfirmationPixelModal
+                                visible={invalidModalVisible}
+                                title="Whoa there, gamer!"
+                                message="Please enter a valid positive number!"
+                                onConfirm={() => setInvalidModalVisible(false)}
+                                onCancel={() => setInvalidModalVisible(false)}
+                            />
+                        </>
+                    )}
+                </View>
+            </TouchableWithoutFeedback>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: "#111",
+    },
     container: {
         flex: 1,
         backgroundColor: "#111",
         padding: 20,
         justifyContent: "flex-start",
-        paddingVertical: "20%",
+        paddingVertical: "10%",
     },
     input: {
         height: 40,

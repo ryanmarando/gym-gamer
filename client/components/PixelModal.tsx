@@ -17,7 +17,7 @@ interface PixelModalProps {
     onCancel: () => void;
     confirmText?: string;
     cancelText?: string;
-    children?: React.ReactNode; // add this
+    children?: React.ReactNode;
 }
 
 export default function PixelModal({
@@ -26,6 +26,8 @@ export default function PixelModal({
     message,
     onConfirm,
     onCancel,
+    confirmText = "Yes",
+    cancelText = "No",
     children,
 }: PixelModalProps) {
     return (
@@ -43,6 +45,7 @@ export default function PixelModal({
                                     {title}
                                 </PixelText>
                             )}
+
                             {message && (
                                 <PixelText
                                     fontSize={14}
@@ -53,17 +56,20 @@ export default function PixelModal({
                                 </PixelText>
                             )}
 
-                            {/* Render custom children here */}
-                            {children}
+                            {children && (
+                                <View style={styles.childrenWrapper}>
+                                    {children}
+                                </View>
+                            )}
 
                             <View style={styles.buttonRow}>
                                 <PixelButton
-                                    text="Yes"
+                                    text={confirmText}
                                     onPress={onConfirm}
                                     containerStyle={styles.button}
                                 />
                                 <PixelButton
-                                    text="No"
+                                    text={cancelText}
                                     onPress={onCancel}
                                     containerStyle={styles.button}
                                 />
@@ -87,15 +93,22 @@ const styles = StyleSheet.create({
         backgroundColor: "#111",
         borderColor: "#0ff",
         borderWidth: 3,
-        padding: 20,
         borderRadius: 8,
+        padding: 20,
         alignItems: "center",
-        width: "80%",
+        width: "85%",
+        maxHeight: "80%",
+    },
+    childrenWrapper: {
+        flexGrow: 1,
+        maxHeight: "60%",
+        width: "100%",
     },
     buttonRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         gap: 20,
+        marginTop: 20,
     },
     button: {
         flex: 1,

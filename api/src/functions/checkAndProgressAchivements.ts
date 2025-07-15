@@ -2,10 +2,10 @@ import { Prisma } from "@prisma/client";
 import { progressAchievement } from "./progressAchievement.js";
 import { AchievementType } from "@prisma/client";
 
-const checkWorkoutDuration = (duration: number, achievementId: number) => {
-    if (duration && duration <= 5400 && achievementId === 10) {
+const checkWorkoutDuration = (duration: number) => {
+    if (duration && duration <= 5400) {
         // 90 min duration {
-        console.log("Not enough duration in id:", achievementId);
+        console.log("Not enough duration in for 90 minute workout");
         return false;
     }
     return true;
@@ -95,7 +95,7 @@ export async function checkAndProgressAchievements(
                 const achievementName = ua.achievement.name.toLowerCase();
                 if (
                     achievementName === "complete a workout over 90 minutes" &&
-                    !checkWorkoutDuration(context.duration, ua.achievementId)
+                    !checkWorkoutDuration(context.duration)
                 ) {
                     continue;
                 }

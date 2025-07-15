@@ -12,6 +12,8 @@ import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { sendPushNotification } from "../utils/notification";
+import Celebration from "../components/Celebration";
+import { getNextSundayReset } from "../utils/getNextSundayReset";
 
 interface AchievementDetails {
     id: number;
@@ -73,6 +75,7 @@ export default function AchievementsScreen({ navigation }: any) {
     });
     const [updateModalVisible, setUpdateModalVisible] = useState(false);
     const [selectedQuestId, setSelectedQuestId] = useState<number | null>(null);
+    const [showConfetti, setShowConfetti] = useState(false);
 
     // Prepare sections for SectionList
     const achievementSections = [
@@ -202,7 +205,6 @@ export default function AchievementsScreen({ navigation }: any) {
 
     const handleCompleteQuest = async (questId: number) => {
         const result = await authFetch(`/quest/completeQuest/${userId}`);
-        console.log(result);
 
         if (result.newlyCompletedAchievements?.length) {
             // Send notification
@@ -216,10 +218,13 @@ export default function AchievementsScreen({ navigation }: any) {
         fetchAchievements();
         fetchUserAchievements();
         setModalVisible(false);
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 5000);
     };
 
     return (
         <SafeAreaView style={styles.safeArea}>
+            {showConfetti && <Celebration />}
             <View style={styles.container}>
                 {/* Quests Section */}
                 <PixelText
@@ -364,7 +369,7 @@ export default function AchievementsScreen({ navigation }: any) {
                                 >
                                     <PixelText
                                         fontSize={12}
-                                        color="#0ff"
+                                        color="#0f0"
                                         style={{
                                             marginBottom: 4,
                                             width: "100%",
@@ -387,21 +392,41 @@ export default function AchievementsScreen({ navigation }: any) {
                                         width={200}
                                         height={15}
                                         backgroundColor="#333"
-                                        progressColor="#0ff"
-                                        borderColor="#0ff"
+                                        progressColor="#9B59B6" // Electric Purple
+                                        borderColor="#9B59B6"
                                     />
-                                    {item.achievement.weeklyReset && (
-                                        <PixelText
-                                            fontSize={10}
-                                            color="#0ff"
-                                            style={{
-                                                marginTop: 4,
-                                                width: "100%",
-                                            }}
-                                        >
-                                            Resets weekly 🔄
-                                        </PixelText>
-                                    )}
+
+                                    {item.achievement.weeklyReset &&
+                                        (() => {
+                                            const {
+                                                nextReset,
+                                                diffHours,
+                                                diffMinutes,
+                                            } = getNextSundayReset();
+                                            return (
+                                                <PixelText
+                                                    fontSize={10}
+                                                    color="#0ff"
+                                                    style={{
+                                                        marginTop: 4,
+                                                        width: "100%",
+                                                    }}
+                                                >
+                                                    Resets on{" "}
+                                                    {nextReset.toLocaleDateString(
+                                                        undefined,
+                                                        {
+                                                            weekday: "long",
+                                                            month: "short",
+                                                            day: "numeric",
+                                                        }
+                                                    )}{" "}
+                                                    at 11:59 PM — in {diffHours}
+                                                    h {diffMinutes}m
+                                                </PixelText>
+                                            );
+                                        })()}
+
                                     <PixelText fontSize={10} color="#fff">
                                         {item.achievement.xp} XP
                                     </PixelText>

@@ -205,9 +205,9 @@ export async function SeedAchievements() {
             weeklyReset: false,
         },
         {
-            name: "Complete Your First Quest",
+            name: "Update Your First Quest",
             xp: 100,
-            description: "Complete your first quest.",
+            description: "Update your first quest.",
             goalAmount: 1,
             goalType: AchievementType.QUEST,
             weeklyReset: false,
@@ -235,6 +235,14 @@ export async function SeedAchievements() {
             xp: 300,
             description: "Accumulate a total of 10,000 lbs lifted in a week.",
             goalAmount: 10000,
+            goalType: AchievementType.LIFTINGWEIGHT,
+            weeklyReset: true,
+        },
+        {
+            name: "Lift a Total of 20,000 lbs in a Week",
+            xp: 300,
+            description: "Accumulate a total of 20,000 lbs lifted in a week.",
+            goalAmount: 20000,
             goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: true,
         },
@@ -320,12 +328,21 @@ export async function SeedAchievements() {
 
         // === Bench Press Goals ===
         {
-            name: "Bench Press 145 lbs",
+            name: "Bench Press 45 lbs",
             xp: 100,
-            description: "Bench press at least 145 pounds.",
+            description: "Bench press at least 45 pounds.",
             goalAmount: 1,
             goalType: AchievementType.LIFTINGWEIGHT,
-            targetValue: 145,
+            targetValue: 45,
+            weeklyReset: false,
+        },
+        {
+            name: "Bench Press 135 lbs",
+            xp: 100,
+            description: "Bench press at least 135 pounds.",
+            goalAmount: 1,
+            goalType: AchievementType.LIFTINGWEIGHT,
+            targetValue: 135,
             weeklyReset: false,
         },
         {
@@ -348,6 +365,15 @@ export async function SeedAchievements() {
         },
 
         // === Squat Goals ===
+        {
+            name: "Squat 135 lbs",
+            xp: 100,
+            description: "Squat at least 135 pounds.",
+            goalAmount: 1,
+            goalType: AchievementType.LIFTINGWEIGHT,
+            targetValue: 135,
+            weeklyReset: false,
+        },
         {
             name: "Squat 225 lbs",
             xp: 100,
@@ -377,6 +403,15 @@ export async function SeedAchievements() {
         },
 
         // === Deadlift Goals ===
+        {
+            name: "Deadlift 225 lbs",
+            xp: 100,
+            description: "Deadlift at least 225 pounds.",
+            goalAmount: 1,
+            goalType: AchievementType.LIFTINGWEIGHT,
+            targetValue: 225,
+            weeklyReset: false,
+        },
         {
             name: "Deadlift 315 lbs",
             xp: 100,

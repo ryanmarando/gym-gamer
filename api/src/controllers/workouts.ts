@@ -4,7 +4,7 @@ import { addXpAndCheckLevelUp } from "../functions/addXPAndCheckLevelUp.js";
 import { checkAndProgressAchievements } from "../functions/checkAndProgressAchivements.js";
 import { AchievementType } from "@prisma/client";
 
-const completedWorkoutProgress = 100;
+const completedWorkoutProgress = 5;
 
 export const getAllWorkouts = async (
     req: Request,
@@ -645,5 +645,32 @@ export const addUserWeightLifted = async (
             message: "Failed to update user's weight lifted.",
             error: error instanceof Error ? error.message : String(error),
         });
+    }
+};
+
+export const saveWorkoutOrder = async (req: Request, res: Response) => {
+    const userId = parseInt(req.params.id, 10);
+    const { workouts } = req.body;
+
+    try {
+        for (const w of workouts) {
+            await prisma.userWorkout.update({
+                where: {
+                    userId_workoutId: {
+                        userId,
+                        workoutId: w.workoutId,
+                    },
+                },
+                data: {
+                    order: w.order,
+                    dayId: w.dayId,
+                },
+            });
+        }
+
+        res.json({ message: "Workout order saved!" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to save workout order" });
     }
 };

@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import PixelText from "./PixelText";
 import PixelButton from "./PixelButton";
+import { Filter } from "bad-words";
 
 const ARCHITYPES = [
     "PUSH",
@@ -41,6 +42,7 @@ export default function CustomWorkoutModal({
 }: CustomWorkoutModalProps) {
     const [customName, setCustomName] = useState("");
     const [selectedArchitypes, setSelectedArchitypes] = useState<string[]>([]);
+    const filter = new Filter();
 
     const toggleArchitype = (architype: string) => {
         setSelectedArchitypes((prev) =>
@@ -57,6 +59,12 @@ export default function CustomWorkoutModal({
             );
             return;
         }
+
+        if (filter.isProfane(customName)) {
+            alert("Please avoid using profanity in your workout name.");
+            return;
+        }
+
         onConfirm({
             customName: customName.trim(),
             architype: selectedArchitypes,

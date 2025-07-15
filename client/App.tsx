@@ -11,6 +11,7 @@ import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
 import BottomTabs from "./components/BottomTabs";
 import UpdateWeightScreen from "./screens/UpdateWeightScreen";
+import UserWaiverScreen from "./screens/UserWaiverScreen";
 
 const RootStack = createNativeStackNavigator();
 const Stack = createNativeStackNavigator();
@@ -73,6 +74,10 @@ export default function App() {
                             />
                         )}
                     </AuthStack.Screen>
+                    <AuthStack.Screen
+                        name="UserWaiver"
+                        component={UserWaiverScreen}
+                    />
                 </AuthStack.Navigator>
             )}
         </NavigationContainer>

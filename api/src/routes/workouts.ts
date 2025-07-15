@@ -44,6 +44,8 @@ router.patch(
     workoutController.assignWorkoutSplit
 );
 
+router.patch("/saveWorkoutOrder/:id", workoutController.saveWorkoutOrder);
+
 router.patch("/addUserWeightLifted/:id", workoutController.addUserWeightLifted);
 
 router.get("/", workoutController.getAllWorkouts);

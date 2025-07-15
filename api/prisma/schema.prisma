@@ -101,6 +101,8 @@ model UserWorkout {
   workoutId Int
   dayId     Int?
 
+  order Int?
+
   user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   workout Workout     @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   day     WorkoutDay? @relation(fields: [dayId], references: [id], onDelete: Cascade)

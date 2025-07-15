@@ -1,13 +1,15 @@
-// screens/WorkoutsScreen.tsx
-
 import React, { useEffect, useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
     View,
     StyleSheet,
-    FlatList,
+    TouchableOpacity,
     TextInput,
     ScrollView,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard,
 } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
@@ -24,6 +26,10 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import DraggableFlatList, {
     RenderItemParams,
 } from "react-native-draggable-flatlist";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Celebration from "../components/Celebration";
+import WorkoutHeader from "../components/WorkoutHeader";
+import WorkoutItem from "../components/WorkoutItem";
 
 interface Workout {
     userId: number;
@@ -67,6 +73,7 @@ export default function WorkoutsScreen({ navigation }: any) {
     const [showSplitModal, setShowSplitModal] = useState(false);
     const [splitName, setSplitName] = useState("");
     const [splitDays, setSplitDays] = useState<string[]>(["", "", ""]);
+    const [showConfetti, setShowConfetti] = useState(false);
 
     const addSplitDay = () => {
         if (splitDays.length < 7) {
@@ -271,6 +278,8 @@ export default function WorkoutsScreen({ navigation }: any) {
                 );
                 setShowConfirmationModal(true);
                 resetWeightEntries();
+                setShowConfetti(true);
+                setTimeout(() => setShowConfetti(false), 5000);
             } catch (error) {
                 console.error("Complete workout failed", error);
                 alert("Failed to complete workout");
@@ -346,14 +355,16 @@ export default function WorkoutsScreen({ navigation }: any) {
                 const userWorkouts = await authFetch(
                     `/user/getUserWorkouts/${userIdStr}`
                 );
-                console.log(userWorkouts.workouts[1].dayId, selectedDay);
 
                 const filtered = userWorkouts.workouts.filter(
                     (w: any) => w.dayId === selectedDay?.id
                 );
 
-                // Set your state
-                setWorkouts(filtered);
+                const ordered = filtered.sort(
+                    (a: any, b: any) => (a.order ?? 0) - (b.order ?? 0)
+                );
+                setWorkouts(ordered);
+
                 setAllWorkoutEntries(filtered);
 
                 // Reset weight entries too
@@ -370,7 +381,12 @@ export default function WorkoutsScreen({ navigation }: any) {
                 return;
             }
 
-            setWorkouts(data.workouts || []);
+            const ordered = data.workouts.sort(
+                (a: any, b: any) => (a.order ?? 0) - (b.order ?? 0)
+            );
+            setWorkouts(ordered);
+
+            //setWorkouts(data.workouts || []);
             setAllWorkoutEntries(data.workouts);
 
             // ✅ Reset the weightEntries so each workout has 3 boxes
@@ -463,6 +479,12 @@ export default function WorkoutsScreen({ navigation }: any) {
         setWeightEntries((prev) => {
             const copy = { ...prev };
             const arr = copy[workoutId] ? [...copy[workoutId]] : [];
+
+            if (arr.length >= 7) {
+                console.log("Cannot add more than 7 entries");
+                return prev; // Do nothing, keep state unchanged
+            }
+
             arr.push("");
             copy[workoutId] = arr;
             return copy;
@@ -516,315 +538,208 @@ export default function WorkoutsScreen({ navigation }: any) {
         navigation.navigate("Workout Shop");
     };
 
+    const saveWorkoutOrder = async (orderedWorkouts: Workout[]) => {
+        const userIdStr = await SecureStore.getItemAsync("userId");
+        const userId = Number(userIdStr);
+        if (!userId || !selectedDay) return;
+
+        // Prepare an array of { workoutId, order }
+        const orderedData = orderedWorkouts.map((w, index) => ({
+            workoutId: w.workoutId,
+            order: index,
+            dayId: selectedDay.id,
+        }));
+
+        console.log("Saving order:", orderedData);
+
+        await authFetch(`/workouts/saveWorkoutOrder/${userId}`, {
+            method: "PATCH",
+            body: JSON.stringify({ workouts: orderedData }),
+        });
+    };
+
     return (
-        <View style={styles.container}>
-            {!selectedDay ? (
-                <View>
-                    <PickWorkoutDay
-                        days={workoutDays}
-                        onSelect={setSelectedDay}
-                    />
+        <SafeAreaView style={styles.safeArea}>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 30 : 0}
+            >
+                <TouchableWithoutFeedback
+                    onPress={Keyboard.dismiss}
+                    accessible={false}
+                >
+                    <View style={styles.container}>
+                        {!selectedDay ? (
+                            <View>
+                                <PickWorkoutDay
+                                    days={workoutDays}
+                                    onSelect={setSelectedDay}
+                                />
 
-                    <PixelButton
-                        text="Change Workout Split"
-                        color="#0f0"
-                        onPress={() => setShowSplitModal(true)}
-                        containerStyle={{
-                            marginVertical: 16,
-                            borderColor: "#0f0",
-                        }}
-                    />
-
-                    <WorkoutSplitModal
-                        visible={showSplitModal}
-                        onCancel={() => setShowSplitModal(false)}
-                        splitName={splitName}
-                        setSplitName={setSplitName}
-                        splitDays={splitDays}
-                        addDay={addSplitDay}
-                        removeDay={removeSplitDay}
-                        updateDay={updateSplitDay}
-                        onConfirm={handleSplitConfirm}
-                    />
-
-                    <ConfirmationPixelModal
-                        visible={showConfirmationModal}
-                        onConfirm={() => setShowConfirmationModal(false)}
-                        onCancel={() => setShowConfirmationModal(false)}
-                        title={modalConfirmationTitle}
-                        message={modalMessage}
-                    />
-                </View>
-            ) : (
-                <>
-                    {!workouts || workouts.length === 0 ? (
-                        <>
-                            <PixelButton
-                                text="Change Day"
-                                onPress={handleChangeDay}
-                                containerStyle={{ marginBottom: 10 }}
-                            />
-                            <PixelText
-                                fontSize={20}
-                                color="#ff0"
-                                style={{
-                                    marginBottom: 12,
-                                    textAlign: "center",
-                                }}
-                            >
-                                {selectedDay?.name} Day
-                            </PixelText>
-                            <View
-                                style={{
-                                    flex: 1,
-                                    justifyContent: "center",
-                                    alignItems: "center",
-                                }}
-                            >
-                                <PixelText>No workouts found!</PixelText>
                                 <PixelButton
-                                    color="#ff0"
-                                    text="Get Workouts"
-                                    onPress={navigateToWorkoutShop}
+                                    text="Change Workout Split"
+                                    color="#0f0"
+                                    onPress={() => setShowSplitModal(true)}
                                     containerStyle={{
-                                        marginTop: 15,
-                                        borderColor: "#ff0",
+                                        marginVertical: 16,
+                                        borderColor: "#0f0",
                                     }}
+                                />
+
+                                <WorkoutSplitModal
+                                    visible={showSplitModal}
+                                    onCancel={() => setShowSplitModal(false)}
+                                    splitName={splitName}
+                                    setSplitName={setSplitName}
+                                    splitDays={splitDays}
+                                    addDay={addSplitDay}
+                                    removeDay={removeSplitDay}
+                                    updateDay={updateSplitDay}
+                                    onConfirm={handleSplitConfirm}
+                                />
+
+                                <ConfirmationPixelModal
+                                    visible={showConfirmationModal}
+                                    onConfirm={() =>
+                                        setShowConfirmationModal(false)
+                                    }
+                                    onCancel={() =>
+                                        setShowConfirmationModal(false)
+                                    }
+                                    title={modalConfirmationTitle}
+                                    message={modalMessage}
                                 />
                             </View>
-                        </>
-                    ) : (
-                        <>
-                            <PixelButton
-                                text="Change Day"
-                                onPress={handleChangeDay}
-                                containerStyle={{ marginBottom: 10 }}
-                            />
-                            <PixelText
-                                fontSize={20}
-                                color="#ff0"
-                                style={{
-                                    marginBottom: 12,
-                                    textAlign: "center",
-                                }}
-                            >
-                                {selectedDay?.name} Day
-                            </PixelText>
-                            <PixelText
-                                fontSize={18}
-                                color="#0ff"
-                                style={{
-                                    marginBottom: 12,
-                                    textAlign: "center",
-                                }}
-                            >
-                                Timer: {formatTime(timer)}
-                            </PixelText>
-                            {workoutStarted ? (
-                                <PixelButton
-                                    color="#f00"
-                                    text="Complete Workout"
-                                    onPress={openCompleteModal}
-                                    containerStyle={{
-                                        marginTop: 20,
-                                        backgroundColor: "#000",
-                                        borderColor: "#f00",
-                                    }}
-                                />
-                            ) : (
-                                <PixelButton
-                                    text="Start Workout"
-                                    onPress={openStartModal}
-                                    containerStyle={{ marginTop: 20 }}
-                                />
-                            )}
-
-                            <PixelModal
-                                visible={showModal}
-                                onConfirm={onModalConfirm}
-                                onCancel={() => setShowModal(false)}
-                                title={
-                                    modalAction === "start"
-                                        ? "Start Workout"
-                                        : "Complete Workout"
-                                }
-                                message={modalMessage}
-                            />
-                            <ConfirmationPixelModal
-                                visible={showConfirmationModal}
-                                onConfirm={() =>
-                                    setShowConfirmationModal(false)
-                                }
-                                onCancel={() => setShowConfirmationModal(false)}
-                                title={modalConfirmationTitle}
-                                message={modalMessage}
-                            />
-
-                            <GestureHandlerRootView style={{ flex: 1 }}>
-                                <DraggableFlatList
-                                    animationConfig={{ duration: 150 }}
-                                    activationDistance={10}
-                                    keyboardShouldPersistTaps="handled"
-                                    data={workouts}
-                                    onDragEnd={({ data }) => {
-                                        setWorkouts(data);
-                                    }}
-                                    keyExtractor={(item) =>
-                                        item.workoutId.toString()
-                                    }
-                                    renderItem={({
-                                        item,
-                                        drag,
-                                        isActive,
-                                    }: RenderItemParams<Workout>) => (
-                                        <View
+                        ) : (
+                            <>
+                                {!workouts || workouts.length === 0 ? (
+                                    <>
+                                        <PixelButton
+                                            text="Change Day"
+                                            onPress={handleChangeDay}
+                                            containerStyle={{
+                                                marginBottom: 10,
+                                            }}
+                                        />
+                                        <PixelText
+                                            fontSize={20}
+                                            color="#ff0"
                                             style={{
-                                                opacity: isActive ? 0.8 : 1,
+                                                marginBottom: 12,
+                                                textAlign: "center",
                                             }}
                                         >
-                                            <View style={styles.workoutCard}>
-                                                <View style={{ flex: 1 }}>
-                                                    <PixelText
-                                                        fontSize={14}
-                                                        color="#0f0"
-                                                        style={{
-                                                            marginBottom: 4,
-                                                            textAlign: "left",
-                                                        }}
-                                                        // remove onLongPress here, we’ll move drag to button
-                                                    >
-                                                        {item.workout.name}
-                                                    </PixelText>
-
-                                                    {/* Drag handle button */}
-                                                    <PixelButton
-                                                        text="Drag"
-                                                        onLongPress={drag} // <- simple and reliable trigger from example
-                                                        containerStyle={{
-                                                            marginBottom: 8,
-                                                            width: "100%",
-                                                        }}
-                                                    />
-
-                                                    <PixelText
-                                                        fontSize={10}
-                                                        color="#fff"
-                                                        style={{
-                                                            marginBottom: 8,
-                                                            textAlign: "left",
-                                                        }}
-                                                    >
-                                                        Reps: 10, Failure,
-                                                        Failure
-                                                    </PixelText>
-
-                                                    <PixelText
-                                                        fontSize={10}
-                                                        color="#fff"
-                                                        style={{
-                                                            marginBottom: 8,
-                                                            textAlign: "left",
-                                                        }}
-                                                    >
-                                                        {`Max weight: ${getLastWorkoutWeight(
-                                                            item.workoutId
-                                                        )} lbs`}
-                                                    </PixelText>
-
-                                                    <ScrollView
-                                                        horizontal
-                                                        showsHorizontalScrollIndicator={
-                                                            false
-                                                        }
-                                                        scrollEnabled={
-                                                            !isActive
-                                                        } // disable scrolling while dragging
-                                                    >
-                                                        <View
-                                                            style={{
-                                                                flexDirection:
-                                                                    "row",
-                                                                gap: 8,
-                                                            }}
-                                                        >
-                                                            {(
-                                                                weightEntries[
-                                                                    item
-                                                                        .workoutId
-                                                                ] || []
-                                                            ).map(
-                                                                (weight, i) => (
-                                                                    <TextInput
-                                                                        key={i}
-                                                                        keyboardType="decimal-pad"
-                                                                        value={weight.toString()}
-                                                                        onChangeText={(
-                                                                            v
-                                                                        ) =>
-                                                                            handleWeightChange(
-                                                                                item.workoutId,
-                                                                                i,
-                                                                                v
-                                                                            )
-                                                                        }
-                                                                        style={
-                                                                            styles.weightInput
-                                                                        }
-                                                                        placeholder="0"
-                                                                        placeholderTextColor="#555"
-                                                                    />
-                                                                )
-                                                            )}
-                                                        </View>
-                                                    </ScrollView>
-                                                </View>
-
-                                                <View
-                                                    style={styles.buttonsColumn}
-                                                >
-                                                    <PixelButton
-                                                        text="+"
-                                                        onPress={() =>
-                                                            addEntry(
-                                                                item.workoutId
-                                                            )
-                                                        }
-                                                        containerStyle={{
-                                                            marginBottom: 8,
-                                                            width: 40,
-                                                        }}
-                                                    />
-                                                    <PixelButton
-                                                        text="-"
-                                                        onPress={() =>
-                                                            deleteEntry(
-                                                                item.workoutId
-                                                            )
-                                                        }
-                                                        containerStyle={{
-                                                            width: 40,
-                                                        }}
-                                                    />
-                                                </View>
-                                            </View>
+                                            {selectedDay?.name} Day
+                                        </PixelText>
+                                        <View
+                                            style={{
+                                                flex: 1,
+                                                justifyContent: "center",
+                                                alignItems: "center",
+                                            }}
+                                        >
+                                            <PixelText>
+                                                No workouts found!
+                                            </PixelText>
+                                            <PixelButton
+                                                color="#ff0"
+                                                text="Get Workouts"
+                                                onPress={navigateToWorkoutShop}
+                                                containerStyle={{
+                                                    marginTop: 15,
+                                                    borderColor: "#ff0",
+                                                }}
+                                            />
                                         </View>
-                                    )}
-                                />
-                            </GestureHandlerRootView>
-                        </>
-                    )}
-                </>
-            )}
-        </View>
+                                    </>
+                                ) : (
+                                    <>
+                                        <WorkoutHeader
+                                            selectedDay={selectedDay}
+                                            timer={timer}
+                                            workoutStarted={workoutStarted}
+                                            formatTime={formatTime}
+                                            handleChangeDay={handleChangeDay}
+                                            openStartModal={openStartModal}
+                                            openCompleteModal={
+                                                openCompleteModal
+                                            }
+                                            showModal={showModal}
+                                            onModalConfirm={onModalConfirm}
+                                            modalAction={modalAction}
+                                            modalMessage={modalMessage}
+                                            setShowModal={setShowModal}
+                                            showConfirmationModal={
+                                                showConfirmationModal
+                                            }
+                                            setShowConfirmationModal={
+                                                setShowConfirmationModal
+                                            }
+                                            modalConfirmationTitle={
+                                                modalConfirmationTitle
+                                            }
+                                            showConfetti={showConfetti}
+                                        />
+
+                                        <GestureHandlerRootView
+                                            style={{ flex: 1 }}
+                                        >
+                                            <DraggableFlatList
+                                                data={workouts}
+                                                onDragEnd={({ data }) => {
+                                                    setWorkouts(data);
+                                                    saveWorkoutOrder(data);
+                                                }}
+                                                keyExtractor={(item) =>
+                                                    item.workoutId.toString()
+                                                }
+                                                renderItem={({
+                                                    item,
+                                                    drag,
+                                                    isActive,
+                                                }) => (
+                                                    <WorkoutItem
+                                                        item={item}
+                                                        isActive={isActive}
+                                                        drag={drag}
+                                                        weightEntries={
+                                                            weightEntries
+                                                        }
+                                                        handleWeightChange={
+                                                            handleWeightChange
+                                                        }
+                                                        getLastWorkoutWeight={
+                                                            getLastWorkoutWeight
+                                                        }
+                                                        addEntry={addEntry}
+                                                        deleteEntry={
+                                                            deleteEntry
+                                                        }
+                                                    />
+                                                )}
+                                            />
+                                        </GestureHandlerRootView>
+                                    </>
+                                )}
+                            </>
+                        )}
+                    </View>
+                </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: "#111",
+    },
     container: {
         flex: 1,
         backgroundColor: "#111",
         paddingHorizontal: 20,
-        paddingTop: "20%",
     },
     workoutCard: {
         backgroundColor: "#222",
@@ -845,7 +760,8 @@ const styles = StyleSheet.create({
         width: 70,
         height: 40,
         paddingHorizontal: 8,
-        fontFamily: "PressStart2P_400Regular", // pixel font
+        marginRight: 4,
+        fontFamily: "PressStart2P_400Regular",
     },
     buttonsColumn: {
         marginLeft: 12,

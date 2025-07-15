@@ -7,11 +7,14 @@ import {
     TouchableWithoutFeedback,
     TextInput,
     Keyboard,
+    KeyboardAvoidingView,
+    Platform,
 } from "react-native";
 import PixelText from "./PixelText";
 import PixelButton from "./PixelButton";
 import * as SecureStore from "expo-secure-store";
 import { authFetch } from "../utils/authFetch";
+import { playBadMoveSound } from "../utils/playBadMoveSound";
 
 interface UpdateQuestModalProps {
     visible: boolean;
@@ -85,6 +88,7 @@ export default function UpdateQuestModal({
             deadline.trim() === "" ||
             goal === 0
         ) {
+            playBadMoveSound();
             alert(
                 "Please enter a valid goal amount, initial weight, and deadline (YYYY-MM-DD)."
             );
@@ -109,131 +113,138 @@ export default function UpdateQuestModal({
 
     return (
         <Modal transparent visible={visible} animationType="fade">
-            <TouchableWithoutFeedback
-                onPress={() => {
-                    Keyboard.dismiss();
-                }}
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? -20 : 0}
             >
-                <View style={styles.overlay}>
-                    <TouchableWithoutFeedback>
-                        <View style={styles.modalContainer}>
-                            <PixelText
-                                fontSize={14}
-                                color="#0ff"
-                                style={{ marginBottom: 12 }}
-                            >
-                                {title}
-                            </PixelText>
+                <TouchableWithoutFeedback
+                    onPress={Keyboard.dismiss}
+                    accessible={false}
+                >
+                    <View style={styles.overlay}>
+                        <TouchableWithoutFeedback>
+                            <View style={styles.modalContainer}>
+                                <PixelText
+                                    fontSize={14}
+                                    color="#0ff"
+                                    style={{ marginBottom: 12 }}
+                                >
+                                    {title}
+                                </PixelText>
 
-                            <PixelText fontSize={10} color="#fff">
-                                Select Goal Type:
-                            </PixelText>
-                            <View style={styles.typeSelector}>
-                                {["GAIN", "LOSE", "MAINTAIN"].map((type) => (
-                                    <TouchableOpacity
-                                        key={type}
-                                        style={[
-                                            styles.typeButton,
-                                            customType === type &&
-                                                styles.typeButtonSelected,
-                                        ]}
-                                        onPress={() =>
-                                            setCustomType(
-                                                type as
-                                                    | "GAIN"
-                                                    | "LOSE"
-                                                    | "MAINTAIN"
-                                            )
-                                        }
-                                    >
-                                        <PixelText
-                                            fontSize={12}
-                                            color={
-                                                customType === type
-                                                    ? "#000"
-                                                    : "#0ff"
-                                            }
-                                        >
-                                            {type}
-                                        </PixelText>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
+                                <PixelText fontSize={10} color="#fff">
+                                    Select Goal Type:
+                                </PixelText>
+                                <View style={styles.typeSelector}>
+                                    {["GAIN", "LOSE", "MAINTAIN"].map(
+                                        (type) => (
+                                            <TouchableOpacity
+                                                key={type}
+                                                style={[
+                                                    styles.typeButton,
+                                                    customType === type &&
+                                                        styles.typeButtonSelected,
+                                                ]}
+                                                onPress={() =>
+                                                    setCustomType(
+                                                        type as
+                                                            | "GAIN"
+                                                            | "LOSE"
+                                                            | "MAINTAIN"
+                                                    )
+                                                }
+                                            >
+                                                <PixelText
+                                                    fontSize={12}
+                                                    color={
+                                                        customType === type
+                                                            ? "#000"
+                                                            : "#0ff"
+                                                    }
+                                                >
+                                                    {type}
+                                                </PixelText>
+                                            </TouchableOpacity>
+                                        )
+                                    )}
+                                </View>
 
-                            <PixelText
-                                fontSize={10}
-                                color="#fff"
-                                style={{ marginTop: 12 }}
-                            >
-                                New Goal Amount:
-                            </PixelText>
-                            <TextInput
-                                placeholder="e.g. 15"
-                                placeholderTextColor="#555"
-                                value={goalAmount}
-                                onChangeText={setGoalAmount}
-                                style={styles.input}
-                                keyboardType="numeric"
-                            />
-
-                            <PixelText
-                                fontSize={10}
-                                color="#fff"
-                                style={{ marginTop: 12 }}
-                            >
-                                New Deadline (YYYY-MM-DD):
-                            </PixelText>
-                            <TextInput
-                                placeholder="e.g. 2025-08-15"
-                                placeholderTextColor="#555"
-                                value={deadline}
-                                onChangeText={setDeadline}
-                                style={styles.input}
-                            />
-                            <PixelText
-                                fontSize={10}
-                                color="#fff"
-                                style={{ marginTop: 12 }}
-                            >
-                                Initial Weight:
-                            </PixelText>
-                            <TextInput
-                                placeholder="e.g. 160"
-                                placeholderTextColor="#555"
-                                value={initialWeight}
-                                onChangeText={setInitialWeight}
-                                style={styles.input}
-                                keyboardType="numeric"
-                            />
-
-                            <View style={styles.buttonRow}>
-                                <PixelButton
-                                    text="Cancel"
-                                    onPress={onCancel}
-                                    fontSize={12}
-                                    color="#f00"
-                                    containerStyle={{
-                                        flex: 1,
-                                        justifyContent: "center",
-                                        borderColor: "#f00",
-                                    }}
+                                <PixelText
+                                    fontSize={10}
+                                    color="#fff"
+                                    style={{ marginTop: 12 }}
+                                >
+                                    New Goal Amount:
+                                </PixelText>
+                                <TextInput
+                                    placeholder="e.g. 15"
+                                    placeholderTextColor="#555"
+                                    value={goalAmount}
+                                    onChangeText={setGoalAmount}
+                                    style={styles.input}
+                                    keyboardType="numeric"
                                 />
-                                <PixelButton
-                                    text="Update Quest"
-                                    onPress={handleConfirm}
-                                    fontSize={12}
-                                    color="#0f0"
-                                    containerStyle={{
-                                        flex: 1,
-                                        justifyContent: "center",
-                                        borderColor: "#0f0",
-                                    }}
+
+                                <PixelText
+                                    fontSize={10}
+                                    color="#fff"
+                                    style={{ marginTop: 12 }}
+                                >
+                                    New Deadline (YYYY-MM-DD):
+                                </PixelText>
+                                <TextInput
+                                    placeholder="e.g. 2025-08-15"
+                                    placeholderTextColor="#555"
+                                    value={deadline}
+                                    onChangeText={setDeadline}
+                                    style={styles.input}
                                 />
+                                <PixelText
+                                    fontSize={10}
+                                    color="#fff"
+                                    style={{ marginTop: 12 }}
+                                >
+                                    Initial Weight:
+                                </PixelText>
+                                <TextInput
+                                    placeholder="e.g. 160"
+                                    placeholderTextColor="#555"
+                                    value={initialWeight}
+                                    onChangeText={setInitialWeight}
+                                    style={styles.input}
+                                    keyboardType="numeric"
+                                />
+
+                                <View style={styles.buttonRow}>
+                                    <PixelButton
+                                        text="Cancel"
+                                        onPress={onCancel}
+                                        fontSize={12}
+                                        color="#f00"
+                                        containerStyle={{
+                                            flex: 1,
+                                            justifyContent: "center",
+                                            borderColor: "#f00",
+                                        }}
+                                    />
+                                    <PixelButton
+                                        text="Update Quest"
+                                        onPress={handleConfirm}
+                                        fontSize={12}
+                                        color="#0f0"
+                                        containerStyle={{
+                                            flex: 1,
+                                            justifyContent: "center",
+                                            borderColor: "#0f0",
+                                        }}
+                                    />
+                                </View>
                             </View>
-                        </View>
-                    </TouchableWithoutFeedback>
-                </View>
-            </TouchableWithoutFeedback>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
         </Modal>
     );
 }

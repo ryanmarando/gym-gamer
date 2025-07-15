@@ -16,6 +16,8 @@ import * as SecureStore from "expo-secure-store";
 import CustomWorkoutModal from "../components/CustomWorkoutModal";
 import PixelModal from "../components/PixelModal";
 import { sendPushNotification } from "../utils/notification";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { playDeleteSound } from "../utils/playDeleteSound";
 
 export default function SaveWorkoutScreen() {
     const [userWorkouts, setUserWorkouts] = useState<any[]>([]);
@@ -199,6 +201,8 @@ export default function SaveWorkoutScreen() {
                 { method: "DELETE" }
             );
 
+            playDeleteSound();
+
             setUserWorkouts((prev) =>
                 prev.filter((w) => w.workoutId !== workoutId)
             );
@@ -331,137 +335,146 @@ export default function SaveWorkoutScreen() {
     });
 
     return (
-        <View style={styles.container}>
-            <PixelText
-                fontSize={22}
-                color="#0ff"
-                style={{ marginBottom: 20, textAlign: "center" }}
-            >
-                🛒 Workout Shop
-            </PixelText>
-            <PixelText fontSize={12} color="#0ff" style={{ marginBottom: 6 }}>
-                Search
-            </PixelText>
-            <TextInput
-                style={styles.searchInput}
-                placeholder="Search workouts..."
-                placeholderTextColor="#888"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-            />
-            <SectionList
-                sections={sections}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => renderWorkoutItem(item)}
-                renderSectionHeader={({ section: { title } }) => (
-                    <PixelText
-                        fontSize={20}
-                        color="#0ff"
-                        style={{
-                            marginBottom: 10,
-
-                            paddingTop: 10,
-                            backgroundColor: "#111",
-                        }}
-                    >
-                        {title}
-                    </PixelText>
-                )}
-                contentContainerStyle={{ paddingBottom: 80 }}
-            />
-
-            {/* Modal for selecting split day when no default match */}
-            {splitSelectionModalVisible && (
-                <PixelModal
-                    visible={splitSelectionModalVisible}
-                    title="Select a Split Day"
-                    message="Choose a split day to save this workout to:"
-                    onConfirm={() => {
-                        if (selectedSplitDay && pendingSaveWorkout) {
-                            SecureStore.getItemAsync("userId").then(
-                                (userIdStr) => {
-                                    if (userIdStr) {
-                                        const userId = Number(userIdStr);
-                                        saveWorkoutToSplit(
-                                            userId,
-                                            pendingSaveWorkout.id,
-                                            selectedSplitDay
-                                        );
-                                    }
-                                }
-                            );
-                        }
-                        setSplitSelectionModalVisible(false);
-                        setPendingSaveWorkout(null);
-                        setSelectedSplitDay(null);
-                    }}
-                    onCancel={() => {
-                        setSplitSelectionModalVisible(false);
-                        setPendingSaveWorkout(null);
-                        setSelectedSplitDay(null);
-                    }}
-                    confirmText="Save"
-                    cancelText="Cancel"
+        <SafeAreaView style={styles.safeArea}>
+            <View style={styles.container}>
+                <PixelText
+                    fontSize={22}
+                    color="#0ff"
+                    style={{ marginBottom: 20, textAlign: "center" }}
                 >
-                    <View style={{ marginBottom: 14 }}>
-                        {splitOptions.map((day) => (
-                            <TouchableOpacity
-                                key={day.id}
-                                onPress={() => {
-                                    setSelectedSplitDay(day.name);
-                                    setSelectedSplitDayId(day.id); // new!
-                                }}
-                                style={{
-                                    padding: 10,
-                                    backgroundColor:
-                                        selectedSplitDay === day.name
-                                            ? "#0ff"
-                                            : "#333",
-                                    marginBottom: 6,
-                                    borderRadius: 6,
-                                }}
-                            >
-                                <PixelText fontSize={14} color="#000">
-                                    {day.name}
-                                </PixelText>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </PixelModal>
-            )}
-
-            <View style={styles.bottomButtonContainer}>
-                <PixelButton
-                    text="Create your own workout"
-                    onPress={toggleCreateWorkout}
-                ></PixelButton>
-
-                <CustomWorkoutModal
-                    visible={showCustomWorkoutModal}
-                    onConfirm={(data) => {
-                        confirmCreateWorkout(data);
-                        setShowCustomWorkoutModal(false);
-                    }}
-                    onCancel={() => setShowCustomWorkoutModal(false)}
+                    🛒 Workout Shop
+                </PixelText>
+                <PixelText
+                    fontSize={12}
+                    color="#0ff"
+                    style={{ marginBottom: 6 }}
+                >
+                    Search
+                </PixelText>
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search workouts..."
+                    placeholderTextColor="#888"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
                 />
-                <PixelModal
-                    visible={modalVisible}
-                    title={modalConfig.title}
-                    message={modalConfig.message}
-                    onConfirm={modalConfig.onConfirm}
-                    onCancel={() => setModalVisible(false)}
+                <SectionList
+                    sections={sections}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={({ item }) => renderWorkoutItem(item)}
+                    renderSectionHeader={({ section: { title } }) => (
+                        <PixelText
+                            fontSize={20}
+                            color="#0ff"
+                            style={{
+                                marginBottom: 10,
+
+                                paddingTop: 10,
+                                backgroundColor: "#111",
+                            }}
+                        >
+                            {title}
+                        </PixelText>
+                    )}
+                    contentContainerStyle={{ paddingBottom: 80 }}
                 />
+
+                {/* Modal for selecting split day when no default match */}
+                {splitSelectionModalVisible && (
+                    <PixelModal
+                        visible={splitSelectionModalVisible}
+                        title="Select a Split Day"
+                        message="Choose a split day to save this workout to:"
+                        onConfirm={() => {
+                            if (selectedSplitDay && pendingSaveWorkout) {
+                                SecureStore.getItemAsync("userId").then(
+                                    (userIdStr) => {
+                                        if (userIdStr) {
+                                            const userId = Number(userIdStr);
+                                            saveWorkoutToSplit(
+                                                userId,
+                                                pendingSaveWorkout.id,
+                                                selectedSplitDay
+                                            );
+                                        }
+                                    }
+                                );
+                            }
+                            setSplitSelectionModalVisible(false);
+                            setPendingSaveWorkout(null);
+                            setSelectedSplitDay(null);
+                        }}
+                        onCancel={() => {
+                            setSplitSelectionModalVisible(false);
+                            setPendingSaveWorkout(null);
+                            setSelectedSplitDay(null);
+                        }}
+                        confirmText="Save"
+                        cancelText="Cancel"
+                    >
+                        <View style={{ marginBottom: 14 }}>
+                            {splitOptions.map((day) => (
+                                <TouchableOpacity
+                                    key={day.id}
+                                    onPress={() => {
+                                        setSelectedSplitDay(day.name);
+                                        setSelectedSplitDayId(day.id); // new!
+                                    }}
+                                    style={{
+                                        padding: 10,
+                                        backgroundColor:
+                                            selectedSplitDay === day.name
+                                                ? "#0ff"
+                                                : "#333",
+                                        marginBottom: 6,
+                                        borderRadius: 6,
+                                    }}
+                                >
+                                    <PixelText fontSize={14} color="#000">
+                                        {day.name}
+                                    </PixelText>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </PixelModal>
+                )}
+
+                <View style={styles.bottomButtonContainer}>
+                    <PixelButton
+                        text="Create your own workout"
+                        onPress={toggleCreateWorkout}
+                    ></PixelButton>
+
+                    <CustomWorkoutModal
+                        visible={showCustomWorkoutModal}
+                        onConfirm={(data) => {
+                            confirmCreateWorkout(data);
+                            setShowCustomWorkoutModal(false);
+                        }}
+                        onCancel={() => setShowCustomWorkoutModal(false)}
+                    />
+                    <PixelModal
+                        visible={modalVisible}
+                        title={modalConfig.title}
+                        message={modalConfig.message}
+                        onConfirm={modalConfig.onConfirm}
+                        onCancel={() => setModalVisible(false)}
+                    />
+                </View>
             </View>
-        </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: "#111",
+    },
     container: {
         flex: 1,
         backgroundColor: "#111",
         paddingHorizontal: 20,
-        paddingVertical: "20%",
     },
     workoutItem: {
         backgroundColor: "#222",
@@ -481,7 +494,7 @@ const styles = StyleSheet.create({
     bottomButtonContainer: {
         alignItems: "center",
         justifyContent: "flex-end",
-        marginBottom: "-19%",
+        marginBottom: "-6%",
         paddingTop: "3%",
     },
     searchInput: {
