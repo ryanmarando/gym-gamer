@@ -19,6 +19,7 @@ import * as SecureStore from "expo-secure-store";
 import PickWorkoutDay from "../components/PickWorkoutDay";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sendPushNotification } from "../utils/notification";
+import { playCompleteSound } from "../utils/playCompleteSound";
 
 interface Workout {
     userId: number;
@@ -133,7 +134,7 @@ export default function WorkoutsScreen({ navigation }: any) {
         for (const workoutId in weightEntries) {
             // Reset to same length but with 0s
             reset[workoutId] = new Array(weightEntries[workoutId].length).fill(
-                0
+                ""
             );
         }
         setWeightEntries(reset);
@@ -155,10 +156,20 @@ export default function WorkoutsScreen({ navigation }: any) {
                 const userId = Number(userIdStr);
                 if (isNaN(userId)) return;
 
+                let totalWeightLifted = 0;
+
                 // Save last weight entry for each workout
                 for (const workout of workouts) {
                     const entries = weightEntries[workout.workoutId];
                     if (!entries || entries.length === 0) continue;
+
+                    // Sum all weights for this workout (all sets)
+                    const sumWeights = entries.reduce((sum, w) => {
+                        const num = Number(w);
+                        return sum + (isNaN(num) ? 0 : num);
+                    }, 0);
+
+                    totalWeightLifted += sumWeights;
 
                     const maxWeight = Math.max(...entries.map(Number));
 
@@ -173,6 +184,19 @@ export default function WorkoutsScreen({ navigation }: any) {
                                 }),
                             }
                         );
+
+                        // Now send totalWeightLifted to backend for weekly tracking
+                        if (totalWeightLifted > 0) {
+                            await authFetch(
+                                `/workouts/addUserWeightLifted/${userId}`,
+                                {
+                                    method: "PATCH",
+                                    body: JSON.stringify({
+                                        weightLifted: Number(totalWeightLifted),
+                                    }),
+                                }
+                            );
+                        }
 
                         if (result.newlyCompletedAchievements?.length) {
                             // Send notification
@@ -220,13 +244,15 @@ export default function WorkoutsScreen({ navigation }: any) {
                         }
                     );
                 }
-
+                playCompleteSound();
                 setWorkoutStarted(false);
                 setWorkoutStartTime(null);
                 setTimer(0);
                 await AsyncStorage.removeItem("workoutStartTime");
                 setmodalConfirmationTitle("Nice work, gamer!");
-                setModalMessage("Workout complete! You just gained XP!");
+                setModalMessage(
+                    `Workout complete! You just gained ${workoutProgressData.xpGiven} XP!`
+                );
                 setShowConfirmationModal(true);
                 resetWeightEntries();
             } catch (error) {
@@ -315,7 +341,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                     const copy = { ...prev };
                     filtered.forEach((w: Workout) => {
                         if (!copy[w.workoutId]) {
-                            copy[w.workoutId] = ["0", "0", "0"];
+                            copy[w.workoutId] = ["", "", ""];
                         }
                     });
                     return copy;
@@ -334,7 +360,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                 (data.workouts || []).forEach((w: Workout) => {
                     if (!copy[w.workoutId]) {
                         // Only initialize if missing
-                        copy[w.workoutId] = ["0", "0", "0"];
+                        copy[w.workoutId] = ["", "", ""];
                     }
                 });
 
@@ -417,7 +443,7 @@ export default function WorkoutsScreen({ navigation }: any) {
         setWeightEntries((prev) => {
             const copy = { ...prev };
             const arr = copy[workoutId] ? [...copy[workoutId]] : [];
-            arr.push("0");
+            arr.push("");
             copy[workoutId] = arr;
             return copy;
         });

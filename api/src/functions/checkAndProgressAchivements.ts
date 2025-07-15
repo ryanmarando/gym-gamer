@@ -13,7 +13,7 @@ const checkWorkoutDuration = (duration: number, achievementId: number) => {
 
 const checkWorkoutTimeOfDay = (
     workoutEndTime: string,
-    achievementId: number
+    achievementName: string
 ) => {
     console.log("Workout end time checking:", workoutEndTime);
     if (!workoutEndTime) return false;
@@ -22,17 +22,17 @@ const checkWorkoutTimeOfDay = (
     const hour = endDate.getHours();
     console.log(`🕒 Workout ended at hour: ${hour}`);
 
-    if (achievementId === 11 && hour < 12) {
-        console.log(`✅ Matched AM workout for achievement ${achievementId}`);
+    if (achievementName === "complete 5 am workouts" && hour < 12) {
+        console.log(`✅ Matched AM workout for achievement ${achievementName}`);
         return true;
     }
-    if (achievementId === 12 && hour >= 12) {
-        console.log(`✅ Matched PM workout for achievement ${achievementId}`);
+    if (achievementName === "complete 5 pm workouts" && hour >= 12) {
+        console.log(`✅ Matched PM workout for achievement ${achievementName}`);
         return true;
     }
 
     console.log(
-        `❌ Workout did not match AM/PM conditions for ${achievementId}`
+        `❌ Workout did not match AM/PM conditions for ${achievementName}`
     );
     return false;
 };
@@ -92,22 +92,24 @@ export async function checkAndProgressAchievements(
         switch (ua.achievement.goalType) {
             case AchievementType.WORKOUT: {
                 // Duration-based achievement
+                const achievementName = ua.achievement.name.toLowerCase();
                 if (
-                    ua.achievementId === 10 &&
+                    achievementName === "complete a workout over 90 minutes" &&
                     !checkWorkoutDuration(context.duration, ua.achievementId)
                 ) {
-                    continue; // skip this achievement
+                    continue;
                 }
 
                 // Time-of-day achievements
                 if (
-                    (ua.achievementId === 11 || ua.achievementId === 12) &&
+                    (achievementName === "complete 5 am workouts" ||
+                        achievementName === "complete 5 pm workouts") &&
                     !checkWorkoutTimeOfDay(
                         context.workoutEndTime,
-                        ua.achievementId
+                        achievementName
                     )
                 ) {
-                    continue; // skip this achievement
+                    continue;
                 }
 
                 // Normal progression logic
@@ -118,9 +120,14 @@ export async function checkAndProgressAchievements(
                 }
                 break;
             }
-            // case AchievementType.STREAK:
-            //     assessAndProgressAchievement(goalAmount, progressToAdd);
-            //     break;
+            case AchievementType.STREAK: {
+                if (goalAmount === 1) {
+                    progressToAdd = 100;
+                } else {
+                    progressToAdd = 100 / goalAmount;
+                }
+                break;
+            }
             case AchievementType.QUEST:
                 if (goalAmount === 1) {
                     progressToAdd = 100;

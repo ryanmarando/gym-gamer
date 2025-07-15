@@ -239,6 +239,8 @@ export const resetUserStats = async (
                     xp: 0,
                     level: 1,
                     levelProgress: 0,
+                    totalWeightLifted: 0,
+                    weeklyWeightLifted: 0,
                 },
                 select: {
                     id: true,

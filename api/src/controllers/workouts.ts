@@ -434,6 +434,7 @@ export const completeWorkout = async (req: Request, res: Response) => {
             message: "Progress updated for completing a workout!",
             user: result,
             newlyCompletedAchievements: newlyCompleted,
+            xpGiven: completedWorkoutProgress,
         });
     } catch (error) {
         console.error(error);
@@ -575,4 +576,54 @@ export const assignWorkoutSplit = async (req: Request, res: Response) => {
         split: updatedSplit,
     });
     return;
+};
+
+export const addUserWeightLifted = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const userId = Number(req.params.id);
+        const { weightLifted } = req.body;
+
+        if (!userId || !weightLifted) {
+            res.status(400).json({
+                message: "Missing userId or weightLifted.",
+            });
+            return;
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            res.status(404).json({ message: "User not found." });
+            return;
+        }
+
+        // Update total + weekly lifted weight
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                totalWeightLifted: { increment: weightLifted },
+                weeklyWeightLifted: { increment: weightLifted },
+            },
+        });
+
+        res.status(200).json({
+            message: "User weight lifted stats updated.",
+            user: {
+                totalWeightLifted: updatedUser.totalWeightLifted,
+                weeklyWeightLifted: updatedUser.weeklyWeightLifted,
+            },
+        });
+    } catch (error) {
+        console.error("Error updating weight lifted:", error);
+        res.status(500).json({
+            message: "Failed to update user's weight lifted.",
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
 };

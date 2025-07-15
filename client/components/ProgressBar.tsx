@@ -1,10 +1,10 @@
 import React from "react";
-import { View, StyleSheet, ViewStyle } from "react-native";
+import { View, StyleSheet, ViewStyle, Animated } from "react-native";
 import { DimensionValue } from "react-native";
 
 interface ProgressBarProps {
-    progress: number; // 0 to 1
-    width?: number | string; // number for px or string for %
+    progress: number | Animated.AnimatedInterpolation<string | number>;
+    width?: number | string;
     height?: number;
     backgroundColor?: string;
     progressColor?: string;
@@ -19,10 +19,23 @@ export default function ProgressBar({
     progressColor = "#0ff",
     borderColor = "#0ff",
 }: ProgressBarProps) {
-    // Clamp progress between 0 and 1
-    const clampedProgress = Math.min(Math.max(progress, 0), 1);
+    let clampedProgress:
+        | number
+        | Animated.AnimatedInterpolation<string | number>;
+    if (typeof progress === "number") {
+        clampedProgress = Math.min(Math.max(progress, 0), 1);
+    } else {
+        clampedProgress = progress;
+    }
 
-    // Style for container with proper typing
+    const widthStyle =
+        typeof clampedProgress === "number"
+            ? (`${clampedProgress * 100}%` as `${number}%`) // <-- assert literal type here
+            : clampedProgress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ["0%", "100%"],
+              });
+
     const containerStyle: ViewStyle = {
         width: width as DimensionValue,
         height,
@@ -35,9 +48,9 @@ export default function ProgressBar({
 
     return (
         <View style={containerStyle}>
-            <View
+            <Animated.View
                 style={{
-                    width: `${clampedProgress * 100}%`,
+                    width: widthStyle,
                     height: "100%",
                     backgroundColor: progressColor,
                 }}
@@ -45,7 +58,6 @@ export default function ProgressBar({
         </View>
     );
 }
-
 const styles = StyleSheet.create({
     container: {
         borderRadius: 4,

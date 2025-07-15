@@ -1,14 +1,6 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import {
-    View,
-    StyleSheet,
-    ScrollView,
-    TouchableOpacity,
-    Alert,
-    SectionList,
-    Text,
-} from "react-native";
+import { View, StyleSheet, SectionList } from "react-native";
 import PixelText from "../components/PixelText";
 import ProgressBar from "../components/ProgressBar";
 import PixelButton from "../components/PixelButton";
@@ -20,6 +12,7 @@ import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { sendPushNotification } from "../utils/notification";
+import AchievementAnimation from "../components/AchievementAnimation";
 
 interface AchievementDetails {
     id: number;
@@ -54,9 +47,10 @@ interface Quest {
     type: string;
     goal: number;
     goalDate: string | Date;
+    baseXP: number;
 }
 
-export default function AchievementsScreen({}: PixelAchievementCardProps) {
+export default function AchievementsScreen({ navigation }: any) {
     const [achievements, setAchievements] = useState<AchievementDetails[]>([]); // All achievements
     const [userAchievements, setUserAchievements] = useState<UserAchievement[]>(
         []
@@ -79,6 +73,10 @@ export default function AchievementsScreen({}: PixelAchievementCardProps) {
     });
     const [updateModalVisible, setUpdateModalVisible] = useState(false);
     const [selectedQuestId, setSelectedQuestId] = useState<number | null>(null);
+    const [newAchievementsToAnimate, setNewAchievementsToAnimate] = useState<
+        AchievementDetails[]
+    >([]);
+    const animatedAchievementIds = useRef<Set<number>>(new Set());
 
     // Prepare sections for SectionList
     const achievementSections = [
@@ -91,6 +89,40 @@ export default function AchievementsScreen({}: PixelAchievementCardProps) {
             data: userAchievements.filter((ua) => !ua.completed),
         },
     ];
+
+    const clearAnimatedAchievementIds = () => {
+        animatedAchievementIds.current.clear();
+        console.log("Cleared animatedAchievementIds!");
+    };
+    //clearAnimatedAchievementIds();
+
+    const processNewAchievements = (fetchedAchievements: UserAchievement[]) => {
+        // Find newly completed achievements that have not yet been animated
+        const newlyCompleted = fetchedAchievements.filter((ua) => {
+            const isCompleted = ua.completed;
+            const hasAnimated = animatedAchievementIds.current.has(
+                ua.achievementId
+            );
+
+            return isCompleted && !hasAnimated;
+        });
+
+        if (newlyCompleted.length > 0) {
+            // Add their achievement details to animation queue
+            setNewAchievementsToAnimate((prev) => [
+                ...prev,
+                ...newlyCompleted.map((ua) => ua.achievement),
+            ]);
+        }
+        console.log(newlyCompleted);
+    };
+
+    const handleAnimationComplete = () => {
+        if (newAchievementsToAnimate.length > 0) {
+            animatedAchievementIds.current.add(newAchievementsToAnimate[0].id);
+            setNewAchievementsToAnimate((prev) => prev.slice(1));
+        }
+    };
 
     useEffect(() => {
         const fetchUserId = async () => {
@@ -113,13 +145,16 @@ export default function AchievementsScreen({}: PixelAchievementCardProps) {
 
     const fetchUserAchievements = async () => {
         const data = await authFetch(`/user/getUserAchievements/${userId}`);
-        setUserAchievements(data?.achievements || []);
+        const achievements = data?.achievements || [];
+        setUserAchievements(achievements);
+        processNewAchievements(achievements);
     };
 
     // Fetch both achievements and user achievements whenever userId or refreshToggle changes
     useFocusEffect(
         useCallback(() => {
             console.log("✅ Achivements loaded");
+
             if (userId === null) return;
 
             fetchAchievements();
@@ -164,6 +199,7 @@ export default function AchievementsScreen({}: PixelAchievementCardProps) {
             if (result.newlyCompletedAchievements?.length) {
                 // Send notification
                 sendNotification(result.newlyCompletedAchievements?.length);
+                setNewAchievementsToAnimate(result.newlyCompletedAchievements);
 
                 result.newlyCompletedAchievements.forEach((ach: any) => {
                     console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
@@ -214,6 +250,13 @@ export default function AchievementsScreen({}: PixelAchievementCardProps) {
 
     return (
         <SafeAreaView style={styles.safeArea}>
+            {newAchievementsToAnimate.length > 0 && (
+                <AchievementAnimation
+                    achievement={newAchievementsToAnimate[0]}
+                    onAnimationComplete={handleAnimationComplete}
+                />
+            )}
+
             <View style={styles.container}>
                 {/* Quests Section */}
                 <PixelText

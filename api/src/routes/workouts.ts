@@ -44,6 +44,8 @@ router.patch(
     workoutController.assignWorkoutSplit
 );
 
+router.patch("/addUserWeightLifted/:id", workoutController.addUserWeightLifted);
+
 router.get("/", workoutController.getAllWorkouts);
 router.delete("/", workoutController.deleteAllWorkouts);
 router.delete("/:id", workoutController.deleteWorkoutById);

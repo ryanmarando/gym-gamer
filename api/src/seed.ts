@@ -238,14 +238,6 @@ export async function SeedAchievements() {
             goalType: AchievementType.LIFTINGWEIGHT,
             weeklyReset: true,
         },
-        {
-            name: "Do 100 Pushups in a Week",
-            xp: 200,
-            description: "Complete 100 pushups within a week.",
-            goalAmount: 100,
-            goalType: AchievementType.EXERCISE,
-            weeklyReset: true,
-        },
 
         // === Time Challenges ===
         {

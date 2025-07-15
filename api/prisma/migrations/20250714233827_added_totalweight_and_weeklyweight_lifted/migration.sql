@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "user" ADD COLUMN     "totalWeightLifted" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "weeklyWeightLifted" DOUBLE PRECISION NOT NULL DEFAULT 0;

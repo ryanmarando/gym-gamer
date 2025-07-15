@@ -17,6 +17,7 @@ interface Quest {
     goal: number;
     goalDate: Date | string;
     initialWeight?: number | null;
+    baseXP: number;
 }
 
 interface WeightEntry {
@@ -211,6 +212,14 @@ export default function PixelQuestCard({
                                     lbs to go!
                                 </PixelText>
                             )}
+
+                            <PixelText
+                                fontSize={10}
+                                color="#fff"
+                                style={{ marginBottom: 4 }}
+                            >
+                                {quest.baseXP * quest.goal} XP reward!
+                            </PixelText>
 
                             <PixelText
                                 fontSize={10}

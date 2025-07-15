@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
     View,
@@ -6,17 +6,20 @@ import {
     Image,
     ActivityIndicator,
     TouchableOpacity,
+    Animated,
 } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import PixelModal from "../components/PixelModal";
 import PixelQuestCard from "../components/PixelQuestCard";
 import ProgressBar from "../components/ProgressBar";
+import Sparks from "../components/Sparks";
 import { authFetch } from "../utils/authFetch";
 import { logout } from "../utils/logout";
 import { resetStats } from "../utils/resetStats";
 import * as SecureStore from "expo-secure-store";
 import { registerForPushNotificationsAsync } from "../utils/notification";
+import { playLevelUpSound } from "../utils/playLevelUpSound";
 
 interface AchievementDetails {
     id: number;
@@ -31,6 +34,7 @@ interface Quest {
     type: string;
     goal: number;
     goalDate: Date | string;
+    baseXP: number;
 }
 
 interface UserData {
@@ -62,6 +66,46 @@ export default function ProfileScreen({
         null
     );
     const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
+    const [sparksActive, setSparksActive] = useState(false);
+
+    const animatedProgress = useRef(new Animated.Value(0)).current;
+    const prevLevelRef = useRef(userData?.level);
+    const prevXpRef = useRef(userData?.xp);
+
+    useEffect(() => {
+        if (!userData) return;
+
+        const prevLevel = prevLevelRef.current ?? userData.level;
+        const prevXp = prevXpRef.current ?? userData.xp;
+
+        if (userData.level > prevLevel) {
+            setSparksActive(true);
+            // Animate to 100% then back to 0
+            Animated.timing(animatedProgress, {
+                toValue: 1,
+                duration: 1000,
+                useNativeDriver: false,
+            }).start(() => {
+                playLevelUpSound();
+                animatedProgress.setValue(0);
+                setSparksActive(false);
+                Animated.timing(animatedProgress, {
+                    toValue: userData.levelProgress / 100,
+                    duration: 1000,
+                    useNativeDriver: false,
+                }).start(() => {});
+            });
+        } else {
+            Animated.timing(animatedProgress, {
+                toValue: userData.levelProgress / 100,
+                duration: 1000,
+                useNativeDriver: false,
+            }).start();
+        }
+
+        prevLevelRef.current = userData.level;
+        prevXpRef.current = userData.xp;
+    }, [userData?.xp, userData?.level]);
 
     useEffect(() => {
         const registerPush = async () => {
@@ -202,14 +246,17 @@ export default function ProfileScreen({
                     Level: {userData.level} | XP: {userData.xp}
                 </PixelText>
 
-                <ProgressBar
-                    progress={userData.levelProgress / 100}
-                    width={250}
-                    height={15}
-                    backgroundColor="#222"
-                    progressColor="#ff0"
-                    borderColor="#ff0"
-                />
+                <View style={{ position: "relative", width: 250, height: 40 }}>
+                    <ProgressBar
+                        progress={animatedProgress}
+                        width={250}
+                        height={15}
+                        backgroundColor="#222"
+                        progressColor="#ff0"
+                        borderColor="#ff0"
+                    />
+                    <Sparks active={sparksActive} />
+                </View>
 
                 <PixelButton
                     text="Reset Stats"
@@ -261,6 +308,7 @@ export default function ProfileScreen({
                                       type: userData.activeQuest.type,
                                       goal: userData.activeQuest.goal,
                                       goalDate: userData.activeQuest.goalDate,
+                                      baseXP: userData.activeQuest.baseXP,
                                   }
                                 : undefined
                         }

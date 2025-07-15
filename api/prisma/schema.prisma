@@ -14,21 +14,23 @@ datasource db {
 }
 
 model User {
-  id              Int               @id @default(autoincrement())
-  email           String            @unique
-  name            String
-  createdAt       DateTime          @default(now()) @map("created_at")
-  password        Password?
-  level           Int               @default(1)
-  levelProgress   Int               @default(0)
-  xp              Int               @default(0)
-  weightEntries   UserWeightEntry[]
-  workouts        UserWorkout[]
-  createdWorkouts Workout[]
-  progressPhotos  ProgressPhoto[]
-  achievements    UserAchievement[]
-  workoutSplit    WorkoutSplit[]
-  quest           Quest[]
+  id                 Int               @id @default(autoincrement())
+  email              String            @unique
+  name               String
+  createdAt          DateTime          @default(now()) @map("created_at")
+  password           Password?
+  level              Int               @default(1)
+  levelProgress      Int               @default(0)
+  xp                 Int               @default(0)
+  weightEntries      UserWeightEntry[]
+  workouts           UserWorkout[]
+  createdWorkouts    Workout[]
+  progressPhotos     ProgressPhoto[]
+  achievements       UserAchievement[]
+  workoutSplit       WorkoutSplit[]
+  quest              Quest[]
+  totalWeightLifted  Float             @default(0)
+  weeklyWeightLifted Float             @default(0)
 
   @@map("user")
 }
