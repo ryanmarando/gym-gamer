@@ -39,6 +39,7 @@ export async function progressAchievement(
         data: {
             progress: newProgress,
             completed: completed,
+            completedAt: completed ? new Date() : ua.completedAt,
         },
         include: { achievement: true },
     });

@@ -12,7 +12,6 @@ import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { sendPushNotification } from "../utils/notification";
-import AchievementAnimation from "../components/AchievementAnimation";
 
 interface AchievementDetails {
     id: number;
@@ -29,6 +28,7 @@ interface UserAchievement {
     completed: boolean;
     isQuest: boolean;
     achievement: AchievementDetails;
+    completedAt: number;
 }
 
 interface PixelAchievementCardProps {
@@ -73,56 +73,24 @@ export default function AchievementsScreen({ navigation }: any) {
     });
     const [updateModalVisible, setUpdateModalVisible] = useState(false);
     const [selectedQuestId, setSelectedQuestId] = useState<number | null>(null);
-    const [newAchievementsToAnimate, setNewAchievementsToAnimate] = useState<
-        AchievementDetails[]
-    >([]);
-    const animatedAchievementIds = useRef<Set<number>>(new Set());
 
     // Prepare sections for SectionList
     const achievementSections = [
         {
             title: "Completed Achievements",
-            data: userAchievements.filter((ua) => ua.completed),
+            data: userAchievements
+                .filter((ua) => ua.completed && ua.completedAt)
+                .sort(
+                    (a, b) =>
+                        new Date(b.completedAt).getTime() -
+                        new Date(a.completedAt).getTime()
+                ),
         },
         {
             title: "In Progress Achievements",
             data: userAchievements.filter((ua) => !ua.completed),
         },
     ];
-
-    const clearAnimatedAchievementIds = () => {
-        animatedAchievementIds.current.clear();
-        console.log("Cleared animatedAchievementIds!");
-    };
-    //clearAnimatedAchievementIds();
-
-    const processNewAchievements = (fetchedAchievements: UserAchievement[]) => {
-        // Find newly completed achievements that have not yet been animated
-        const newlyCompleted = fetchedAchievements.filter((ua) => {
-            const isCompleted = ua.completed;
-            const hasAnimated = animatedAchievementIds.current.has(
-                ua.achievementId
-            );
-
-            return isCompleted && !hasAnimated;
-        });
-
-        if (newlyCompleted.length > 0) {
-            // Add their achievement details to animation queue
-            setNewAchievementsToAnimate((prev) => [
-                ...prev,
-                ...newlyCompleted.map((ua) => ua.achievement),
-            ]);
-        }
-        console.log(newlyCompleted);
-    };
-
-    const handleAnimationComplete = () => {
-        if (newAchievementsToAnimate.length > 0) {
-            animatedAchievementIds.current.add(newAchievementsToAnimate[0].id);
-            setNewAchievementsToAnimate((prev) => prev.slice(1));
-        }
-    };
 
     useEffect(() => {
         const fetchUserId = async () => {
@@ -147,7 +115,6 @@ export default function AchievementsScreen({ navigation }: any) {
         const data = await authFetch(`/user/getUserAchievements/${userId}`);
         const achievements = data?.achievements || [];
         setUserAchievements(achievements);
-        processNewAchievements(achievements);
     };
 
     // Fetch both achievements and user achievements whenever userId or refreshToggle changes
@@ -168,19 +135,23 @@ export default function AchievementsScreen({ navigation }: any) {
         }, [userId, refreshToggle])
     );
 
-    const sendNotification = async (numberOfNew: number) => {
+    const sendNotification = async (newCompletedAchievements: any[]) => {
         const expoPushToken = await SecureStore.getItemAsync("notifToken");
         console.log("Push token:", expoPushToken);
         if (!expoPushToken) {
             return;
         }
+
         const title = "Hey, Gym Gamer!";
         let body: string;
-        if (numberOfNew === 1) {
-            body = `You completed an achievement!`;
+
+        if (newCompletedAchievements.length === 1) {
+            const achievementName = newCompletedAchievements[0].name;
+            body = `🏆 You completed '${achievementName}'!`;
         } else {
-            body = `You completed ${numberOfNew} achievements!`;
+            body = `🏆 You completed ${newCompletedAchievements.length} achievements!`;
         }
+
         await sendPushNotification({ expoPushToken, title, body });
     };
 
@@ -198,8 +169,7 @@ export default function AchievementsScreen({ navigation }: any) {
 
             if (result.newlyCompletedAchievements?.length) {
                 // Send notification
-                sendNotification(result.newlyCompletedAchievements?.length);
-                setNewAchievementsToAnimate(result.newlyCompletedAchievements);
+                sendNotification(result.newlyCompletedAchievements);
 
                 result.newlyCompletedAchievements.forEach((ach: any) => {
                     console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
@@ -236,7 +206,7 @@ export default function AchievementsScreen({ navigation }: any) {
 
         if (result.newlyCompletedAchievements?.length) {
             // Send notification
-            sendNotification(result.newlyCompletedAchievements?.length);
+            sendNotification(result.newlyCompletedAchievements);
 
             result.newlyCompletedAchievements.forEach((ach: any) => {
                 console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
@@ -250,13 +220,6 @@ export default function AchievementsScreen({ navigation }: any) {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            {newAchievementsToAnimate.length > 0 && (
-                <AchievementAnimation
-                    achievement={newAchievementsToAnimate[0]}
-                    onAnimationComplete={handleAnimationComplete}
-                />
-            )}
-
             <View style={styles.container}>
                 {/* Quests Section */}
                 <PixelText

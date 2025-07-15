@@ -594,30 +594,50 @@ export const addUserWeightLifted = async (
             return;
         }
 
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
+        const result = await prisma.$transaction(async (tx) => {
+            const user = await tx.user.findUnique({
+                where: { id: userId },
+            });
+
+            if (!user) {
+                res.status(404).json({ message: "User not found." });
+                return;
+            }
+
+            // Update total + weekly lifted weight
+            const updatedUser = await tx.user.update({
+                where: { id: userId },
+                data: {
+                    totalWeightLifted: { increment: weightLifted },
+                    weeklyWeightLifted: { increment: weightLifted },
+                },
+            });
+
+            const newlyCompletedAchievements =
+                await checkAndProgressAchievements(
+                    tx,
+                    userId,
+                    AchievementType.LIFTINGWEIGHT,
+                    { updatedUser, weight: weightLifted }
+                );
+
+            return { updatedUser, newlyCompletedAchievements };
         });
 
-        if (!user) {
-            res.status(404).json({ message: "User not found." });
+        if (!result) {
+            res.status(500).json({
+                message: "Exercise weight lifted entry failed.",
+            });
             return;
         }
-
-        // Update total + weekly lifted weight
-        const updatedUser = await prisma.user.update({
-            where: { id: userId },
-            data: {
-                totalWeightLifted: { increment: weightLifted },
-                weeklyWeightLifted: { increment: weightLifted },
-            },
-        });
 
         res.status(200).json({
             message: "User weight lifted stats updated.",
             user: {
-                totalWeightLifted: updatedUser.totalWeightLifted,
-                weeklyWeightLifted: updatedUser.weeklyWeightLifted,
+                totalWeightLifted: result.updatedUser.totalWeightLifted,
+                weeklyWeightLifted: result.updatedUser.weeklyWeightLifted,
             },
+            newlyCompletedAchievements: result.newlyCompletedAchievements,
         });
     } catch (error) {
         console.error("Error updating weight lifted:", error);

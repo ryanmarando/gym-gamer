@@ -171,7 +171,8 @@ export async function checkAndProgressAchievements(
                 const weight = context.weight;
                 const workoutName = context.workoutName?.toLowerCase();
                 const previousMax = context.previousMax;
-                const previousMaxWeight = previousMax._max.weight;
+                const previousMaxWeight = previousMax?._max.weight;
+                const userForWeightLifted = context?.updatedUser;
 
                 const targetLift = ua.achievement.name.toLowerCase();
 
@@ -186,11 +187,23 @@ export async function checkAndProgressAchievements(
                     !ua.achievement.targetValue &&
                     ua.achievement.name.toLowerCase().includes("personal best")
                 ) {
-                    console.log(weight);
-                    console.log(previousMax._max.weight);
                     if (weight > previousMaxWeight) {
-                        console.log("here");
                         progressToAdd = 100;
+                    }
+                } else if (
+                    ua.achievement.name
+                        .toLowerCase()
+                        .includes("lift a total") &&
+                    userForWeightLifted
+                ) {
+                    const totalLiftedWeight =
+                        userForWeightLifted.totalLiftedWeight;
+                    const weeklyWeightLifted =
+                        userForWeightLifted.weeklyWeightLifted;
+                    if (goalAmount === 1) {
+                        progressToAdd = 100;
+                    } else {
+                        progressToAdd += (weight / goalAmount) * 100;
                     }
                 }
                 break;

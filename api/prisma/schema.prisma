@@ -163,8 +163,9 @@ model UserAchievement {
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
 
-  progress  Float   @default(0)
-  completed Boolean @default(false)
+  progress    Float     @default(0)
+  completed   Boolean   @default(false)
+  completedAt DateTime?
 
   @@id([userId, achievementId])
 }

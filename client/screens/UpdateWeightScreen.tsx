@@ -90,19 +90,23 @@ export default function UpdateWeightScreen({ navigation }: any) {
         });
     };
 
-    const sendNotification = async (numberOfNew: number) => {
+    const sendNotification = async (newCompletedAchievements: any[]) => {
         const expoPushToken = await SecureStore.getItemAsync("notifToken");
         console.log("Push token:", expoPushToken);
         if (!expoPushToken) {
             return;
         }
+
         const title = "Hey, Gym Gamer!";
         let body: string;
-        if (numberOfNew === 1) {
-            body = `You completed an achievement!`;
+
+        if (newCompletedAchievements.length === 1) {
+            const achievementName = newCompletedAchievements[0].name;
+            body = `🏆 You completed '${achievementName}'!`;
         } else {
-            body = `You completed ${numberOfNew} achievements!`;
+            body = `🏆 You completed ${newCompletedAchievements.length} achievements!`;
         }
+
         await sendPushNotification({ expoPushToken, title, body });
     };
 
@@ -122,7 +126,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
             );
             if (result.newlyCompletedAchievements?.length) {
                 // Send notification
-                sendNotification(result.newlyCompletedAchievements?.length);
+                sendNotification(result.newlyCompletedAchievements);
 
                 result.newlyCompletedAchievements.forEach((ach: any) => {
                     console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);

@@ -20,6 +20,10 @@ import PickWorkoutDay from "../components/PickWorkoutDay";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sendPushNotification } from "../utils/notification";
 import { playCompleteSound } from "../utils/playCompleteSound";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import DraggableFlatList, {
+    RenderItemParams,
+} from "react-native-draggable-flatlist";
 
 interface Workout {
     userId: number;
@@ -173,6 +177,8 @@ export default function WorkoutsScreen({ navigation }: any) {
 
                     const maxWeight = Math.max(...entries.map(Number));
 
+                    let newCompletedAchievements: any[] = [];
+
                     // Only send if lastWeight > 0 (optional)
                     if (maxWeight > 0) {
                         const result = await authFetch(
@@ -185,9 +191,15 @@ export default function WorkoutsScreen({ navigation }: any) {
                             }
                         );
 
+                        if (result.newlyCompletedAchievements?.length) {
+                            newCompletedAchievements.push(
+                                ...result.newlyCompletedAchievements
+                            );
+                        }
+
                         // Now send totalWeightLifted to backend for weekly tracking
                         if (totalWeightLifted > 0) {
-                            await authFetch(
+                            const weightLiftedResult = await authFetch(
                                 `/workouts/addUserWeightLifted/${userId}`,
                                 {
                                     method: "PATCH",
@@ -196,22 +208,26 @@ export default function WorkoutsScreen({ navigation }: any) {
                                     }),
                                 }
                             );
+                            if (
+                                weightLiftedResult.newlyCompletedAchievements
+                                    ?.length
+                            ) {
+                                newCompletedAchievements.push(
+                                    ...weightLiftedResult.newlyCompletedAchievements
+                                );
+                            }
                         }
 
-                        if (result.newlyCompletedAchievements?.length) {
+                        if (newCompletedAchievements.length) {
                             // Send notification
-                            sendNotification(
-                                result.newlyCompletedAchievements?.length
-                            );
+                            sendNotification(newCompletedAchievements);
 
-                            result.newlyCompletedAchievements.forEach(
-                                (ach: any) => {
-                                    console.log(
-                                        `🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`
-                                    );
-                                    // Show modal, play sound, push notification, etc.
-                                }
-                            );
+                            newCompletedAchievements.forEach((ach: any) => {
+                                console.log(
+                                    `🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`
+                                );
+                                // Show modal, play sound, push notification, etc.
+                            });
                         }
                     }
                 }
@@ -232,7 +248,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                 if (workoutProgressData.newlyCompletedAchievements?.length) {
                     // Send notification
                     sendNotification(
-                        workoutProgressData.newlyCompletedAchievements?.length
+                        workoutProgressData.newlyCompletedAchievements
                     );
 
                     workoutProgressData.newlyCompletedAchievements.forEach(
@@ -264,19 +280,23 @@ export default function WorkoutsScreen({ navigation }: any) {
         setModalAction(null);
     };
 
-    const sendNotification = async (numberOfNew: number) => {
+    const sendNotification = async (newCompletedAchievements: any[]) => {
         const expoPushToken = await SecureStore.getItemAsync("notifToken");
         console.log("Push token:", expoPushToken);
         if (!expoPushToken) {
             return;
         }
+
         const title = "Hey, Gym Gamer!";
         let body: string;
-        if (numberOfNew === 1) {
-            body = `You completed an achievement!`;
+
+        if (newCompletedAchievements.length === 1) {
+            const achievementName = newCompletedAchievements[0].name;
+            body = `🏆 You completed '${achievementName}'!`;
         } else {
-            body = `You completed ${numberOfNew} achievements!`;
+            body = `🏆 You completed ${newCompletedAchievements.length} achievements!`;
         }
+
         await sendPushNotification({ expoPushToken, title, body });
     };
 
@@ -618,108 +638,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                                     containerStyle={{ marginTop: 20 }}
                                 />
                             )}
-                            <FlatList
-                                data={workouts}
-                                keyExtractor={(item) =>
-                                    item.workoutId.toString()
-                                }
-                                style={{ flex: 1 }}
-                                renderItem={({ item }) => (
-                                    <View style={styles.workoutCard}>
-                                        <View style={{ flex: 1 }}>
-                                            <PixelText
-                                                fontSize={14}
-                                                color="#0f0"
-                                                style={{
-                                                    marginBottom: 4,
-                                                    textAlign: "left",
-                                                }}
-                                            >
-                                                {item.workout.name}
-                                            </PixelText>
-                                            <PixelText
-                                                fontSize={10}
-                                                color="#fff"
-                                                style={{
-                                                    marginBottom: 8,
-                                                    textAlign: "left",
-                                                }}
-                                            >
-                                                Reps: 10, Failure, Failure
-                                            </PixelText>
-                                            <PixelText
-                                                fontSize={10}
-                                                color="#fff"
-                                                style={{
-                                                    marginBottom: 8,
-                                                    textAlign: "left",
-                                                }}
-                                            >
-                                                {`Max weight: ${getLastWorkoutWeight(
-                                                    item.workoutId
-                                                )} lbs`}
-                                            </PixelText>
-                                            <ScrollView
-                                                horizontal
-                                                showsHorizontalScrollIndicator={
-                                                    false
-                                                }
-                                            >
-                                                <View
-                                                    style={{
-                                                        flexDirection: "row",
-                                                        gap: 8,
-                                                    }}
-                                                >
-                                                    {(
-                                                        weightEntries[
-                                                            item.workoutId
-                                                        ] || []
-                                                    ).map((weight, i) => (
-                                                        <TextInput
-                                                            key={i}
-                                                            keyboardType="decimal-pad"
-                                                            value={weight.toString()}
-                                                            onChangeText={(v) =>
-                                                                handleWeightChange(
-                                                                    item.workoutId,
-                                                                    i,
-                                                                    v
-                                                                )
-                                                            }
-                                                            style={
-                                                                styles.weightInput
-                                                            }
-                                                            placeholder="0"
-                                                            placeholderTextColor="#555"
-                                                        />
-                                                    ))}
-                                                </View>
-                                            </ScrollView>
-                                        </View>
 
-                                        <View style={styles.buttonsColumn}>
-                                            <PixelButton
-                                                text="+"
-                                                onPress={() =>
-                                                    addEntry(item.workoutId)
-                                                }
-                                                containerStyle={{
-                                                    marginBottom: 8,
-                                                    width: 40,
-                                                }}
-                                            />
-                                            <PixelButton
-                                                text="-"
-                                                onPress={() =>
-                                                    deleteEntry(item.workoutId)
-                                                }
-                                                containerStyle={{ width: 40 }}
-                                            />
-                                        </View>
-                                    </View>
-                                )}
-                            />
                             <PixelModal
                                 visible={showModal}
                                 onConfirm={onModalConfirm}
@@ -740,6 +659,158 @@ export default function WorkoutsScreen({ navigation }: any) {
                                 title={modalConfirmationTitle}
                                 message={modalMessage}
                             />
+
+                            <GestureHandlerRootView style={{ flex: 1 }}>
+                                <DraggableFlatList
+                                    animationConfig={{ duration: 150 }}
+                                    activationDistance={10}
+                                    keyboardShouldPersistTaps="handled"
+                                    data={workouts}
+                                    onDragEnd={({ data }) => {
+                                        setWorkouts(data);
+                                    }}
+                                    keyExtractor={(item) =>
+                                        item.workoutId.toString()
+                                    }
+                                    renderItem={({
+                                        item,
+                                        drag,
+                                        isActive,
+                                    }: RenderItemParams<Workout>) => (
+                                        <View
+                                            style={{
+                                                opacity: isActive ? 0.8 : 1,
+                                            }}
+                                        >
+                                            <View style={styles.workoutCard}>
+                                                <View style={{ flex: 1 }}>
+                                                    <PixelText
+                                                        fontSize={14}
+                                                        color="#0f0"
+                                                        style={{
+                                                            marginBottom: 4,
+                                                            textAlign: "left",
+                                                        }}
+                                                        // remove onLongPress here, we’ll move drag to button
+                                                    >
+                                                        {item.workout.name}
+                                                    </PixelText>
+
+                                                    {/* Drag handle button */}
+                                                    <PixelButton
+                                                        text="Drag"
+                                                        onLongPress={drag} // <- simple and reliable trigger from example
+                                                        containerStyle={{
+                                                            marginBottom: 8,
+                                                            width: "100%",
+                                                        }}
+                                                    />
+
+                                                    <PixelText
+                                                        fontSize={10}
+                                                        color="#fff"
+                                                        style={{
+                                                            marginBottom: 8,
+                                                            textAlign: "left",
+                                                        }}
+                                                    >
+                                                        Reps: 10, Failure,
+                                                        Failure
+                                                    </PixelText>
+
+                                                    <PixelText
+                                                        fontSize={10}
+                                                        color="#fff"
+                                                        style={{
+                                                            marginBottom: 8,
+                                                            textAlign: "left",
+                                                        }}
+                                                    >
+                                                        {`Max weight: ${getLastWorkoutWeight(
+                                                            item.workoutId
+                                                        )} lbs`}
+                                                    </PixelText>
+
+                                                    <ScrollView
+                                                        horizontal
+                                                        showsHorizontalScrollIndicator={
+                                                            false
+                                                        }
+                                                        scrollEnabled={
+                                                            !isActive
+                                                        } // disable scrolling while dragging
+                                                    >
+                                                        <View
+                                                            style={{
+                                                                flexDirection:
+                                                                    "row",
+                                                                gap: 8,
+                                                            }}
+                                                        >
+                                                            {(
+                                                                weightEntries[
+                                                                    item
+                                                                        .workoutId
+                                                                ] || []
+                                                            ).map(
+                                                                (weight, i) => (
+                                                                    <TextInput
+                                                                        key={i}
+                                                                        keyboardType="decimal-pad"
+                                                                        value={weight.toString()}
+                                                                        onChangeText={(
+                                                                            v
+                                                                        ) =>
+                                                                            handleWeightChange(
+                                                                                item.workoutId,
+                                                                                i,
+                                                                                v
+                                                                            )
+                                                                        }
+                                                                        style={
+                                                                            styles.weightInput
+                                                                        }
+                                                                        placeholder="0"
+                                                                        placeholderTextColor="#555"
+                                                                    />
+                                                                )
+                                                            )}
+                                                        </View>
+                                                    </ScrollView>
+                                                </View>
+
+                                                <View
+                                                    style={styles.buttonsColumn}
+                                                >
+                                                    <PixelButton
+                                                        text="+"
+                                                        onPress={() =>
+                                                            addEntry(
+                                                                item.workoutId
+                                                            )
+                                                        }
+                                                        containerStyle={{
+                                                            marginBottom: 8,
+                                                            width: 40,
+                                                        }}
+                                                    />
+                                                    <PixelButton
+                                                        text="-"
+                                                        onPress={() =>
+                                                            deleteEntry(
+                                                                item.workoutId
+                                                            )
+                                                        }
+                                                        containerStyle={{
+                                                            width: 40,
+                                                        }}
+                                                    />
+                                                </View>
+                                            </View>
+                                        </View>
+                                    )}
+                                />
+                            </GestureHandlerRootView>
                         </>
                     )}
                 </>
