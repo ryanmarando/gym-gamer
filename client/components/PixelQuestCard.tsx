@@ -43,6 +43,7 @@ export default function PixelQuestCard({
             const data = await authFetch(
                 `/user/getAllUserWeightEntries/${userId}`
             );
+            console.log(data.user.weightEntires);
             if (
                 data?.user?.weightEntries &&
                 data.user.weightEntries.length > 0
@@ -65,15 +66,15 @@ export default function PixelQuestCard({
 
     useEffect(() => {
         const fetchQuestAndWeights = async () => {
-            if (propQuest) {
-                setQuest(propQuest);
-                if (propQuest.initialWeight != null) {
-                    const userId = await SecureStore.getItemAsync("userId");
-                    if (userId) await fetchWeights(userId);
-                }
-                setLoading(false);
-                return;
-            }
+            // if (propQuest) {
+            //     setQuest(propQuest);
+            //     if (propQuest.initialWeight != null) {
+            //         const userId = await SecureStore.getItemAsync("userId");
+            //         if (userId) await fetchWeights(userId);
+            //     }
+            //     setLoading(false);
+            //     return;
+            // }
 
             try {
                 const userId = await SecureStore.getItemAsync("userId");
@@ -145,7 +146,6 @@ export default function PixelQuestCard({
         <View style={[styles.card, containerStyle]}>
             <PixelText
                 color="#ff0"
-                numberOfLines={1}
                 style={{ marginBottom: 6, width: "100%", textAlign: "center" }}
             >
                 Keep going gamer!
@@ -182,13 +182,23 @@ export default function PixelQuestCard({
                 )}
             </View>
             {quest.initialWeight == null ? (
-                <PixelText
-                    fontSize={10}
-                    color="#fff"
-                    style={{ marginBottom: 4 }}
+                <View
+                    style={{
+                        borderRadius: 12,
+                        borderColor: "#fff",
+                        borderWidth: 2,
+                        padding: 8,
+                    }}
                 >
-                    Enter bodyweight to track progress
-                </PixelText>
+                    <PixelText
+                        fontSize={10}
+                        color="#fff"
+                        style={{ marginBottom: 4, marginTop: 4 }}
+                    >
+                        Enter bodyweight to track progress and/or update quest
+                        with intial bodyweight
+                    </PixelText>
+                </View>
             ) : getProgress() === null ? (
                 <PixelText
                     fontSize={10}
@@ -260,7 +270,7 @@ export default function PixelQuestCard({
                     )}
                 </>
             )}
-            <PixelText fontSize={10} color="#fff">
+            <PixelText fontSize={10} color="#fff" style={{ marginTop: 4 }}>
                 Days left: {getDaysLeft(quest.goalDate)}
             </PixelText>
         </View>

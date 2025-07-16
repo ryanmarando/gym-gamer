@@ -34,48 +34,46 @@ export default function PixelModal({
         <Modal transparent visible={visible} animationType="fade">
             <TouchableWithoutFeedback onPress={onCancel}>
                 <View style={styles.overlay}>
-                    <TouchableWithoutFeedback>
-                        <View style={styles.modalContainer}>
-                            {title && (
-                                <PixelText
-                                    fontSize={16}
-                                    color="#0ff"
-                                    style={{ marginBottom: 10 }}
-                                >
-                                    {title}
-                                </PixelText>
-                            )}
+                    <View style={styles.modalContainer}>
+                        {title && (
+                            <PixelText
+                                fontSize={16}
+                                color="#0ff"
+                                style={{ marginBottom: 10 }}
+                            >
+                                {title}
+                            </PixelText>
+                        )}
 
-                            {message && (
-                                <PixelText
-                                    fontSize={14}
-                                    color="#fff"
-                                    style={{ marginBottom: 20 }}
-                                >
-                                    {message}
-                                </PixelText>
-                            )}
+                        {message && (
+                            <PixelText
+                                fontSize={14}
+                                color="#fff"
+                                style={{ marginBottom: 20 }}
+                            >
+                                {message}
+                            </PixelText>
+                        )}
 
-                            {children && (
-                                <View style={styles.childrenWrapper}>
-                                    {children}
-                                </View>
-                            )}
-
-                            <View style={styles.buttonRow}>
-                                <PixelButton
-                                    text={confirmText}
-                                    onPress={onConfirm}
-                                    containerStyle={styles.button}
-                                />
-                                <PixelButton
-                                    text={cancelText}
-                                    onPress={onCancel}
-                                    containerStyle={styles.button}
-                                />
+                        {children && (
+                            <View style={styles.childrenWrapper}>
+                                {children}
                             </View>
+                        )}
+
+                        <View style={styles.buttonRow}>
+                            <PixelButton
+                                text={confirmText}
+                                onPress={onConfirm}
+                                containerStyle={styles.button}
+                            />
+                            <PixelButton
+                                text={cancelText}
+                                onPress={onCancel}
+                                containerStyle={styles.button}
+                            />
                         </View>
-                    </TouchableWithoutFeedback>
+                    </View>
                 </View>
             </TouchableWithoutFeedback>
         </Modal>

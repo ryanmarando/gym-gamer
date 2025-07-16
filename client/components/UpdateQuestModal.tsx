@@ -84,21 +84,64 @@ export default function UpdateQuestModal({
         return new Date(year, month - 1, day);
     };
 
+    function validateDate(dateStr: string): boolean {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+
+        const [year, month, day] = dateStr.split("-").map(Number);
+        const date = new Date(dateStr);
+
+        return (
+            date.getUTCFullYear() === year &&
+            date.getUTCMonth() === month - 1 &&
+            date.getUTCDate() === day
+        );
+    }
+
+    function isDateAfterToday(dateStr: string): boolean {
+        if (!validateDate(dateStr.split("T")[0].replace(/\s+/g, "")))
+            return false;
+
+        const inputDate = new Date(dateStr.split("T")[0].replace(/\s+/g, ""));
+        const today = new Date();
+
+        // Reset time on today's date so only the date is compared
+        today.setHours(0, 0, 0, 0);
+
+        return inputDate > today;
+    }
+
     const handleConfirm = () => {
-        const goal = parseFloat(goalAmount);
+        let goal = parseFloat(goalAmount);
+        const dateOnly = deadline.split("T")[0].replace(/\s+/g, "");
+
         if (
-            isNaN(goal) ||
+            (customType !== "MAINTAIN" && (isNaN(goal) || goal <= 0)) ||
             isNaN(parseFloat(initialWeight)) ||
             deadline.trim() === "" ||
-            goal === 0
+            !validateDate(dateOnly) ||
+            !isDateAfterToday(deadline)
         ) {
+            console.log(validateDate(dateOnly));
             playBadMoveSound();
             setModalMessage(
-                "Please enter a valid goal amount, initial weight, and deadline (YYYY-MM-DD)."
+                "Please enter a valid goal amount, initial weight, and deadline (YYYY-MM-DD) after today."
             );
             setPixelModalVisible(true);
             return;
         }
+
+        // Cant lose more weight than you initally weight
+        if (goal >= parseFloat(initialWeight) && customType === "LOSE") {
+            playBadMoveSound();
+            setModalMessage(
+                "Your weight goal can't be greater than your initial weight."
+            );
+            setPixelModalVisible(true);
+            return;
+        }
+
+        // If maintain is on the send 1 to backend
+        if (isNaN(goal)) goal = 1;
 
         const deadlineDate = parseLocalDate(deadline);
         const deadlineISO = deadlineDate.toISOString();
@@ -184,22 +227,25 @@ export default function UpdateQuestModal({
                                     }
                                     onCancel={() => setPixelModalVisible(false)}
                                 ></ConfirmationPixelModal>
-
-                                <PixelText
-                                    fontSize={10}
-                                    color="#fff"
-                                    style={{ marginTop: 12 }}
-                                >
-                                    New Goal Amount:
-                                </PixelText>
-                                <TextInput
-                                    placeholder="e.g. 15"
-                                    placeholderTextColor="#555"
-                                    value={goalAmount}
-                                    onChangeText={setGoalAmount}
-                                    style={styles.input}
-                                    keyboardType="numeric"
-                                />
+                                {customType !== "MAINTAIN" && (
+                                    <View>
+                                        <PixelText
+                                            fontSize={10}
+                                            color="#fff"
+                                            style={{ marginTop: 12 }}
+                                        >
+                                            How Much Weight To {customType}:
+                                        </PixelText>
+                                        <TextInput
+                                            placeholder="e.g. 15"
+                                            placeholderTextColor="#555"
+                                            value={goalAmount}
+                                            onChangeText={setGoalAmount}
+                                            style={styles.input}
+                                            keyboardType="numeric"
+                                        />
+                                    </View>
+                                )}
 
                                 <PixelText
                                     fontSize={10}

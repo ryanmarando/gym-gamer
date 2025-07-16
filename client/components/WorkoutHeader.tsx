@@ -44,7 +44,7 @@ export default function WorkoutHeader({
     showConfetti,
 }: WorkoutHeaderProps) {
     return (
-        <>
+        <View>
             <PixelButton
                 text="Change Day"
                 onPress={handleChangeDay}
@@ -88,11 +88,7 @@ export default function WorkoutHeader({
                 visible={showModal}
                 onConfirm={onModalConfirm}
                 onCancel={() => setShowModal(false)}
-                title={
-                    modalAction === "start"
-                        ? "Start Workout"
-                        : "Complete Workout"
-                }
+                title={modalConfirmationTitle}
                 message={modalMessage}
             />
 
@@ -105,6 +101,6 @@ export default function WorkoutHeader({
             />
 
             {showConfetti && <Celebration />}
-        </>
+        </View>
     );
 }

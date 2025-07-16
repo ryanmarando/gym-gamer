@@ -3,9 +3,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import {
     View,
     StyleSheet,
-    TouchableOpacity,
-    TextInput,
-    ScrollView,
     KeyboardAvoidingView,
     Platform,
     TouchableWithoutFeedback,
@@ -13,7 +10,7 @@ import {
 } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
-
+import PixelModal from "../components/PixelModal";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import WorkoutSplitModal from "../components/WorkoutSplitModal";
 import { authFetch } from "../utils/authFetch";
@@ -25,6 +22,7 @@ import { playCompleteSound } from "../utils/playCompleteSound";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { playBadMoveSound } from "../utils/playBadMoveSound";
 
 import WorkoutHeader from "../components/WorkoutHeader";
 import WorkoutItem from "../components/WorkoutItem";
@@ -73,6 +71,9 @@ export default function WorkoutsScreen({ navigation }: any) {
     const [splitDays, setSplitDays] = useState<string[]>(["", "", ""]);
     const [showConfetti, setShowConfetti] = useState(false);
 
+    const [isPixelModalVisible, setPixelModalVisible] = useState(false);
+    const [modalSplitMessage, setModalSplitMessage] = useState<string>("");
+
     const addSplitDay = () => {
         if (splitDays.length < 7) {
             setSplitDays((prev) => [...prev, ""]);
@@ -95,7 +96,11 @@ export default function WorkoutsScreen({ navigation }: any) {
 
     const handleSplitConfirm = async () => {
         if (splitDays.some((d) => d.trim() === "")) {
-            alert("Please fill in all day names.");
+            playBadMoveSound();
+
+            setModalSplitMessage("Please fill in all day names.");
+            setPixelModalVisible(true);
+            //alert("Please fill in all day names.");
             return;
         }
 
@@ -134,7 +139,9 @@ export default function WorkoutsScreen({ navigation }: any) {
 
     const openCompleteModal = () => {
         setModalAction("complete");
-        setModalMessage("Are you sure you want to complete the workout?");
+        setModalMessage(
+            "Are you sure you want to complete the workout? Workouts under 15 minutes will not save."
+        );
         setShowModal(true);
     };
 
@@ -160,6 +167,20 @@ export default function WorkoutsScreen({ navigation }: any) {
             setTimer(0);
         } else if (modalAction === "complete") {
             try {
+                if (timer < 900) {
+                    // User is confirming too-short workout now
+                    playBadMoveSound();
+                    setWorkoutStarted(false);
+                    setWorkoutStartTime(null);
+                    setTimer(0);
+                    await AsyncStorage.removeItem("workoutStartTime");
+                    resetWeightEntries();
+
+                    setmodalConfirmationTitle("Got it!");
+                    setModalMessage("Workout ended without saving progress.");
+                    setShowConfirmationModal(true);
+                    return;
+                }
                 const userIdStr = await SecureStore.getItemAsync("userId");
                 if (!userIdStr) return;
                 const userId = Number(userIdStr);
@@ -324,8 +345,8 @@ export default function WorkoutsScreen({ navigation }: any) {
                 const days = userData.workoutSplit[0].days
                     .sort((a: any, b: any) => a.dayIndex - b.dayIndex)
                     .map((d: any) => ({
-                        id: d.id, // ✅ include day ID
-                        name: d.dayName, // ✅ include day name
+                        id: d.id,
+                        name: d.dayName,
                     }));
 
                 setWorkoutDays(days);
@@ -559,8 +580,8 @@ export default function WorkoutsScreen({ navigation }: any) {
     return (
         <SafeAreaView style={styles.safeArea}>
             <KeyboardAvoidingView
-                style={{ flex: 1 }}
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
+                style={styles.keyboardAvoidingContainer}
                 keyboardVerticalOffset={Platform.OS === "ios" ? 30 : 0}
             >
                 <TouchableWithoutFeedback
@@ -595,6 +616,9 @@ export default function WorkoutsScreen({ navigation }: any) {
                                     removeDay={removeSplitDay}
                                     updateDay={updateSplitDay}
                                     onConfirm={handleSplitConfirm}
+                                    isPixelModalVisible={isPixelModalVisible}
+                                    setPixelModalVisible={setPixelModalVisible}
+                                    modalSplitMessage={modalSplitMessage}
                                 />
 
                                 <ConfirmationPixelModal
@@ -756,7 +780,7 @@ export const styles = StyleSheet.create({
         borderWidth: 2,
         borderRadius: 4,
         width: 70,
-        height: 40,
+        height: Platform.OS === "ios" ? 40 : undefined,
         paddingHorizontal: 8,
         marginRight: 4,
         fontFamily: "PressStart2P_400Regular",
@@ -765,5 +789,8 @@ export const styles = StyleSheet.create({
         marginLeft: 12,
         justifyContent: "center",
         alignItems: "center",
+    },
+    keyboardAvoidingContainer: {
+        flex: 1,
     },
 });

@@ -15,6 +15,7 @@ import { sendPushNotification } from "../utils/notification";
 import Celebration from "../components/Celebration";
 import { getNextSundayReset } from "../utils/getNextSundayReset";
 import { playCompleteSound } from "../utils/playCompleteSound";
+import { playExcitingSound } from "../utils/playExcitingSound";
 
 interface AchievementDetails {
     id: number;
@@ -221,6 +222,7 @@ export default function AchievementsScreen({ navigation }: any) {
         fetchUserAchievements();
         setModalVisible(false);
         setShowConfetti(true);
+        playExcitingSound();
         setTimeout(() => setShowConfetti(false), 5000);
     };
 
@@ -435,7 +437,7 @@ export default function AchievementsScreen({ navigation }: any) {
                                 </View>
                             </View>
                         )}
-                        contentContainerStyle={{ paddingBottom: 400 }}
+                        contentContainerStyle={{ paddingBottom: 700 }}
                     />
                 )}
             </View>

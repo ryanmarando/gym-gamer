@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import {
     View,
     TextInput,
     ScrollView,
     TouchableOpacity,
     Keyboard,
+    Platform,
 } from "react-native";
 import PixelText from "./PixelText";
 import PixelButton from "./PixelButton";
@@ -35,10 +36,17 @@ export default function WorkoutItem({
     addEntry,
     deleteEntry,
 }: WorkoutItemProps) {
-    const repsCount = weightEntries[item.workoutId]?.length || 0;
+    const scrollRef = useRef<ScrollView>(null);
+    const entryCount = weightEntries[item.workoutId]?.length || 0;
+
+    useEffect(() => {
+        // Whenever the count of entries changes, reset scroll position
+        scrollRef.current?.scrollTo({ x: 0, animated: false });
+    }, [entryCount]);
+
     const repsLabel =
-        repsCount > 0
-            ? ["10", ...Array(repsCount - 1).fill("Failure")]
+        entryCount > 0
+            ? ["10", ...Array(entryCount - 1).fill("Failure")]
             : ["10"];
 
     return (
@@ -61,7 +69,11 @@ export default function WorkoutItem({
                         Max weight: {getLastWorkoutWeight(item.workoutId)} lbs
                     </PixelText>
 
-                    <ScrollView horizontal>
+                    <ScrollView
+                        horizontal
+                        ref={scrollRef}
+                        showsHorizontalScrollIndicator={false}
+                    >
                         <View style={{ flexDirection: "row", columnGap: 4 }}>
                             {(weightEntries[item.workoutId] || []).map(
                                 (weight, i) => (
@@ -74,8 +86,8 @@ export default function WorkoutItem({
                                             color="#fff"
                                             style={{
                                                 marginBottom: 2,
-                                                paddingHorizontal: 0, // <-- no extra horizontal padding
                                                 textAlign: "center",
+                                                paddingHorizontal: 0,
                                             }}
                                         >
                                             {repsLabel[i]}
@@ -105,12 +117,17 @@ export default function WorkoutItem({
                     <PixelButton
                         text="+"
                         onPress={() => addEntry(item.workoutId)}
-                        containerStyle={{ marginBottom: 8, width: 40 }}
+                        containerStyle={{
+                            marginBottom: 8,
+                            width: Platform.OS === "ios" ? 40 : undefined,
+                        }}
                     />
                     <PixelButton
                         text="-"
                         onPress={() => deleteEntry(item.workoutId)}
-                        containerStyle={{ width: 40 }}
+                        containerStyle={{
+                            width: Platform.OS === "ios" ? 40 : undefined,
+                        }}
                     />
                 </View>
             </View>

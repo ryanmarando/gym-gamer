@@ -7,6 +7,7 @@ import {
     ActivityIndicator,
     TouchableOpacity,
     Animated,
+    ScrollView,
 } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
@@ -16,7 +17,6 @@ import ProgressBar from "../components/ProgressBar";
 import Sparks from "../components/Sparks";
 import { authFetch } from "../utils/authFetch";
 import { logout } from "../utils/logout";
-import { resetStats } from "../utils/resetStats";
 import * as SecureStore from "expo-secure-store";
 import { registerForPushNotificationsAsync } from "../utils/notification";
 import { playLevelUpSound } from "../utils/playLevelUpSound";
@@ -50,6 +50,8 @@ interface UserData {
     xp: number;
     achievements: AchievementDetails[];
     activeQuest: Quest;
+    totalWeightLifted: number;
+    weeklyWeightLifted: number;
 }
 
 export default function ProfileScreen({
@@ -57,6 +59,7 @@ export default function ProfileScreen({
     isLoggedIn,
     setIsLoggedIn,
 }: any) {
+    const scrollRef = useRef<ScrollView>(null);
     const [userData, setUserData] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -65,9 +68,7 @@ export default function ProfileScreen({
     );
     const [modalTitleMessage, setmodalTitleMessage] =
         useState<string>("Are you sure?");
-    const [modalAction, setModalAction] = useState<"logout" | "reset" | null>(
-        null
-    );
+    const [modalAction, setModalAction] = useState<"logout" | null>(null);
     const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
     const [sparksActive, setSparksActive] = useState(false);
     const [questExpiredModalVisible, setQuestExpiredModalVisible] =
@@ -185,23 +186,9 @@ export default function ProfileScreen({
         }
     };
 
-    const doResetStats = async () => {
-        if (!userData) return;
-
-        try {
-            await resetStats(Number(userData.id));
-            const data = await authFetch(`/user/${Number(userData.id)}`);
-            setUserData(data);
-        } catch (error) {
-            console.error("❌ Error resetting stats:", error);
-        }
-    };
-
     const handleModalConfirm = async () => {
         if (modalAction === "logout") {
             logoutUser();
-        } else if (modalAction === "reset") {
-            await doResetStats();
         }
         setModalVisible(false);
     };
@@ -210,13 +197,6 @@ export default function ProfileScreen({
         playDeleteSound();
         logout(setIsLoggedIn, setUserData);
         setModalVisible(false);
-    };
-
-    const resetUserStats = async () => {
-        setModalVisible(true);
-        const message = `This will reset your XP and return your level to 0.`;
-        setModalAction("reset");
-        setModalMessage(message);
     };
 
     if (!isLoggedIn) {
@@ -259,140 +239,145 @@ export default function ProfileScreen({
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
-                <View style={styles.content}>
-                    <PixelText
-                        fontSize={20}
-                        color="#0ff"
-                        style={{ marginBottom: 20 }}
-                    >
-                        🎮 Welcome, {userData.name}!
-                    </PixelText>
-
-                    <Image
-                        source={require("../assets/barbell_pixel.png")}
-                        style={{ width: 100, height: 100, marginBottom: 20 }}
-                    />
-
-                    <PixelText
-                        fontSize={12}
-                        color="#fff"
-                        style={{ marginBottom: 10 }}
-                    >
-                        Level: {userData.level} | XP: {userData.xp}
-                    </PixelText>
-
-                    <View
-                        style={{ position: "relative", width: 250, height: 40 }}
-                    >
-                        <ProgressBar
-                            progress={animatedProgress}
-                            width={250}
-                            height={15}
-                            backgroundColor="#222"
-                            progressColor="#ff0"
-                            borderColor="#ff0"
-                        />
-                        <Sparks active={sparksActive} />
-                    </View>
-
-                    <PixelButton
-                        text="Reset Stats"
-                        onPress={resetUserStats}
-                        color="#f00"
-                        containerStyle={{
-                            backgroundColor: "#000",
-                            borderColor: "#f00",
-                            marginTop: 10,
-                        }}
-                    />
-                    <View
-                        style={{
-                            alignItems: "center",
-                            marginTop: 20,
-                        }}
-                    >
-                        <PixelText fontSize={12} color="#fff">
-                            Get into the gym:
+                <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{ padding: 16 }}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    <View style={styles.content}>
+                        <PixelText
+                            fontSize={20}
+                            color="#0ff"
+                            style={{ marginBottom: 20 }}
+                        >
+                            🎮 Welcome, {userData.name}!
                         </PixelText>
-                        <PixelButton
-                            text="Start Workout"
-                            onPress={() => {
-                                navigation.navigate("Workouts");
+
+                        <Image
+                            source={require("../assets/barbell_pixel.png")}
+                            style={{ width: 100, height: 100 }}
+                        />
+
+                        <PixelText
+                            fontSize={12}
+                            color="#fff"
+                            style={{ marginBottom: 10 }}
+                        >
+                            Level: {userData.level} | XP: {userData.xp}
+                        </PixelText>
+
+                        <View style={{ position: "relative" }}>
+                            <ProgressBar
+                                progress={animatedProgress}
+                                width={250}
+                                height={15}
+                                backgroundColor="#222"
+                                progressColor="#ff0"
+                                borderColor="#ff0"
+                            />
+                            <Sparks active={sparksActive} />
+                        </View>
+
+                        <View
+                            style={{
+                                alignItems: "center",
+                                marginTop: 20,
                             }}
-                            color="#f0f"
+                        >
+                            {userData.totalWeightLifted > 0 && (
+                                <PixelText
+                                    fontSize={12}
+                                    color="#fff"
+                                    style={{ marginBottom: 10 }}
+                                >
+                                    You've lifted a total of{" "}
+                                    {userData.totalWeightLifted} lbs!
+                                </PixelText>
+                            )}
+                            <PixelText fontSize={12} color="#fff">
+                                Get into the gym:
+                            </PixelText>
+                            <PixelButton
+                                text="Start Workout"
+                                onPress={() => {
+                                    navigation.navigate("Workouts");
+                                }}
+                                color="#f0f"
+                                containerStyle={{
+                                    backgroundColor: "#000",
+                                    borderColor: "#f0f",
+                                    marginTop: 10,
+                                    marginBottom: 20,
+                                }}
+                            />
+                        </View>
+                        <PixelText>Your quest:</PixelText>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate("Achievements")}
+                            style={{
+                                backgroundColor: "transparent",
+                                width: "100%",
+                                alignItems: "center",
+                            }}
+                        >
+                            <PixelQuestCard
+                                quest={
+                                    userData.activeQuest
+                                        ? {
+                                              name: userData.activeQuest.name,
+                                              type: userData.activeQuest.type,
+                                              goal: userData.activeQuest.goal,
+                                              goalDate:
+                                                  userData.activeQuest.goalDate,
+                                              baseXP: userData.activeQuest
+                                                  .baseXP,
+                                          }
+                                        : undefined
+                                }
+                                containerStyle={{ width: "90%" }}
+                            />
+                        </TouchableOpacity>
+
+                        <PixelButton
+                            text="Update bodyweight"
+                            onPress={() => navigation.navigate("UpdateWeight")}
+                        ></PixelButton>
+
+                        <PixelButton
+                            text="Log Out"
+                            onPress={() => {
+                                setModalAction("logout");
+                                setModalVisible(true);
+                                const message = "You will be logged out.";
+                                setModalMessage(message);
+                            }}
+                            color="#f00"
                             containerStyle={{
                                 backgroundColor: "#000",
-                                borderColor: "#f0f",
+                                borderColor: "#f00",
                                 marginTop: 10,
-                                marginBottom: 20,
                             }}
                         />
-                    </View>
-                    <PixelText>Your quest:</PixelText>
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate("Achievements")}
-                        style={{
-                            backgroundColor: "transparent",
-                            width: "100%",
-                            alignItems: "center",
-                        }}
-                    >
-                        <PixelQuestCard
-                            quest={
-                                userData.activeQuest
-                                    ? {
-                                          name: userData.activeQuest.name,
-                                          type: userData.activeQuest.type,
-                                          goal: userData.activeQuest.goal,
-                                          goalDate:
-                                              userData.activeQuest.goalDate,
-                                          baseXP: userData.activeQuest.baseXP,
-                                      }
-                                    : undefined
-                            }
-                            containerStyle={{ width: "90%" }}
+                        <PixelModal
+                            visible={modalVisible}
+                            title={modalTitleMessage}
+                            message={modalMessage}
+                            onConfirm={handleModalConfirm}
+                            onCancel={() => setModalVisible(false)}
                         />
-                    </TouchableOpacity>
-                </View>
-
-                <View style={styles.bottomButtonContainer}>
-                    <PixelButton
-                        text="Update bodyweight"
-                        onPress={() => navigation.navigate("UpdateWeight")}
-                    ></PixelButton>
-                    <PixelButton
-                        text="Log Out"
-                        onPress={() => {
-                            setModalAction("logout");
-                            setModalVisible(true);
-                            const message = "You will be logged out.";
-                            setModalMessage(message);
-                        }}
-                        color="#f00"
-                        containerStyle={{
-                            backgroundColor: "#000",
-                            borderColor: "#f00",
-                            marginTop: 10,
-                        }}
-                    />
-                    <PixelModal
-                        visible={modalVisible}
-                        title={modalTitleMessage}
-                        message={modalMessage}
-                        onConfirm={handleModalConfirm}
-                        onCancel={() => setModalVisible(false)}
-                    />
-                    <PixelModal
-                        visible={questExpiredModalVisible}
-                        title="Quest Expired!"
-                        message="Hey gamer, your quest is currently past due! Please update it!"
-                        onConfirm={() => {
-                            setQuestExpiredModalVisible(false);
-                            navigation.navigate("Achievements");
-                        }}
-                        onCancel={() => setQuestExpiredModalVisible(false)}
-                    />
-                </View>
+                        <PixelModal
+                            visible={questExpiredModalVisible}
+                            title="Quest Expired!"
+                            message="Hey gamer, your quest is currently past due! Please update it!"
+                            onConfirm={() => {
+                                setQuestExpiredModalVisible(false);
+                                navigation.navigate("Achievements");
+                            }}
+                            onCancel={() => setQuestExpiredModalVisible(false)}
+                        />
+                    </View>
+                </ScrollView>
             </View>
         </SafeAreaView>
     );

@@ -20,11 +20,6 @@ app.get("/", (req, res) => {
 app.use(express.json());
 app.use(logging.logRequest);
 
-// Origin Point
-app.listen(port, "0.0.0.0", () => {
-    console.log(`API listening on :${port}`);
-});
-
 // Sanitize
 app.use(xss);
 
@@ -35,7 +30,7 @@ app.use("/auth", authRouter);
 app.use("/uploads", express.static("uploads"));
 
 // Authentication
-//app.use(authenticated);
+app.use(authenticated);
 
 // Routers
 app.use("/workouts", workoutRouter);
@@ -43,3 +38,8 @@ app.use("/user", userRouter);
 app.use("/progressPhoto", progressPhotoRouter);
 app.use("/achievement", achievementRouter);
 app.use("/quest", questRouter);
+
+// Origin Point
+app.listen(port, "0.0.0.0", () => {
+    console.log(`API listening on :${port}`);
+});

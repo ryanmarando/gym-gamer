@@ -4,7 +4,7 @@ import { addXpAndCheckLevelUp } from "../functions/addXPAndCheckLevelUp.js";
 import { checkAndProgressAchievements } from "../functions/checkAndProgressAchivements.js";
 import { AchievementType } from "@prisma/client";
 
-const completedWorkoutProgress = 5;
+const completedWorkoutProgress = 100;
 
 export const getAllWorkouts = async (
     req: Request,
@@ -380,6 +380,13 @@ export const completeWorkout = async (req: Request, res: Response) => {
     let newlyCompleted;
 
     try {
+        if (duration < 900) {
+            res.status(400).json({
+                message: "Workouts must be at least 15 minutes to save!",
+            });
+            return;
+        }
+
         const result = await prisma.$transaction(async (tx) => {
             // 1️⃣ Award XP for the workout itself
             const levelUpResult = await addXpAndCheckLevelUp(

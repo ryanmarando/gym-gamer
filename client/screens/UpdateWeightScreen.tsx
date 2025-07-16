@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
         paddingVertical: "10%",
     },
     input: {
-        height: 40,
+        height: Platform.OS === "ios" ? 40 : undefined,
         borderColor: "#0ff",
         borderWidth: 1,
         borderRadius: 6,
@@ -426,5 +426,6 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         color: "#fff",
         fontFamily: "PressStart2P_400Regular",
+        paddingVertical: Platform.OS === "android" ? 18 : 0,
     },
 });

@@ -4,10 +4,12 @@ import {
     ScrollView,
     TouchableOpacity,
     View,
+    Platform,
     StyleSheet,
 } from "react-native";
 import PixelText from "./PixelText";
 import PixelButton from "./PixelButton";
+import ConfirmationPixelModal from "./ConfirmationPixelModal";
 
 export default function WorkoutSplitModal({
     visible,
@@ -19,6 +21,9 @@ export default function WorkoutSplitModal({
     removeDay,
     updateDay,
     onConfirm,
+    isPixelModalVisible,
+    setPixelModalVisible,
+    modalSplitMessage,
 }: {
     visible: boolean;
     onCancel: () => void;
@@ -29,9 +34,19 @@ export default function WorkoutSplitModal({
     removeDay: () => void;
     updateDay: (index: number, val: string) => void;
     onConfirm: () => void;
+    isPixelModalVisible: boolean;
+    setPixelModalVisible: (val: boolean) => void;
+    modalSplitMessage: string;
 }) {
     return (
         <Modal transparent visible={visible} animationType="fade">
+            <ConfirmationPixelModal
+                visible={isPixelModalVisible}
+                title="Whoa there, gamer!"
+                message={modalSplitMessage}
+                onConfirm={() => setPixelModalVisible(false)}
+                onCancel={() => setPixelModalVisible(false)}
+            ></ConfirmationPixelModal>
             <TouchableOpacity
                 style={modalStyles.overlay}
                 activeOpacity={1}
@@ -71,14 +86,20 @@ export default function WorkoutSplitModal({
                         <PixelButton
                             text="+"
                             onPress={addDay}
-                            containerStyle={{ width: 50 }}
+                            fontSize={22}
+                            containerStyle={{
+                                width: Platform.OS === "ios" ? 50 : undefined,
+                            }}
                             disabled={splitDays.length >= 7}
                             color={splitDays.length >= 7 ? "#555" : "#0f0"}
                         />
                         <PixelButton
                             text="-"
+                            fontSize={22}
                             onPress={removeDay}
-                            containerStyle={{ width: 50 }}
+                            containerStyle={{
+                                width: Platform.OS === "ios" ? 50 : undefined,
+                            }}
                             disabled={splitDays.length <= 3}
                             color={splitDays.length <= 3 ? "#555" : "#f00"}
                         />
@@ -96,7 +117,10 @@ export default function WorkoutSplitModal({
                         <PixelButton
                             text="Save"
                             onPress={onConfirm}
-                            containerStyle={{ flex: 1, borderColor: "#0f0" }}
+                            containerStyle={{
+                                flex: 1,
+                                borderColor: "#0f0",
+                            }}
                             color="#0f0"
                         />
                     </View>
