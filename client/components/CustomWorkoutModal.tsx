@@ -11,6 +11,8 @@ import {
 import PixelText from "./PixelText";
 import PixelButton from "./PixelButton";
 import { Filter } from "bad-words";
+import ConfirmationPixelModal from "./ConfirmationPixelModal";
+import { playBadMoveSound } from "../utils/playBadMoveSound";
 
 const ARCHITYPES = [
     "PUSH",
@@ -42,6 +44,8 @@ export default function CustomWorkoutModal({
 }: CustomWorkoutModalProps) {
     const [customName, setCustomName] = useState("");
     const [selectedArchitypes, setSelectedArchitypes] = useState<string[]>([]);
+    const [isPixelModalVisible, setPixelModalVisible] = useState(false);
+    const [modalMessage, setModalMessage] = useState("");
     const filter = new Filter();
 
     const toggleArchitype = (architype: string) => {
@@ -54,14 +58,21 @@ export default function CustomWorkoutModal({
 
     const handleConfirm = () => {
         if (customName.trim() === "" || selectedArchitypes.length === 0) {
-            alert(
+            setModalMessage(
                 "Please enter a workout name and select at least one architype."
             );
+            playBadMoveSound();
+            setPixelModalVisible(true);
+
             return;
         }
 
         if (filter.isProfane(customName)) {
-            alert("Please avoid using profanity in your workout name.");
+            setModalMessage(
+                "Please avoid using profanity in your workout name."
+            );
+            playBadMoveSound();
+            setPixelModalVisible(true);
             return;
         }
 
@@ -135,6 +146,13 @@ export default function CustomWorkoutModal({
                                 })}
                             </ScrollView>
 
+                            <ConfirmationPixelModal
+                                visible={isPixelModalVisible}
+                                title="Whoa there, gamer!"
+                                message={modalMessage}
+                                onConfirm={() => setPixelModalVisible(false)}
+                                onCancel={() => setPixelModalVisible(false)}
+                            ></ConfirmationPixelModal>
                             <View style={styles.buttonRow}>
                                 <PixelButton
                                     text="Cancel"

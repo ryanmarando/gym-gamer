@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
-import PixelModal from "../components/PixelModal";
+
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import WorkoutSplitModal from "../components/WorkoutSplitModal";
 import { authFetch } from "../utils/authFetch";
@@ -23,11 +23,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sendPushNotification } from "../utils/notification";
 import { playCompleteSound } from "../utils/playCompleteSound";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import DraggableFlatList, {
-    RenderItemParams,
-} from "react-native-draggable-flatlist";
+import DraggableFlatList from "react-native-draggable-flatlist";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Celebration from "../components/Celebration";
+
 import WorkoutHeader from "../components/WorkoutHeader";
 import WorkoutItem from "../components/WorkoutItem";
 

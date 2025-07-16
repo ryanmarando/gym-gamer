@@ -5,7 +5,8 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "build": "tsc",
-        "startapi": "nodemon --ext ts,js,json --exec \"node --no-warnings --loader ts-node/esm src/app.ts\""
+        "startapi": "nodemon --ext ts,js,json --exec \"node --no-warnings --loader ts-node/esm src/app.ts\"",
+        "weeklyReset": "tsc && node dist/functions/runWeeklyResetJob.js"
     },
     "prisma": {
         "seed": "node dist/seed.js"
@@ -16,7 +17,7 @@
     "license": "ISC",
     "description": "",
     "dependencies": {
-        "@prisma/client": "^6.11.1",
+        "@prisma/client": "^6.12.0",
         "bcrypt": "^6.0.0",
         "dotenv": "^16.6.0",
         "express": "^5.1.0",
@@ -33,7 +34,7 @@
         "@types/multer": "^2.0.0",
         "@types/node": "^24.0.4",
         "nodemon": "^3.1.10",
-        "prisma": "^6.11.1",
+        "prisma": "^6.12.0",
         "ts-node": "^10.9.2",
         "typescript": "^5.8.3"
     }

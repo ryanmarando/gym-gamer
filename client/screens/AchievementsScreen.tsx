@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { sendPushNotification } from "../utils/notification";
 import Celebration from "../components/Celebration";
 import { getNextSundayReset } from "../utils/getNextSundayReset";
+import { playCompleteSound } from "../utils/playCompleteSound";
 
 interface AchievementDetails {
     id: number;
@@ -180,6 +181,7 @@ export default function AchievementsScreen({ navigation }: any) {
                 });
             }
             console.log("Quest updated!");
+            playCompleteSound();
             setUpdateModalVisible(false);
             fetchActiveQuest();
             fetchUserAchievements();

@@ -12,8 +12,8 @@ import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 
 interface Quest {
-    name: string; // e.g., "Gain 10 lbs by Aug 12, 2025"
-    type: string; // "GAIN" or "LOSE"
+    name: string;
+    type: string;
     goal: number;
     goalDate: Date | string;
     initialWeight?: number | null;
@@ -157,9 +157,29 @@ export default function PixelQuestCard({
                     marginBottom: 12,
                 }}
             >
-                <PixelText fontSize={12} color="#0ff">
-                    🎯 {quest.name}
-                </PixelText>
+                {quest.type !== "MAINTAIN" && (
+                    <>
+                        <PixelText fontSize={12} color="#0ff">
+                            🎯 {quest.name}
+                        </PixelText>
+                    </>
+                )}
+                {quest.type === "MAINTAIN" && (
+                    <>
+                        <PixelText fontSize={12} color="#0ff">
+                            🎯 Maintain {quest.initialWeight} lbs through{" "}
+                            {new Date(quest.goalDate).toLocaleDateString(
+                                "en-US",
+                                {
+                                    year: "numeric",
+                                    month: "2-digit",
+                                    day: "2-digit",
+                                }
+                            )}
+                            !
+                        </PixelText>
+                    </>
+                )}
             </View>
             {quest.initialWeight == null ? (
                 <PixelText
@@ -237,17 +257,6 @@ export default function PixelQuestCard({
                                 />
                             </View>
                         </>
-                    )}
-
-                    {quest.type === "MAINTAIN" && (
-                        <PixelText
-                            fontSize={10}
-                            color="#fff"
-                            style={{ marginBottom: 4 }}
-                        >
-                            Maintain your weight around {quest.initialWeight}{" "}
-                            lbs
-                        </PixelText>
                     )}
                 </>
             )}

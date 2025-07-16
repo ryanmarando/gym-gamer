@@ -16,6 +16,8 @@ import * as SecureStore from "expo-secure-store";
 import { authFetch } from "../utils/authFetch";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 
+import ConfirmationPixelModal from "./ConfirmationPixelModal";
+
 interface UpdateQuestModalProps {
     visible: boolean;
     onConfirm: (data: {
@@ -40,6 +42,8 @@ export default function UpdateQuestModal({
     const [goalAmount, setGoalAmount] = useState<string>("");
     const [deadline, setDeadline] = useState<string>("");
     const [initialWeight, setInitialWeight] = useState<string>("");
+    const [isPixelModalVisible, setPixelModalVisible] = useState(false);
+    const [modalMessage, setModalMessage] = useState("");
 
     React.useEffect(() => {
         const fetchLatestWeight = async () => {
@@ -89,9 +93,10 @@ export default function UpdateQuestModal({
             goal === 0
         ) {
             playBadMoveSound();
-            alert(
+            setModalMessage(
                 "Please enter a valid goal amount, initial weight, and deadline (YYYY-MM-DD)."
             );
+            setPixelModalVisible(true);
             return;
         }
 
@@ -169,6 +174,16 @@ export default function UpdateQuestModal({
                                         )
                                     )}
                                 </View>
+
+                                <ConfirmationPixelModal
+                                    visible={isPixelModalVisible}
+                                    title="Whoa there, gamer!"
+                                    message={modalMessage}
+                                    onConfirm={() =>
+                                        setPixelModalVisible(false)
+                                    }
+                                    onCancel={() => setPixelModalVisible(false)}
+                                ></ConfirmationPixelModal>
 
                                 <PixelText
                                     fontSize={10}
