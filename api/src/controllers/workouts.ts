@@ -379,8 +379,9 @@ export const completeWorkout = async (req: Request, res: Response) => {
     const { duration, workoutEndTime } = req.body;
     let newlyCompleted;
 
+    const minWorkoutTimer = 900; // 15 minutes
     try {
-        if (duration < 900) {
+        if (duration < minWorkoutTimer) {
             res.status(400).json({
                 message: "Workouts must be at least 15 minutes to save!",
             });

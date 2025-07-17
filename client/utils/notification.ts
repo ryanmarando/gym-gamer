@@ -57,7 +57,7 @@ export async function scheduleNotification({
     data?: any;
     seconds?: number;
     repeats?: boolean;
-    sound?: string; // Note: custom sounds only work for local, if properly bundled
+    sound?: string;
 }) {
     console.log(`📅 Scheduling local notification in ${seconds}s`);
 

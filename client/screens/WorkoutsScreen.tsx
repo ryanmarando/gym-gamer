@@ -7,12 +7,14 @@ import {
     Platform,
     TouchableWithoutFeedback,
     Keyboard,
+    ActivityIndicator,
 } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import PixelModal from "../components/PixelModal";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import WorkoutSplitModal from "../components/WorkoutSplitModal";
+import Celebration from "../components/Celebration";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import PickWorkoutDay from "../components/PickWorkoutDay";
@@ -73,6 +75,8 @@ export default function WorkoutsScreen({ navigation }: any) {
 
     const [isPixelModalVisible, setPixelModalVisible] = useState(false);
     const [modalSplitMessage, setModalSplitMessage] = useState<string>("");
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const minWorkoutTime = 900; //15 minutes
 
     const addSplitDay = () => {
         if (splitDays.length < 7) {
@@ -139,9 +143,13 @@ export default function WorkoutsScreen({ navigation }: any) {
 
     const openCompleteModal = () => {
         setModalAction("complete");
-        setModalMessage(
-            "Are you sure you want to complete the workout? Workouts under 15 minutes will not save."
-        );
+        if (timer < minWorkoutTime) {
+            setModalMessage(
+                "Are you sure you want to complete the workout? Workouts under 15 minutes will not save."
+            );
+        } else {
+            setModalMessage("Are you sure you want to complete the workout?");
+        }
         setShowModal(true);
     };
 
@@ -167,7 +175,7 @@ export default function WorkoutsScreen({ navigation }: any) {
             setTimer(0);
         } else if (modalAction === "complete") {
             try {
-                if (timer < 900) {
+                if (timer < minWorkoutTime) {
                     // User is confirming too-short workout now
                     playBadMoveSound();
                     setWorkoutStarted(false);
@@ -181,6 +189,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                     setShowConfirmationModal(true);
                     return;
                 }
+                setIsLoading(true);
                 const userIdStr = await SecureStore.getItemAsync("userId");
                 if (!userIdStr) return;
                 const userId = Number(userIdStr);
@@ -234,6 +243,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                                     }),
                                 }
                             );
+
                             if (
                                 weightLiftedResult.newlyCompletedAchievements
                                     ?.length
@@ -290,6 +300,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                 setWorkoutStarted(false);
                 setWorkoutStartTime(null);
                 setTimer(0);
+                setIsLoading(false);
                 await AsyncStorage.removeItem("workoutStartTime");
                 setmodalConfirmationTitle("Nice work, gamer!");
                 setModalMessage(
@@ -300,8 +311,12 @@ export default function WorkoutsScreen({ navigation }: any) {
                 setShowConfetti(true);
                 setTimeout(() => setShowConfetti(false), 5000);
             } catch (error) {
+                setIsLoading(false);
                 console.error("Complete workout failed", error);
-                alert("Failed to complete workout");
+                playBadMoveSound();
+                setmodalConfirmationTitle("Whoa there, gamer!");
+                setModalMessage(`Complete workout failed: ${error}`);
+                setShowConfirmationModal(true);
             }
         }
 
@@ -500,6 +515,7 @@ export default function WorkoutsScreen({ navigation }: any) {
             const arr = copy[workoutId] ? [...copy[workoutId]] : [];
 
             if (arr.length >= 7) {
+                playBadMoveSound();
                 console.log("Cannot add more than 7 entries");
                 return prev; // Do nothing, keep state unchanged
             }
@@ -517,6 +533,7 @@ export default function WorkoutsScreen({ navigation }: any) {
             if (copy[workoutId] && copy[workoutId].length > 1) {
                 copy[workoutId] = copy[workoutId].slice(0, -1);
             } else {
+                playBadMoveSound();
                 console.log("Cannot delete last entry");
             }
             return copy;
@@ -703,6 +720,16 @@ export default function WorkoutsScreen({ navigation }: any) {
                                             }
                                             showConfetti={showConfetti}
                                         />
+
+                                        {isLoading && (
+                                            <ActivityIndicator
+                                                size="large"
+                                                color="#0ff"
+                                                style={{ marginTop: 20 }}
+                                            />
+                                        )}
+
+                                        {showConfetti && <Celebration />}
 
                                         <GestureHandlerRootView
                                             style={{ flex: 1 }}

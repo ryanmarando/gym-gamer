@@ -99,8 +99,6 @@ export default function WorkoutHeader({
                 title={modalConfirmationTitle}
                 message={modalMessage}
             />
-
-            {showConfetti && <Celebration />}
         </View>
     );
 }

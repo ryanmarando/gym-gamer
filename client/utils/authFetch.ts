@@ -23,15 +23,18 @@ export async function authFetch(endpoint: string, options: RequestInit = {}) {
         headers,
     });
 
+    const res = await response.json();
+
     // Handle non-OK responses if you want
     if (!response.ok) {
         console.error(
             "❌ AuthFetch failed:",
             response.status,
-            response.statusText
+            response.statusText,
+            res.message
         );
         throw new Error("API request failed");
     }
 
-    return response.json(); // or return response if you prefer
+    return res;
 }

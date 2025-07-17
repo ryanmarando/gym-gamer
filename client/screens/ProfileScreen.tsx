@@ -77,15 +77,21 @@ export default function ProfileScreen({
     const animatedProgress = useRef(new Animated.Value(0)).current;
     const prevLevelRef = useRef(userData?.level);
     const prevXpRef = useRef(userData?.xp);
+    const [displayLevel, setDisplayLevel] = useState<number | null>(null);
+    const [displayXp, setDisplayXp] = useState<number | null>(null);
 
     const animateLevelUp = (remainingLevels: number) => {
         if (remainingLevels <= 0) {
-            // Animate final partial bar
+            // Final bar for current level's progress
             Animated.timing(animatedProgress, {
                 toValue: userData!.levelProgress / 100,
                 duration: 1000,
                 useNativeDriver: false,
-            }).start();
+            }).start(() => {
+                setSparksActive(false);
+                setDisplayLevel(userData!.level);
+                setDisplayXp(userData!.xp);
+            });
             return;
         }
 
@@ -98,12 +104,13 @@ export default function ProfileScreen({
         }).start(() => {
             playLevelUpSound();
 
-            // Reset for next level
+            // Bump the displayed level
+            setDisplayLevel((prev) => (prev ?? 0) + 1);
+            setDisplayXp((prev) => (prev ?? 0) + 100);
+
+            // Reset progress bar
             animatedProgress.setValue(0);
 
-            setSparksActive(false);
-
-            // Continue with next level
             animateLevelUp(remainingLevels - 1);
         });
     };
@@ -114,11 +121,14 @@ export default function ProfileScreen({
         const prevLevel = prevLevelRef.current ?? userData.level;
         const levelsGained = userData.level - prevLevel;
 
+        // Start with previous values
+        setDisplayLevel(prevLevel);
+        setDisplayXp(prevXpRef.current ?? userData.xp);
+
         if (levelsGained > 0) {
             animateLevelUp(levelsGained);
         } else {
             setSparksActive(true);
-
             Animated.timing(animatedProgress, {
                 toValue: userData.levelProgress / 100,
                 duration: 1000,
@@ -264,7 +274,8 @@ export default function ProfileScreen({
                             color="#fff"
                             style={{ marginBottom: 10 }}
                         >
-                            Level: {userData.level} | XP: {userData.xp}
+                            Level: {displayLevel ?? userData.level} | XP:{" "}
+                            {displayXp ?? userData.xp}
                         </PixelText>
 
                         <View style={{ position: "relative" }}>
