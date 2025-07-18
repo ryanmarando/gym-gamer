@@ -87,7 +87,7 @@ export default function ProfileScreen({
 
         Animated.timing(levelUpAnim, {
             toValue: -35, // move up by 50 pixels
-            duration: 500,
+            duration: 700,
             useNativeDriver: true,
         }).start(() => {
             setShowLevelUpImage(false); // hide after animation
