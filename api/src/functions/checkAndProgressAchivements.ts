@@ -4,8 +4,7 @@ import { AchievementType } from "@prisma/client";
 
 const checkWorkoutDuration = (duration: number) => {
     if (duration && duration <= 5400) {
-        // 90 min duration {
-        console.log("Not enough duration in for 90 minute workout");
+        // 90 min duration
         return false;
     }
     return true;
@@ -20,26 +19,22 @@ const checkWorkoutTimeOfDay = (
 
     const endDate = new Date(workoutEndTime);
     const hour = endDate.getHours();
-    console.log(`🕒 Workout ended at hour: ${hour}`);
+    //console.log(`🕒 Workout ended at hour: ${hour}`);
 
     if (achievementName === "complete 5 am workouts" && hour < 12) {
-        console.log(`✅ Matched AM workout for achievement ${achievementName}`);
+        //console.log(`✅ Matched AM workout for achievement ${achievementName}`);
         return true;
     }
     if (achievementName === "complete 5 pm workouts" && hour >= 12) {
-        console.log(`✅ Matched PM workout for achievement ${achievementName}`);
+        //console.log(`✅ Matched PM workout for achievement ${achievementName}`);
         return true;
     }
 
-    console.log(
-        `❌ Workout did not match AM/PM conditions for ${achievementName}`
-    );
     return false;
 };
 
 const checkCreationWorkoutType = (creationType: string) => {
     if (creationType === "createWorkout") {
-        console.log("found workout create true");
         return true;
     }
     return false;

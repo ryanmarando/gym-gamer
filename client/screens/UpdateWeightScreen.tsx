@@ -8,13 +8,15 @@ import {
     Platform,
     TouchableWithoutFeedback,
     Keyboard,
+    KeyboardAvoidingView,
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import { LineChart, Grid, YAxis, XAxis } from "react-native-svg-charts";
+
 import PixelButton from "../components/PixelButton";
 import PixelText from "../components/PixelText";
 import PixelModal from "../components/PixelModal";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
+import WeightEntriesList from "../components/WeightEntriesList";
 import { authFetch } from "../utils/authFetch";
 import { sendPushNotification } from "../utils/notification";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,7 +26,7 @@ import { playDeleteSound } from "../utils/playDeleteSound";
 export default function UpdateWeightScreen({ navigation }: any) {
     const [userId, setUserId] = useState<number | null>(null);
     const [weights, setWeights] = useState<
-        { weight: number; enteredAt: string }[]
+        { id: number; userId: number; weight: number; enteredAt: string }[]
     >([]);
     const [newWeight, setNewWeight] = useState("");
     const [loading, setLoading] = useState(true); // true until fully ready
@@ -68,8 +70,10 @@ export default function UpdateWeightScreen({ navigation }: any) {
                 `/user/getAllUserWeightEntries/${userId}`
             );
             if (data?.user?.weightEntries) {
-                setWeights(data.user.weightEntries);
-                console.log("✅ Weights:", data.user.weightEntries);
+                console.log(data?.user?.weightEntries);
+                const weights = data?.user?.weightEntries;
+                setWeights(weights);
+                console.log("✅ Weights:", weights);
             } else {
                 console.warn("⚠️ No weightEntries found");
             }
@@ -206,15 +210,12 @@ export default function UpdateWeightScreen({ navigation }: any) {
             new Date(a.enteredAt).getTime() - new Date(b.enteredAt).getTime()
     );
     const weightValues = sortedWeights.map((w) => w.weight);
-    const dates = sortedWeights.map((w) =>
-        new Date(w.enteredAt).toLocaleDateString()
-    );
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <TouchableWithoutFeedback
-                onPress={Keyboard.dismiss}
-                accessible={false}
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
             >
                 <View style={styles.container}>
                     {loading && <ActivityIndicator color="#0ff" size="large" />}
@@ -230,16 +231,6 @@ export default function UpdateWeightScreen({ navigation }: any) {
                                 sortedWeights.length - 1
                             ].weight.toFixed(1)}{" "}
                             lbs
-                        </PixelText>
-                    )}
-
-                    {!loading && sortedWeights.length === 1 && (
-                        <PixelText
-                            fontSize={10}
-                            color="#0ff"
-                            style={{ marginBottom: 10 }}
-                        >
-                            Please enter two entries for a chart.
                         </PixelText>
                     )}
 
@@ -271,85 +262,15 @@ export default function UpdateWeightScreen({ navigation }: any) {
                                 containerStyle={{ marginBottom: 20 }}
                             />
 
-                            {weightValues.length > 1 && (
-                                <View style={{ height: 250, padding: 10 }}>
-                                    <View
-                                        style={{
-                                            flexDirection: "row",
-                                            flex: 1,
-                                        }}
-                                    >
-                                        <YAxis
-                                            data={weightValues}
-                                            contentInset={{
-                                                top: 20,
-                                                bottom: 20,
-                                            }}
-                                            svg={{
-                                                fill: "#0ff",
-                                                fontSize: 8,
-                                                fontFamily:
-                                                    "PressStart2P_400Regular",
-                                            }}
-                                            numberOfTicks={6}
-                                            formatLabel={(value: any) =>
-                                                value.toFixed(1)
-                                            }
-                                        />
-
-                                        <View
-                                            style={{ flex: 1, marginLeft: 10 }}
-                                        >
-                                            <LineChart
-                                                style={{ flex: 1 }}
-                                                data={weightValues}
-                                                svg={{ stroke: "#0ff" }}
-                                                contentInset={{
-                                                    top: 20,
-                                                    bottom: 30,
-                                                }} // More bottom space for labels
-                                            >
-                                                <Grid
-                                                    svg={{
-                                                        stroke: "#333",
-                                                        strokeDasharray: [4, 4],
-                                                    }}
-                                                />
-                                            </LineChart>
-
-                                            <XAxis
-                                                style={{
-                                                    marginTop: 8,
-                                                    height: 40,
-                                                }}
-                                                data={weightValues}
-                                                formatLabel={(value, index) => {
-                                                    const date = dates[index];
-                                                    if (!date) return ""; // fallback if date is undefined
-                                                    const [month, day, year] =
-                                                        date.split("/");
-                                                    return `${month}/${day}/${year}`;
-                                                }}
-                                                contentInset={{
-                                                    left: 20,
-                                                    right: 20,
-                                                }}
-                                                svg={{
-                                                    fill: "#0ff",
-                                                    fontSize: 8,
-                                                    y: 15,
-                                                    rotation: 0,
-                                                    originY: 0,
-                                                    fontFamily:
-                                                        "PressStart2P_400Regular",
-                                                }}
-                                                numberOfTicks={Math.min(
-                                                    dates.length,
-                                                    2
-                                                )}
-                                            />
-                                        </View>
-                                    </View>
+                            {weightValues.length > 0 && (
+                                <View
+                                    style={{
+                                        padding: 10,
+                                        maxHeight: 300,
+                                        height: 300,
+                                    }}
+                                >
+                                    <WeightEntriesList weights={weights} />
                                 </View>
                             )}
 
@@ -400,7 +321,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
                         </>
                     )}
                 </View>
-            </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }
@@ -415,7 +336,6 @@ const styles = StyleSheet.create({
         backgroundColor: "#111",
         padding: 20,
         justifyContent: "flex-start",
-        paddingVertical: "10%",
     },
     input: {
         height: Platform.OS === "ios" ? 40 : undefined,

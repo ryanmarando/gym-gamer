@@ -8,10 +8,10 @@ import {
     TouchableWithoutFeedback,
     Keyboard,
     ActivityIndicator,
+    Image,
 } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
-import PixelModal from "../components/PixelModal";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import WorkoutSplitModal from "../components/WorkoutSplitModal";
 import Celebration from "../components/Celebration";
@@ -622,6 +622,25 @@ export default function WorkoutsScreen({ navigation }: any) {
                                         borderColor: "#0f0",
                                     }}
                                 />
+
+                                <View
+                                    style={{
+                                        alignItems: "center",
+                                        marginTop: 40,
+                                        bottom: 0,
+                                    }}
+                                >
+                                    <Image
+                                        source={require("../assets/HeadphonePixel.png")}
+                                        style={{
+                                            width: 180,
+                                            height: 180,
+                                        }}
+                                    />
+                                    <PixelText color="#9B59B6">
+                                        Get the tunes ready!
+                                    </PixelText>
+                                </View>
 
                                 <WorkoutSplitModal
                                     visible={showSplitModal}

@@ -49,7 +49,7 @@ export default function PixelModal({
                             <PixelText
                                 fontSize={14}
                                 color="#fff"
-                                style={{ marginBottom: 20 }}
+                                style={{ marginBottom: 20, lineHeight: 19 }}
                             >
                                 {message}
                             </PixelText>

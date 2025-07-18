@@ -17,8 +17,5 @@
     },
     "submit": {
         "production": {}
-    },
-    "ios": {
-        "bundleIdentifier": "com.ryanmarando.yourapp"
     }
 }

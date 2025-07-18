@@ -1,44 +1,41 @@
 {
-  "expo": {
-    "name": "client",
-    "slug": "client",
-    "version": "1.0.0",
-    "owner": "ryanmarando",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.ryanmarando.client",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true,
-      "package": "com.ryanmarando.client"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-secure-store",
-      "expo-audio"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "aafdffa4-7a09-4511-a579-35dee4fbcf19"
-      }
+    "expo": {
+        "name": "Gym Gamer",
+        "slug": "client",
+        "version": "1.0.0",
+        "owner": "ryanmarando",
+        "orientation": "portrait",
+        "icon": "./assets/gym-gamer-app-icon.png",
+        "userInterfaceStyle": "light",
+        "newArchEnabled": true,
+        "splash": {
+            "image": "./assets/splash-icon.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#ffffff"
+        },
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.ryanmarando.client",
+            "infoPlist": {
+                "ITSAppUsesNonExemptEncryption": false
+            }
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/adaptive-icon.png",
+                "backgroundColor": "#ffffff"
+            },
+            "edgeToEdgeEnabled": true,
+            "package": "com.ryanmarando.client"
+        },
+        "web": {
+            "favicon": "./assets/favicon.png"
+        },
+        "plugins": ["expo-secure-store", "expo-audio"],
+        "extra": {
+            "eas": {
+                "projectId": "aafdffa4-7a09-4511-a579-35dee4fbcf19"
+            }
+        }
     }
-  }
 }

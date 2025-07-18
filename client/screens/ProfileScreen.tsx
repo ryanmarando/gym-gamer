@@ -78,7 +78,21 @@ export default function ProfileScreen({
     const prevLevelRef = useRef(userData?.level);
     const prevXpRef = useRef(userData?.xp);
     const [displayLevel, setDisplayLevel] = useState<number | null>(null);
-    const [displayXp, setDisplayXp] = useState<number | null>(null);
+    const levelUpAnim = useRef(new Animated.Value(0)).current;
+    const [showLevelUpImage, setShowLevelUpImage] = useState(false);
+
+    const triggerLevelUpImage = () => {
+        setShowLevelUpImage(true);
+        levelUpAnim.setValue(100);
+
+        Animated.timing(levelUpAnim, {
+            toValue: -35, // move up by 50 pixels
+            duration: 500,
+            useNativeDriver: true,
+        }).start(() => {
+            setShowLevelUpImage(false); // hide after animation
+        });
+    };
 
     const animateLevelUp = (remainingLevels: number) => {
         if (remainingLevels <= 0) {
@@ -90,7 +104,6 @@ export default function ProfileScreen({
             }).start(() => {
                 setSparksActive(false);
                 setDisplayLevel(userData!.level);
-                setDisplayXp(userData!.xp);
             });
             return;
         }
@@ -103,10 +116,10 @@ export default function ProfileScreen({
             useNativeDriver: false,
         }).start(() => {
             playLevelUpSound();
+            triggerLevelUpImage();
 
             // Bump the displayed level
             setDisplayLevel((prev) => (prev ?? 0) + 1);
-            setDisplayXp((prev) => (prev ?? 0) + 100);
 
             // Reset progress bar
             animatedProgress.setValue(0);
@@ -123,7 +136,6 @@ export default function ProfileScreen({
 
         // Start with previous values
         setDisplayLevel(prevLevel);
-        setDisplayXp(prevXpRef.current ?? userData.xp);
 
         if (levelsGained > 0) {
             animateLevelUp(levelsGained);
@@ -221,7 +233,7 @@ export default function ProfileScreen({
                 </PixelText>
 
                 <Image
-                    source={require("../assets/barbell_pixel.png")}
+                    source={require("../assets/DumbbellPixel.png")}
                     style={{ width: 100, height: 100, marginBottom: 20 }}
                 />
 
@@ -265,8 +277,12 @@ export default function ProfileScreen({
                         </PixelText>
 
                         <Image
-                            source={require("../assets/barbell_pixel.png")}
-                            style={{ width: 100, height: 100 }}
+                            source={require("../assets/DumbbellPixel.png")}
+                            style={{
+                                width: 50,
+                                height: 50,
+                                marginBottom: 20,
+                            }}
                         />
 
                         <PixelText
@@ -275,7 +291,7 @@ export default function ProfileScreen({
                             style={{ marginBottom: 10 }}
                         >
                             Level: {displayLevel ?? userData.level} | XP:{" "}
-                            {displayXp ?? userData.xp}
+                            {userData.xp}
                         </PixelText>
 
                         <View style={{ position: "relative" }}>
@@ -288,6 +304,24 @@ export default function ProfileScreen({
                                 borderColor="#ff0"
                             />
                             <Sparks active={sparksActive} />
+
+                            {showLevelUpImage && (
+                                <Animated.Image
+                                    source={require("../assets/LevelUpPixel.png")}
+                                    style={{
+                                        width: 240,
+                                        height: 240,
+                                        position: "absolute",
+                                        alignSelf: "center",
+                                        bottom: 0,
+                                        transform: [
+                                            { translateY: levelUpAnim },
+                                        ],
+                                        zIndex: 10,
+                                    }}
+                                    resizeMode="contain"
+                                />
+                            )}
                         </View>
 
                         <View

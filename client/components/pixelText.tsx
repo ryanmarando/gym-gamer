@@ -22,6 +22,7 @@ export default function PixelText({
             {...rest}
             style={[
                 styles.text,
+
                 color != null ? { color } : undefined,
                 typeof fontSize === "number" ? { fontSize } : undefined,
                 textAlign != null ? { textAlign } : undefined,
@@ -36,10 +37,12 @@ export default function PixelText({
 
 const styles = StyleSheet.create({
     text: {
-        fontFamily: "PressStart2P_400Regular", // your pixel font
-        color: "#0ff", // default color
-        fontSize: 14, // default font size
+        fontFamily: "PressStart2P_400Regular",
+        color: "#0ff",
+        fontSize: 14,
         textAlign: "center",
         paddingHorizontal: 20,
+        flexWrap: "wrap",
+        overflow: "hidden",
     },
 });

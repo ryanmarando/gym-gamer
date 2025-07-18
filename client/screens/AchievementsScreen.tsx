@@ -207,6 +207,7 @@ export default function AchievementsScreen({ navigation }: any) {
     };
 
     const handleCompleteQuest = async (questId: number) => {
+        setModalVisible(false);
         const result = await authFetch(`/quest/completeQuest/${userId}`);
 
         if (result.newlyCompletedAchievements?.length) {
@@ -220,7 +221,12 @@ export default function AchievementsScreen({ navigation }: any) {
         }
         fetchAchievements();
         fetchUserAchievements();
-        setModalVisible(false);
+        setModalConfirmationConfig({
+            title: "Amazing!",
+            message: `You are a true gamer! You just gained ${result.xp} XP! Update your quest for another goal!`,
+            onConfirm: () => setModalConfirmationVisible(false),
+        });
+        setModalConfirmationVisible(true);
         setShowConfetti(true);
         playExcitingSound();
         setTimeout(() => setShowConfetti(false), 5000);
@@ -236,7 +242,7 @@ export default function AchievementsScreen({ navigation }: any) {
                     color="#ff0"
                     style={{ marginBottom: 10 }}
                 >
-                    🏆 Conquer With Quests
+                    🏆 Conquer With A Quest
                 </PixelText>
 
                 {activeQuest ? (

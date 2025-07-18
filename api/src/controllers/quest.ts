@@ -139,13 +139,14 @@ export const completeQuest = async (req: Request, res: Response) => {
                 },
             });
 
-            return { freshUser, newlyCompleted };
+            return { freshUser, newlyCompleted, xpToAward };
         });
 
         res.json({
             message: "Progress updated for completing a quest!",
             user: result.freshUser,
             newlyCompletedAchievements: result.newlyCompleted,
+            xp: result.xpToAward,
         });
     } catch (error) {
         console.error(error);

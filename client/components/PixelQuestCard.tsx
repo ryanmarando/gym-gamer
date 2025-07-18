@@ -4,7 +4,8 @@ import {
     StyleSheet,
     ActivityIndicator,
     ViewStyle,
-    DevMenu,
+    Platform,
+    Image,
 } from "react-native";
 import PixelText from "./PixelText";
 import ProgressBar from "./ProgressBar";
@@ -165,7 +166,7 @@ export default function PixelQuestCard({
                     </>
                 )}
                 {quest.type === "MAINTAIN" && (
-                    <>
+                    <View>
                         <PixelText fontSize={12} color="#0ff">
                             🎯 Maintain {quest.initialWeight} lbs through{" "}
                             {new Date(quest.goalDate).toLocaleDateString(
@@ -178,7 +179,34 @@ export default function PixelQuestCard({
                             )}
                             !
                         </PixelText>
-                    </>
+                        <View
+                            style={{
+                                position: "absolute",
+                                right: -62,
+                                top: -45,
+                            }}
+                        >
+                            <PixelText
+                                fontSize={10}
+                                color="#3B2F2F"
+                                style={{
+                                    position: "absolute",
+                                    zIndex: 10,
+                                    bottom: Platform.OS === "ios" ? 25 : 25,
+                                    textAlign: "center",
+                                }}
+                            >
+                                Worth {quest.baseXP * quest.goal} XP!
+                            </PixelText>
+                            <Image
+                                source={require("../assets/RewardPixel.png")}
+                                style={{
+                                    width: 125,
+                                    height: 125,
+                                }}
+                            />
+                        </View>
+                    </View>
                 )}
             </View>
             {quest.initialWeight == null ? (
@@ -214,7 +242,11 @@ export default function PixelQuestCard({
                             <PixelText
                                 fontSize={10}
                                 color="#fff"
-                                style={{ marginBottom: 4 }}
+                                style={{
+                                    marginBottom: 4,
+                                    width: "70%",
+                                    lineHeight: 12,
+                                }}
                             >
                                 Weight Goal:{" "}
                                 {quest.type === "GAIN"
@@ -243,13 +275,34 @@ export default function PixelQuestCard({
                                 </PixelText>
                             )}
 
-                            <PixelText
-                                fontSize={10}
-                                color="#fff"
-                                style={{ marginBottom: 4 }}
+                            <View
+                                style={{
+                                    position: "absolute",
+                                    flex: 1,
+                                    right: -45,
+                                    top: -3,
+                                }}
                             >
-                                {quest.baseXP * quest.goal} XP reward!
-                            </PixelText>
+                                <PixelText
+                                    fontSize={10}
+                                    color="#3B2F2F"
+                                    style={{
+                                        position: "absolute",
+                                        zIndex: 10,
+                                        bottom: Platform.OS === "ios" ? 15 : 10,
+                                        textAlign: "center",
+                                    }}
+                                >
+                                    Worth {quest.baseXP * quest.goal} XP!
+                                </PixelText>
+                                <Image
+                                    source={require("../assets/RewardPixel.png")}
+                                    style={{
+                                        width: 120,
+                                        height: 120,
+                                    }}
+                                />
+                            </View>
 
                             <PixelText
                                 fontSize={10}

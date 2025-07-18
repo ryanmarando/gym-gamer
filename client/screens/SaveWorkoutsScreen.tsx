@@ -3,7 +3,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import {
     View,
     StyleSheet,
-    FlatList,
+    Platform,
     TouchableOpacity,
     ActivityIndicator,
     TextInput,
@@ -443,6 +443,9 @@ export default function SaveWorkoutScreen() {
                     <PixelButton
                         text="Create your own workout"
                         onPress={toggleCreateWorkout}
+                        containerStyle={{
+                            marginBottom: Platform.OS === "ios" ? 0 : 8,
+                        }}
                     ></PixelButton>
 
                     <CustomWorkoutModal

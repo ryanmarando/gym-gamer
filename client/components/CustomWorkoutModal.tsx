@@ -174,6 +174,7 @@ export default function CustomWorkoutModal({
                                         flex: 1,
                                         justifyContent: "center",
                                         borderColor: "#0f0",
+                                        width: "100%",
                                     }}
                                 />
                             </View>

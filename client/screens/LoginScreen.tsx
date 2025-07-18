@@ -31,9 +31,9 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
             setModalMessage("Please enter both email and password.");
             setModalTitleMessage("Oops!");
             setShowConfirmationModal(true);
-            return; // stop further execution
+            return;
         }
-        setLoading(true); // Start loading
+        setLoading(true);
         try {
             const response = await fetch(API_URL + "/auth/login", {
                 method: "POST",
@@ -43,11 +43,21 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
                 body: JSON.stringify({ email, password }),
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                throw new Error("Invalid credentials");
+                playBadMoveSound();
+
+                if (data.message) {
+                    throw new Error(`${data.message}`);
+                }
+
+                if (data.errors[0].message) {
+                    throw new Error(`${data.errors[0].message}`);
+                }
             }
 
-            const data = await response.json();
+            //const data = await response.json();
             console.log("✅ Login success:", data);
 
             await SecureStore.setItemAsync("userToken", data.token);
@@ -73,7 +83,7 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
                 </PixelText>
 
                 <Image
-                    source={require("../assets/barbell_pixel.png")}
+                    source={require("../assets/ControllerPixel.png")}
                     style={{ width: 64, height: 64 }}
                     resizeMode="contain"
                 />
@@ -138,6 +148,18 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
                     onCancel={() => setShowConfirmationModal(false)}
                     title={modalTitleMessage}
                     message={modalMessage}
+                />
+
+                <Image
+                    source={require("../assets/gym-gamer-app-icon.png")}
+                    style={{
+                        width: 126,
+                        height: 126,
+                        borderRadius: 12,
+                        marginTop: 22,
+                        justifyContent: "flex-end",
+                    }}
+                    resizeMode="contain"
                 />
             </View>
         </SafeAreaView>

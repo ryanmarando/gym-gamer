@@ -43,7 +43,7 @@ export default function ConfirmationPixelModal({
                                 <PixelText
                                     fontSize={14}
                                     color="#fff"
-                                    style={{ marginBottom: 20 }}
+                                    style={{ marginBottom: 20, lineHeight: 19 }}
                                 >
                                     {message}
                                 </PixelText>
