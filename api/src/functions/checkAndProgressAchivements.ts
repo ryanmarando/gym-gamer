@@ -136,7 +136,11 @@ export async function checkAndProgressAchievements(
                 const isWorkout = checkCreationWorkoutType(creationType);
                 const isQuest = checkCreationQuestType(creationType);
 
-                if (isWorkout && ua.achievementId === 2) {
+                if (
+                    isWorkout &&
+                    ua.achievement.name.toLowerCase() ===
+                        "create your own workout"
+                ) {
                     if (goalAmount === 1) {
                         progressToAdd = 100;
                     } else {
@@ -145,7 +149,11 @@ export async function checkAndProgressAchievements(
                     break;
                 }
 
-                if (isQuest && ua.achievementId === 3) {
+                if (
+                    isQuest &&
+                    ua.achievement.name.toLowerCase() ===
+                        "update your first quest"
+                ) {
                     if (goalAmount === 1) {
                         progressToAdd = 100;
                     } else {
