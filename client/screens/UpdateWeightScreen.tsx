@@ -6,8 +6,6 @@ import {
     ActivityIndicator,
     Alert,
     Platform,
-    TouchableWithoutFeedback,
-    Keyboard,
     KeyboardAvoidingView,
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
@@ -22,6 +20,7 @@ import { sendPushNotification } from "../utils/notification";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import { playDeleteSound } from "../utils/playDeleteSound";
+import { playQuickAddSound } from "../utils/playQuickAddSound";
 
 export default function UpdateWeightScreen({ navigation }: any) {
     const [userId, setUserId] = useState<number | null>(null);
@@ -30,8 +29,19 @@ export default function UpdateWeightScreen({ navigation }: any) {
     >([]);
     const [newWeight, setNewWeight] = useState("");
     const [loading, setLoading] = useState(true); // true until fully ready
-    const [invalidModalVisible, setInvalidModalVisible] = useState(false);
+    //const [invalidModalVisible, setInvalidModalVisible] = useState(false);
     const [modalConfig, setModalConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+    }>({
+        visible: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+    });
+    const [modalConfirmationConfig, setModalConfirmationConfig] = useState<{
         visible: boolean;
         title: string;
         message: string;
@@ -70,16 +80,28 @@ export default function UpdateWeightScreen({ navigation }: any) {
                 `/user/getAllUserWeightEntries/${userId}`
             );
             if (data?.user?.weightEntries) {
-                console.log(data?.user?.weightEntries);
                 const weights = data?.user?.weightEntries;
                 setWeights(weights);
-                console.log("✅ Weights:", weights);
+                console.log("✅ Weights:", weights.length, "entries found.");
             } else {
                 console.warn("⚠️ No weightEntries found");
             }
         } catch (err) {
             console.error(err);
-            Alert.alert("Error", "Failed to load weight entries.");
+            playBadMoveSound();
+            setModalConfirmationConfig({
+                visible: true,
+                title: "Oh no, gamer",
+                message: "Failed to load weight entries!",
+                onConfirm: () => {
+                    setModalConfirmationConfig({
+                        visible: false,
+                        title: "Oh no, gamer",
+                        message: "Failed to load weight entries!",
+                        onConfirm: () => {},
+                    });
+                },
+            });
         } finally {
             setLoading(false);
         }
@@ -90,7 +112,19 @@ export default function UpdateWeightScreen({ navigation }: any) {
         const weightNum = parseFloat(newWeight);
         if (isNaN(weightNum) || weightNum <= 0) {
             playBadMoveSound();
-            setInvalidModalVisible(true);
+            setModalConfirmationConfig({
+                visible: true,
+                title: "Whoa there, gamer",
+                message: "Please enter a valid, positive number!",
+                onConfirm: () => {
+                    setModalConfirmationConfig({
+                        visible: false,
+                        title: "Whoa there, gamer",
+                        message: "Please enter a valid, positive number!",
+                        onConfirm: () => {},
+                    });
+                },
+            });
             return;
         }
         setModalConfig({
@@ -144,11 +178,26 @@ export default function UpdateWeightScreen({ navigation }: any) {
                     // Show modal, play sound, push notification, etc.
                 });
             }
+            playQuickAddSound();
             setNewWeight("");
             await fetchWeights();
         } catch (err) {
             console.error(err);
-            Alert.alert("Error", "Failed to add weight entry.");
+            playBadMoveSound();
+            setModalConfirmationConfig({
+                visible: true,
+                title: "Oh no, gamer",
+                message: "Failed to add weight entry.",
+                onConfirm: () => {
+                    setModalConfirmationConfig({
+                        visible: false,
+                        title: "Oh no, gamer",
+                        message: "Failed to add weight entry.",
+                        onConfirm: () => {},
+                    });
+                },
+            });
+
             setLoading(false);
         }
     };
@@ -171,7 +220,20 @@ export default function UpdateWeightScreen({ navigation }: any) {
                     await fetchWeights();
                 } catch (err) {
                     console.error(err);
-                    Alert.alert("Error", "Failed to delete last entry.");
+                    playBadMoveSound();
+                    setModalConfirmationConfig({
+                        visible: true,
+                        title: "Oh no, gamer",
+                        message: "Failed to delete last entry.",
+                        onConfirm: () => {
+                            setModalConfirmationConfig({
+                                visible: false,
+                                title: "Oh no, gamer",
+                                message: "Failed to delete last entry.",
+                                onConfirm: () => {},
+                            });
+                        },
+                    });
                 } finally {
                     setModalConfig((prev) => ({ ...prev, visible: false }));
                 }
@@ -196,7 +258,20 @@ export default function UpdateWeightScreen({ navigation }: any) {
                     await fetchWeights();
                 } catch (err) {
                     console.error(err);
-                    Alert.alert("Error", "Failed to delete all entries.");
+                    playBadMoveSound();
+                    setModalConfirmationConfig({
+                        visible: true,
+                        title: "Oh no, gamer",
+                        message: "Failed to delete all entries.",
+                        onConfirm: () => {
+                            setModalConfirmationConfig({
+                                visible: false,
+                                title: "Oh no, gamer",
+                                message: "Failed to delete all entries.",
+                                onConfirm: () => {},
+                            });
+                        },
+                    });
                 } finally {
                     setModalConfig((prev) => ({ ...prev, visible: false }));
                 }
@@ -312,11 +387,15 @@ export default function UpdateWeightScreen({ navigation }: any) {
                                 }
                             />
                             <ConfirmationPixelModal
-                                visible={invalidModalVisible}
-                                title="Whoa there, gamer!"
-                                message="Please enter a valid positive number!"
-                                onConfirm={() => setInvalidModalVisible(false)}
-                                onCancel={() => setInvalidModalVisible(false)}
+                                visible={modalConfirmationConfig.visible}
+                                title={modalConfirmationConfig.title}
+                                message={modalConfirmationConfig.message}
+                                onConfirm={() =>
+                                    modalConfirmationConfig.onConfirm()
+                                }
+                                onCancel={() =>
+                                    modalConfirmationConfig.onConfirm()
+                                }
                             />
                         </>
                     )}
