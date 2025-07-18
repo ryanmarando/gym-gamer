@@ -10,7 +10,7 @@ import xss from "./middleware/xss.js";
 import authenticated from "./middleware/auth.js";
 
 const app = express();
-const port = 3001;
+const port = Number(process.env.PORT);
 
 app.get("/", (req, res) => {
     res.send("Welcome To The Gym Gamer API!");
@@ -30,7 +30,7 @@ app.use("/auth", authRouter);
 app.use("/uploads", express.static("uploads"));
 
 // Authentication
-//app.use(authenticated);
+app.use(authenticated);
 
 // Routers
 app.use("/workouts", workoutRouter);
