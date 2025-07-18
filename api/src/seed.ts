@@ -348,10 +348,6 @@ async function SeedWorkouts() {
             architype: [WorkoutArchitype.LEGS, WorkoutArchitype.HAMSTRINGS],
         },
         {
-            name: "Glute Bridge",
-            architype: [WorkoutArchitype.LEGS, WorkoutArchitype.HAMSTRINGS],
-        },
-        {
             name: "Single Leg Romanian Deadlift",
             architype: [WorkoutArchitype.LEGS, WorkoutArchitype.HAMSTRINGS],
         },

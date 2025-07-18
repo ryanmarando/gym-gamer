@@ -22,14 +22,14 @@
         },
         "android": {
             "adaptiveIcon": {
-                "foregroundImage": "./assets/adaptive-icon.png",
+                "foregroundImage": "./assets/gym-gamer-app-icon.png",
                 "backgroundColor": "#ffffff"
             },
             "edgeToEdgeEnabled": true,
             "package": "com.ryanmarando.client"
         },
         "web": {
-            "favicon": "./assets/favicon.png"
+            "favicon": "./assets/gym-gamer-app-icon.png"
         },
         "plugins": ["expo-secure-store", "expo-audio"],
         "extra": {
