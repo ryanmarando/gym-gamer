@@ -4,7 +4,7 @@
     "main": "app.ts",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "build": "tsc",
+        "build": "npx prisma generate && tsc",
         "startapi": "nodemon --ext ts,js,json --exec \"node --no-warnings --loader ts-node/esm src/app.ts\"",
         "start": "node dist/app.js",
         "weeklyReset": "tsc && node dist/functions/runWeeklyResetJob.js"
