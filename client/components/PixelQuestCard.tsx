@@ -184,27 +184,31 @@ export default function PixelQuestCard({
                                 position: "absolute",
                                 right: -62,
                                 top: -45,
+                                width: 125,
+                                height: 125,
+                                justifyContent: "center",
+                                alignItems: "center",
                             }}
                         >
-                            <PixelText
-                                fontSize={10}
-                                color="#3B2F2F"
-                                style={{
-                                    position: "absolute",
-                                    zIndex: 10,
-                                    bottom: Platform.OS === "ios" ? 25 : 25,
-                                    textAlign: "center",
-                                }}
-                            >
-                                Worth {quest.baseXP * quest.goal} XP!
-                            </PixelText>
                             <Image
                                 source={require("../assets/RewardPixel.png")}
                                 style={{
                                     width: 125,
                                     height: 125,
+                                    position: "absolute",
                                 }}
                             />
+                            <PixelText
+                                fontSize={10}
+                                color="#3B2F2F"
+                                style={{
+                                    textAlign: "center",
+                                    zIndex: 10,
+                                    marginTop: Platform.OS === "ios" ? 50 : 50,
+                                }}
+                            >
+                                Worth {quest.baseXP * quest.goal} XP!
+                            </PixelText>
                         </View>
                     </View>
                 )}
@@ -284,7 +288,7 @@ export default function PixelQuestCard({
                                 }}
                             >
                                 <PixelText
-                                    fontSize={10}
+                                    fontSize={11}
                                     color="#3B2F2F"
                                     style={{
                                         position: "absolute",

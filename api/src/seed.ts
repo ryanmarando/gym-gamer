@@ -568,7 +568,7 @@ export async function SeedAchievements() {
             xp: 100,
             description: "Update your first quest.",
             goalAmount: 1,
-            goalType: AchievementType.QUEST,
+            goalType: AchievementType.CREATION,
             weeklyReset: false,
         },
 

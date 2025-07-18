@@ -172,6 +172,8 @@ export default function AchievementsScreen({ navigation }: any) {
                 body: JSON.stringify(data),
             });
 
+            console.log(result);
+
             if (result.newlyCompletedAchievements?.length) {
                 // Send notification
                 sendNotification(result.newlyCompletedAchievements);
