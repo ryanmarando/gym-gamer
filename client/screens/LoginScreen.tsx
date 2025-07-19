@@ -126,15 +126,21 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
                     <PixelButton
                         text="Log In"
                         onPress={handleLogin}
-                        color="#0ff"
+                        color="#0f0"
                         containerStyle={{
                             backgroundColor: "#000",
-                            borderColor: "#0ff",
+                            borderColor: "#0f0",
                             marginTop: 20,
                         }}
                         disabled={loading} // disable button when loading
                     />
                 )}
+
+                <View style={{ marginTop: 18 }}>
+                    <PixelText fontSize={12} color="#fff">
+                        Register if you don't have an account
+                    </PixelText>
+                </View>
 
                 <PixelButton
                     text="Sign Up"
@@ -143,7 +149,7 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
                     containerStyle={{
                         backgroundColor: "#000",
                         borderColor: "#f00",
-                        marginTop: 20,
+                        marginTop: 18,
                     }}
                 />
 

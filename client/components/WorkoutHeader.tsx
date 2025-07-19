@@ -79,8 +79,13 @@ export default function WorkoutHeader({
             ) : (
                 <PixelButton
                     text="Start Workout"
+                    color="#0f0"
                     onPress={openStartModal}
-                    containerStyle={{ marginTop: 20 }}
+                    containerStyle={{
+                        marginTop: 20,
+
+                        borderColor: "#0f0",
+                    }}
                 />
             )}
 

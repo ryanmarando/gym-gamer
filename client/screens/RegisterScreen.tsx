@@ -25,9 +25,16 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
     // Triggered when Register button pressed
     const handleRegisterPress = () => {
         if (!waiverAccepted) {
-            // Navigate to waiver page, pass a callback
+            // Navigate to waiver and auto-register if valid
             navigation.navigate("UserWaiver", {
-                onAccept: () => setWaiverAccepted(true),
+                onAccept: () => {
+                    setWaiverAccepted(true);
+
+                    // Auto-register if all info is filled
+                    if (email && name && password) {
+                        handleRegister();
+                    }
+                },
             });
         } else {
             handleRegister();
@@ -141,10 +148,10 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
                 <PixelButton
                     text="Register"
                     onPress={handleRegisterPress}
-                    color="#0ff"
+                    color="#0f0"
                     containerStyle={{
                         backgroundColor: waiverAccepted ? "#000" : "#555",
-                        borderColor: "#0ff",
+                        borderColor: "#0f0",
                         marginTop: 20,
                     }}
                 />

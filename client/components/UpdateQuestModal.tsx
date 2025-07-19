@@ -121,7 +121,6 @@ export default function UpdateQuestModal({
             !validateDate(dateOnly) ||
             !isDateAfterToday(deadline)
         ) {
-            console.log(validateDate(dateOnly));
             playBadMoveSound();
             setModalMessage(
                 "Please enter a valid goal amount, initial weight, and deadline (YYYY-MM-DD) after today."
@@ -137,6 +136,15 @@ export default function UpdateQuestModal({
                 "Your weight goal can't be greater than your initial weight."
             );
             setPixelModalVisible(true);
+            return;
+        }
+
+        // Goal to LOSE or GAIN is unreasonable
+        if (goal >= 500) {
+            playBadMoveSound();
+            setModalMessage("Let's enter a more reasonable goal.");
+            setPixelModalVisible(true);
+            setGoalAmount("");
             return;
         }
 
