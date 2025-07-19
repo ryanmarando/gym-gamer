@@ -31,21 +31,7 @@
         "web": {
             "favicon": "./assets/gym-gamer-app-icon.png"
         },
-        "plugins": [
-            "expo-secure-store",
-            "expo-audio",
-            [
-                "expo-notifications",
-                {
-                    "icon": "./assets/gym-gamer-app-icon.png",
-                    "color": "#ffffff",
-                    "defaultChannel": "default",
-                    "enableVibrateFallback": true,
-                    "playSound": true,
-                    "sounds": ["default"]
-                }
-            ]
-        ],
+        "plugins": ["expo-secure-store", "expo-audio", "expo-notifications"],
         "extra": {
             "eas": {
                 "projectId": "aafdffa4-7a09-4511-a579-35dee4fbcf19"
