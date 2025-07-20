@@ -1,11 +1,12 @@
 import { Router } from "express";
 import * as userController from "../controllers/user.js";
 import { validateBody, WeightEntrySchema } from "../middleware/validation.js";
+import { isAdmin } from "../middleware/isAdmin.js";
 
 const router = Router();
 
-router.get("/getAllUsers", userController.getAllUsers);
-router.delete("/deleteAllUsers", userController.deleteAllUsers);
+router.get("/getAllUsers", isAdmin, userController.getAllUsers);
+router.delete("/deleteAllUsers", isAdmin, userController.deleteAllUsers);
 
 router.get("/getUserWorkouts/:id", userController.getUserWorkouts);
 router.get(
@@ -21,7 +22,7 @@ router.get(
     userController.getUserWorkoutWeightEntries
 );
 
-router.patch("/resetUserStats/:id", userController.resetUserStats);
+router.patch("/resetUserStats/:id", isAdmin, userController.resetUserStats);
 
 router.post(
     "/addUserWeightEntry/:id",

@@ -4,6 +4,7 @@ import {
     validateBody,
     AchievementUpdateInputSchema,
 } from "../middleware/validation.js";
+import { isAdmin } from "../middleware/isAdmin.js";
 
 const router = Router();
 
@@ -16,12 +17,17 @@ router.post(
 
 router.delete(
     "/deleteAllAchievements",
+    isAdmin,
     achievementController.deleteAllAchievements
 );
 
 router.get("/weeklyReset", achievementController.weeklyAchivementReset);
 
 router.get("/", achievementController.getAllAchievements);
-router.delete("/", achievementController.deleteAchievementByIdFromUser);
+router.delete(
+    "/",
+    isAdmin,
+    achievementController.deleteAchievementByIdFromUser
+);
 
 export default router;

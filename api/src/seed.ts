@@ -1,5 +1,7 @@
-import { prisma } from "./config.js";
 import { AchievementType, WorkoutArchitype } from "@prisma/client";
+import { prisma } from "./config.js";
+import bcrypt from "bcrypt";
+import { assignDefaultAchievementsAndSplitToUser } from "./functions/assignDefaultAchievementsAndSplitToUser.js";
 
 async function SeedWorkouts() {
     // Reset the ID sequence if needed (PostgreSQL specific)
@@ -521,8 +523,12 @@ async function SeedWorkouts() {
         },
     ];
 
-    for (const workout of workouts) {
-        await prisma.workout.create({ data: workout });
+    try {
+        for (const workout of workouts) {
+            await prisma.workout.create({ data: workout });
+        }
+    } catch (error) {
+        console.log(`Unsuccessful creation of workouts: ${error}`);
     }
 
     console.log("✅ Seed complete with a huge library of workouts!");
@@ -788,22 +794,67 @@ export async function SeedAchievements() {
         },
     ];
 
-    for (const ach of achievements) {
-        await prisma.achievement.create({
-            data: {
-                name: ach.name,
-                xp: ach.xp,
-                description: ach.description ?? null,
-                deadline: null,
-                goalAmount: ach.goalAmount ?? null,
-                goalType: ach.goalType,
-                targetValue: ach.targetValue ?? null,
-                weeklyReset: ach.weeklyReset ?? false,
-            },
-        });
+    try {
+        for (const ach of achievements) {
+            await prisma.achievement.create({
+                data: {
+                    name: ach.name,
+                    xp: ach.xp,
+                    description: ach.description ?? null,
+                    deadline: null,
+                    goalAmount: ach.goalAmount ?? null,
+                    goalType: ach.goalType,
+                    targetValue: ach.targetValue ?? null,
+                    weeklyReset: ach.weeklyReset ?? false,
+                },
+            });
+        }
+    } catch (error) {
+        console.log(`Unsuccessful seeding of achievements: ${error}`);
     }
 
     console.log("✅ Seeded achievements with full model fields!");
 }
 
 SeedAchievements();
+
+async function AssignAdmin() {
+    const email = "marandoryan@gmail.com";
+    const rawPassword = process.env.PASSWORD;
+
+    if (!rawPassword) {
+        console.error("Missing PASSWORD environment variable.");
+        return;
+    }
+
+    try {
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(
+            process.env.PASSWORD!,
+            saltRounds
+        );
+
+        const newUser = await prisma.user.create({
+            data: {
+                email: email,
+                name: "Ryan",
+                password: {
+                    create: {
+                        hash: hashedPassword,
+                    },
+                },
+                isAdmin: true,
+            },
+        });
+
+        await assignDefaultAchievementsAndSplitToUser(newUser.id);
+
+        console.log(`Admin account ready for ${email}`);
+    } catch (error) {
+        console.error(`Could not assign admin: ${error}`);
+    } finally {
+        await prisma.$disconnect();
+    }
+}
+
+AssignAdmin();

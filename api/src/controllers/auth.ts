@@ -45,9 +45,13 @@ export const login = async (
             return;
         }
 
-        const token = jwt.sign({ id: user.id, email: user.email }, jwtSecret!, {
-            expiresIn: "6h",
-        });
+        const token = jwt.sign(
+            { id: user.id, email: user.email, isAdmin: user.isAdmin },
+            jwtSecret!,
+            {
+                expiresIn: "6h",
+            }
+        );
 
         res.json({
             token,
@@ -99,7 +103,7 @@ export const register = async (
         assignDefaultAchievementsAndSplitToUser(newUser.id);
 
         const token = jwt.sign(
-            { id: newUser.id, email: newUser.email },
+            { id: newUser.id, email: newUser.email, isAdmin: newUser.isAdmin },
             jwtSecret!,
             {
                 expiresIn: "6h",

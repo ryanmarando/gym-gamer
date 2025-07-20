@@ -19,6 +19,7 @@ model User {
   name               String
   createdAt          DateTime          @default(now()) @map("created_at")
   password           Password?
+  isAdmin            Boolean           @default(false)
   level              Int               @default(1)
   levelProgress      Int               @default(0)
   xp                 Int               @default(0)
