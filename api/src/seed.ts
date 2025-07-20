@@ -534,7 +534,7 @@ async function SeedWorkouts() {
     console.log("✅ Seed complete with a huge library of workouts!");
 }
 
-SeedWorkouts();
+await SeedWorkouts();
 
 export async function SeedAchievements() {
     //await prisma.$executeRaw`ALTER SEQUENCE "Achievement_id_seq" RESTART WITH 1`;
@@ -816,7 +816,7 @@ export async function SeedAchievements() {
     console.log("✅ Seeded achievements with full model fields!");
 }
 
-SeedAchievements();
+await SeedAchievements();
 
 async function AssignAdmin() {
     const email = "marandoryan@gmail.com";
@@ -857,4 +857,4 @@ async function AssignAdmin() {
     }
 }
 
-AssignAdmin();
+await AssignAdmin();
