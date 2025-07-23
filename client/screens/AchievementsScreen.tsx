@@ -16,6 +16,11 @@ import Celebration from "../components/Celebration";
 import { getNextSundayReset } from "../utils/getNextSundayReset";
 import { playCompleteSound } from "../utils/playCompleteSound";
 import { playExcitingSound } from "../utils/playExcitingSound";
+import {
+    getWeightUnit,
+    convertWeight,
+    getLocalizedAchievementName,
+} from "../utils/unitUtils";
 
 interface AchievementDetails {
     id: number;
@@ -23,6 +28,9 @@ interface AchievementDetails {
     xp: number;
     weeklyReset: boolean;
     description: string;
+    goalAmount: number;
+    goalType: string;
+    targetValue: number;
 }
 
 interface UserAchievement {
@@ -78,6 +86,10 @@ export default function AchievementsScreen({ navigation }: any) {
     const [updateModalVisible, setUpdateModalVisible] = useState(false);
     const [selectedQuestId, setSelectedQuestId] = useState<number | null>(null);
     const [showConfetti, setShowConfetti] = useState(false);
+    const [selectedSystem, setSelectedSystem] = useState<
+        "IMPERIAL" | "METRIC"
+    >();
+    const [loading, setLoading] = useState(true);
 
     // Prepare sections for SectionList
     const achievementSections = [
@@ -96,14 +108,6 @@ export default function AchievementsScreen({ navigation }: any) {
             data: userAchievements.filter((ua) => !ua.completed),
         },
     ];
-
-    useEffect(() => {
-        const fetchUserId = async () => {
-            const idStr = await SecureStore.getItemAsync("userId");
-            if (idStr) setUserId(Number(idStr));
-        };
-        fetchUserId();
-    }, []);
 
     const fetchActiveQuest = async () => {
         if (!userId) return;
@@ -125,19 +129,54 @@ export default function AchievementsScreen({ navigation }: any) {
     // Fetch both achievements and user achievements whenever userId or refreshToggle changes
     useFocusEffect(
         useCallback(() => {
-            console.log("✅ Achivements loaded");
+            let isActive = true;
+            const loadData = async () => {
+                try {
+                    setLoading(true);
 
-            if (userId === null) return;
+                    const idStr = await SecureStore.getItemAsync("userId");
+                    if (!idStr) return;
+                    const id = Number(idStr);
 
-            fetchAchievements();
-            fetchUserAchievements();
-            fetchActiveQuest();
+                    if (!isActive) return;
 
-            // Optionally return a cleanup function if needed
-            return () => {
-                // cleanup if necessary
+                    setUserId(id);
+
+                    const weightSystem = await SecureStore.getItemAsync(
+                        "weightSystem"
+                    );
+                    if (
+                        weightSystem === "METRIC" ||
+                        weightSystem === "IMPERIAL"
+                    ) {
+                        setSelectedSystem(weightSystem);
+                    }
+
+                    const questData = await authFetch(
+                        `/user/getUserQuest/${id}`
+                    );
+                    setActiveQuest(questData.quest || null);
+
+                    const achievementData = await authFetch("/achievement");
+                    setAchievements(achievementData || []);
+
+                    const userAchData = await authFetch(
+                        `/user/getUserAchievements/${id}`
+                    );
+                    setUserAchievements(userAchData?.achievements || []);
+                } catch (err) {
+                    console.error("Error loading achievements data", err);
+                } finally {
+                    if (isActive) setLoading(false);
+                }
             };
-        }, [userId, refreshToggle])
+
+            loadData();
+
+            return () => {
+                isActive = false;
+            };
+        }, [refreshToggle])
     );
 
     const sendNotification = async (newCompletedAchievements: any[]) => {
@@ -164,12 +203,13 @@ export default function AchievementsScreen({ navigation }: any) {
         customGoalAmount: number;
         customDeadline: string;
     }) => {
+        console.log(selectedSystem);
         try {
             const userId = await SecureStore.getItemAsync("userId");
             const result = await authFetch(`/quest/editQuest/${userId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
+                body: JSON.stringify({ ...data, weightSystem: selectedSystem }),
             });
 
             if (result.newlyCompletedAchievements?.length) {
@@ -385,8 +425,14 @@ export default function AchievementsScreen({ navigation }: any) {
                                             width: "100%",
                                         }}
                                     >
-                                        {item.achievement.name}
+                                        {getLocalizedAchievementName(
+                                            item.achievement.name,
+                                            item.achievement.goalType,
+                                            item.achievement.targetValue,
+                                            selectedSystem!
+                                        )}
                                     </PixelText>
+
                                     <PixelText
                                         fontSize={10}
                                         color="#0ff"
@@ -395,14 +441,42 @@ export default function AchievementsScreen({ navigation }: any) {
                                             width: "100%",
                                         }}
                                     >
-                                        {item.achievement.description}
+                                        {item.achievement.goalType ===
+                                        "LIFTINGWEIGHT"
+                                            ? item.achievement.targetValue
+                                                ? // Example: "Deadlift 315 lbs"
+                                                  `Lift at least ${convertWeight(
+                                                      item.achievement
+                                                          .targetValue,
+                                                      selectedSystem!
+                                                  )} ${getWeightUnit(
+                                                      selectedSystem!
+                                                  )}`
+                                                : item.achievement.name
+                                                      .toLowerCase()
+                                                      .includes(
+                                                          "lift a total"
+                                                      ) &&
+                                                  item.achievement.goalAmount
+                                                ? // Example: "Lift a Total of 10,000 lbs in a Week"
+                                                  `Lift a total of ${convertWeight(
+                                                      item.achievement
+                                                          .goalAmount,
+                                                      selectedSystem!
+                                                  )} ${getWeightUnit(
+                                                      selectedSystem!
+                                                  )} in a week`
+                                                : // Fallback to description
+                                                  item.achievement.description
+                                            : item.achievement.description}
                                     </PixelText>
+
                                     <ProgressBar
                                         progress={item.progress / 100}
                                         width={200}
                                         height={15}
                                         backgroundColor="#333"
-                                        progressColor="#9B59B6" // Electric Purple
+                                        progressColor="#9B59B6"
                                         borderColor="#9B59B6"
                                     />
 

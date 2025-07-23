@@ -23,6 +23,11 @@ router.delete(
     workoutController.deleteWorkoutEntryById
 );
 router.delete(
+    "/deleteAllEntriesForUser",
+    workoutController.deleteAllEntriesForUser
+);
+
+router.delete(
     "/deleteAllWorkoutEntries",
     workoutController.deleteAllEntriesForUserWorkout
 );

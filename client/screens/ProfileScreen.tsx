@@ -14,15 +14,19 @@ import PixelButton from "../components/PixelButton";
 import PixelModal from "../components/PixelModal";
 import PixelQuestCard from "../components/PixelQuestCard";
 import ProgressBar from "../components/ProgressBar";
+import WeightSystemSelector from "../components/WeightSystemSelector";
 import Sparks from "../components/Sparks";
 import { authFetch } from "../utils/authFetch";
 import { logout } from "../utils/logout";
 import * as SecureStore from "expo-secure-store";
 import { registerForPushNotificationsAsync } from "../utils/notification";
 import { playLevelUpSound } from "../utils/playLevelUpSound";
+import { playCompleteSound } from "../utils/playCompleteSound";
 import { playDeleteSound } from "../utils/playDeleteSound";
 import { playAlertSound } from "../utils/playAlertSound";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { playBadMoveSound } from "../utils/playBadMoveSound";
+import { getConvertedQuestFields } from "../utils/unitUtils";
 
 interface AchievementDetails {
     id: number;
@@ -34,10 +38,15 @@ interface AchievementDetails {
 
 interface Quest {
     name: string;
-    type: string;
+    type: "GAIN" | "LOSE";
     goal: number;
-    goalDate: Date | string;
+    goalDate: string | Date;
     baseXP: number;
+    initialWeight: number;
+}
+
+interface UserQuest {
+    quest: Quest;
 }
 
 interface UserData {
@@ -52,6 +61,8 @@ interface UserData {
     activeQuest: Quest;
     totalWeightLifted: number;
     weeklyWeightLifted: number;
+    weightSystem: "IMPERIAL" | "METRIC";
+    userQuest: UserQuest;
 }
 
 export default function ProfileScreen({
@@ -80,17 +91,24 @@ export default function ProfileScreen({
     const [displayLevel, setDisplayLevel] = useState<number | null>(null);
     const levelUpAnim = useRef(new Animated.Value(0)).current;
     const [showLevelUpImage, setShowLevelUpImage] = useState(false);
+    const [showWeightSelector, setShowWeightSelector] = useState(false);
+    const [selectedSystem, setSelectedSystem] = useState<"IMPERIAL" | "METRIC">(
+        userData?.weightSystem || "IMPERIAL"
+    );
+    const [pendingSystem, setPendingSystem] = useState<
+        "IMPERIAL" | "METRIC" | null
+    >(null);
 
     const triggerLevelUpImage = () => {
         setShowLevelUpImage(true);
         levelUpAnim.setValue(100);
 
         Animated.timing(levelUpAnim, {
-            toValue: -35, // move up by 50 pixels
+            toValue: -35,
             duration: 700,
             useNativeDriver: true,
         }).start(() => {
-            setShowLevelUpImage(false); // hide after animation
+            setShowLevelUpImage(false);
         });
     };
 
@@ -201,6 +219,10 @@ export default function ProfileScreen({
                 playAlertSound();
                 setQuestExpiredModalVisible(true);
             }
+
+            // Get user weight system
+            setSelectedSystem(data.weightSystem);
+            await SecureStore.setItemAsync("weightSystem", data.weightSystem);
         } catch (error) {
             console.error("❌ Failed to fetch user data:", error);
         } finally {
@@ -211,6 +233,11 @@ export default function ProfileScreen({
     const handleModalConfirm = async () => {
         if (modalAction === "logout") {
             logoutUser();
+        }
+        if (pendingSystem) {
+            await handleUpdateWeightSystem(pendingSystem);
+            setPendingSystem(null);
+            playCompleteSound();
         }
         setModalVisible(false);
     };
@@ -250,6 +277,84 @@ export default function ProfileScreen({
         );
     }
 
+    const handleUpdateWeightSystem = async (
+        newSystem: "IMPERIAL" | "METRIC"
+    ) => {
+        if (newSystem === selectedSystem) return;
+
+        try {
+            const userId = await SecureStore.getItemAsync("userId");
+
+            // Delete all bodyweight and exercise entries
+            handleDeleteAllBodyWeightEntries(Number(userId));
+            handleDeleteAllExerciseWeightEntires(Number(userId));
+
+            await authFetch(
+                `/user/updateWeightSystem/${userId}?weightSystem=${newSystem}`,
+                { method: "PATCH" }
+            );
+
+            let updatedUserData = { ...userData!, weightSystem: newSystem };
+            const questFields = getConvertedQuestFields(
+                userData!.userQuest.quest,
+                newSystem
+            );
+
+            console.log(questFields);
+
+            if (questFields) {
+                await authFetch(`/quest/editQuest/${userId}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(questFields),
+                });
+
+                updatedUserData = {
+                    ...updatedUserData,
+                    userQuest: {
+                        ...updatedUserData.userQuest,
+                        quest: {
+                            ...updatedUserData.userQuest.quest,
+                            ...questFields,
+                        },
+                    },
+                };
+            }
+
+            setSelectedSystem(newSystem);
+            setUserData(updatedUserData);
+            await SecureStore.setItemAsync("weightSystem", newSystem);
+            await fetchUserData();
+        } catch (err) {
+            playBadMoveSound();
+            console.error("Error updating weight system and quest", err);
+        }
+    };
+
+    const handleSystemPress = (system: "IMPERIAL" | "METRIC") => {
+        if (system === selectedSystem) return;
+
+        setPendingSystem(system);
+        setmodalTitleMessage("Change Weight System?");
+        setModalMessage(
+            `Are you sure you want to switch to ${
+                system === "IMPERIAL" ? "Imperial (lbs)" : "Metric (kg)"
+            }? This will delete all of your bodyweight and exercise entries...`
+        );
+        setModalVisible(true);
+    };
+
+    const handleDeleteAllBodyWeightEntries = async (userId: number) => {
+        try {
+            await authFetch(`/user/deleteAllUserWeightEntries/${userId}`, {
+                method: "DELETE",
+            });
+        } catch (err) {
+            console.error(err);
+            playBadMoveSound();
+        }
+    };
+
     if (loading || !userData) {
         return (
             <View style={styles.container}>
@@ -257,6 +362,20 @@ export default function ProfileScreen({
             </View>
         );
     }
+
+    const handleDeleteAllExerciseWeightEntires = async (userId: number) => {
+        try {
+            await authFetch(
+                `/workouts/deleteAllEntriesForUser?userId=${userId}`,
+                {
+                    method: "DELETE",
+                }
+            );
+        } catch (err) {
+            console.error(err);
+            playBadMoveSound();
+        }
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -337,9 +456,16 @@ export default function ProfileScreen({
                                     style={{ marginBottom: 10 }}
                                 >
                                     You've lifted a total of{" "}
-                                    {userData.totalWeightLifted} lbs!
+                                    {selectedSystem === "METRIC"
+                                        ? `${(
+                                              userData.totalWeightLifted *
+                                              0.453592
+                                          ).toFixed(1)} kg`
+                                        : `${userData.totalWeightLifted} lbs`}
+                                    !
                                 </PixelText>
                             )}
+
                             <PixelText fontSize={12} color="#fff">
                                 Get into the gym:
                             </PixelText>
@@ -388,6 +514,25 @@ export default function ProfileScreen({
                             text="Update bodyweight"
                             onPress={() => navigation.navigate("UpdateWeight")}
                         ></PixelButton>
+
+                        <PixelButton
+                            text="Update Units (lbs/kg)"
+                            onPress={() =>
+                                setShowWeightSelector(!showWeightSelector)
+                            }
+                            color="#FF6F61"
+                            containerStyle={{
+                                borderColor: "#FF6F61",
+                                marginTop: 10,
+                            }}
+                        />
+
+                        {showWeightSelector && (
+                            <WeightSystemSelector
+                                selectedSystem={selectedSystem}
+                                onSelectSystem={handleSystemPress}
+                            />
+                        )}
 
                         <PixelButton
                             text="Log Out"

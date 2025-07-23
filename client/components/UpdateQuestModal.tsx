@@ -49,6 +49,7 @@ export default function UpdateQuestModal({
         const fetchLatestWeight = async () => {
             try {
                 const userId = await SecureStore.getItemAsync("userId");
+
                 const data = await authFetch(
                     `/user/getAllUserWeightEntries/${userId}`
                 );

@@ -1,6 +1,9 @@
 import { prisma } from "../config.js";
 
-export async function assignDefaultAchievementsAndSplitToUser(userId: number) {
+export async function assignDefaultAchievementsAndSplitToUser(
+    userId: number,
+    weightSystem: "METRIC" | "IMPERIAL"
+) {
     // 1. Fetch all achievement IDs from Achievement table
     const achievements = await prisma.achievement.findMany({
         select: { id: true },
@@ -59,24 +62,28 @@ export async function assignDefaultAchievementsAndSplitToUser(userId: number) {
     const goalDate = new Date();
     goalDate.setDate(goalDate.getDate() + 30);
 
+    // Set goal value and unit based on weight system
+    const goalValue = weightSystem === "METRIC" ? 4.5 : 10; // kg or lbs
+    const unit = weightSystem === "METRIC" ? "kg" : "lbs";
+
     await prisma.quest.upsert({
         where: { userId: userId },
         update: {
             type: "GAIN",
-            goal: 10,
+            goal: goalValue,
             goalDate: goalDate,
-            name: `Gain 10 lbs by ${goalDate.toLocaleDateString()}`,
+            name: `Gain ${goalValue} ${unit} by ${goalDate.toLocaleDateString()}`,
         },
         create: {
             type: "GAIN",
-            goal: 10,
+            goal: goalValue,
             goalDate: goalDate,
-            name: `Gain 10 lbs by ${goalDate.toLocaleDateString()}`,
+            name: `Gain ${goalValue} ${unit} by ${goalDate.toLocaleDateString()}`,
             userId: userId,
         },
     });
 
-    // ✅ Optionally return updated user with achievements & split & quests
+    // Optionally return updated user with achievements & split & quests
     const updatedUser = await prisma.user.findUnique({
         where: { id: userId },
         include: {

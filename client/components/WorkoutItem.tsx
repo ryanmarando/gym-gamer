@@ -24,6 +24,7 @@ interface WorkoutItemProps {
     getLastWorkoutWeight: (workoutId: number) => number;
     addEntry: (workoutId: number) => void;
     deleteEntry: (workoutId: number) => void;
+    weightSystem: string;
 }
 
 export default function WorkoutItem({
@@ -35,13 +36,18 @@ export default function WorkoutItem({
     getLastWorkoutWeight,
     addEntry,
     deleteEntry,
+    weightSystem,
 }: WorkoutItemProps) {
     const scrollRef = useRef<ScrollView>(null);
     const entryCount = weightEntries[item.workoutId]?.length || 0;
+    const lastWeight = getLastWorkoutWeight(item.workoutId);
+    const convertedWeight =
+        weightSystem === "METRIC" ? lastWeight * 0.453592 : lastWeight;
 
     useEffect(() => {
         // Whenever the count of entries changes, reset scroll position
         scrollRef.current?.scrollTo({ x: 0, animated: false });
+        console.log(weightSystem);
     }, [entryCount]);
 
     const repsLabel =
@@ -66,9 +72,14 @@ export default function WorkoutItem({
                         color="#fff"
                         style={{ marginBottom: 8, textAlign: "left" }}
                     >
-                        Max weight: {getLastWorkoutWeight(item.workoutId)} lbs
+                        {lastWeight > 0
+                            ? `Max weight: ${
+                                  Number.isInteger(lastWeight)
+                                      ? lastWeight
+                                      : lastWeight.toFixed(1)
+                              } ${weightSystem === "METRIC" ? "kg" : "lbs"}`
+                            : "No weight recorded yet"}
                     </PixelText>
-
                     <ScrollView
                         horizontal
                         ref={scrollRef}

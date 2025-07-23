@@ -1,4 +1,8 @@
-import { AchievementType, WorkoutArchitype } from "@prisma/client";
+import {
+    AchievementType,
+    WeightSystem,
+    WorkoutArchitype,
+} from "@prisma/client";
 import { prisma } from "./config.js";
 import bcrypt from "bcrypt";
 import { assignDefaultAchievementsAndSplitToUser } from "./functions/assignDefaultAchievementsAndSplitToUser.js";
@@ -820,12 +824,6 @@ await SeedAchievements();
 
 async function AssignAdmin() {
     const email = "marandoryan@gmail.com";
-    const rawPassword = process.env.PASSWORD;
-
-    if (!rawPassword) {
-        console.error("Missing PASSWORD environment variable.");
-        return;
-    }
 
     try {
         const saltRounds = 10;
@@ -847,7 +845,10 @@ async function AssignAdmin() {
             },
         });
 
-        await assignDefaultAchievementsAndSplitToUser(newUser.id);
+        await assignDefaultAchievementsAndSplitToUser(
+            newUser.id,
+            WeightSystem.IMPERIAL
+        );
 
         console.log(`Admin account ready for ${email}`);
     } catch (error) {

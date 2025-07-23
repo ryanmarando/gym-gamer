@@ -1,3 +1,4 @@
+import { WeightSystem } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import z, { ZodSchema } from "zod";
 
@@ -19,6 +20,7 @@ const WorkoutArchitypeEnum = z.enum([
 export const CompleteWorkoutInputSchema = z.object({
     duration: z.number(),
     workoutEndTime: z.string(),
+    localHour: z.number(),
 });
 
 export const WorkoutSplitInputSchema = z.object({
@@ -43,6 +45,7 @@ export const RegisterInputSchema = z.object({
     email: z.string().email(),
     name: z.string().min(1),
     password: z.string().min(8),
+    userWeightSystem: z.string().optional(),
 });
 
 export const LoginInputSchema = z.object({
@@ -61,6 +64,7 @@ export const QuestUpdateInputSchema = z.object({
     customGoalAmount: z.number(),
     customDeadline: z.string(),
     initialWeight: z.number(),
+    weightSystem: z.string(),
 });
 
 export const UpdateUserQuestionInputSchema = z.object({

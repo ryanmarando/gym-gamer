@@ -32,8 +32,14 @@ model User {
   quest              Quest[]
   totalWeightLifted  Float             @default(0)
   weeklyWeightLifted Float             @default(0)
+  weightSystem       WeightSystem      @default(IMPERIAL)
 
   @@map("user")
+}
+
+enum WeightSystem {
+  IMPERIAL
+  METRIC
 }
 
 model Password {

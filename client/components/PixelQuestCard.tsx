@@ -38,6 +38,7 @@ export default function PixelQuestCard({
     const [quest, setQuest] = useState<Quest | null>(null);
     const [loading, setLoading] = useState(true);
     const [currentWeight, setCurrentWeight] = useState<number | null>(null);
+    const [weightSystem, setWeightSystem] = useState<string>();
 
     const fetchWeights = async (userId: string) => {
         try {
@@ -78,6 +79,10 @@ export default function PixelQuestCard({
             // }
 
             try {
+                const weightSystem = await SecureStore.getItemAsync(
+                    "weightSystem"
+                );
+                setWeightSystem(weightSystem!);
                 const userId = await SecureStore.getItemAsync("userId");
                 if (!userId) throw new Error("Missing userId");
 
@@ -158,60 +163,11 @@ export default function PixelQuestCard({
                     marginBottom: 12,
                 }}
             >
-                {quest.type !== "MAINTAIN" && (
-                    <>
-                        <PixelText fontSize={12} color="#0ff">
-                            🎯 {quest.name}
-                        </PixelText>
-                    </>
-                )}
-                {quest.type === "MAINTAIN" && (
-                    <View>
-                        <PixelText fontSize={12} color="#0ff">
-                            🎯 Maintain {quest.initialWeight} lbs through{" "}
-                            {new Date(quest.goalDate).toLocaleDateString(
-                                "en-US",
-                                {
-                                    year: "numeric",
-                                    month: "2-digit",
-                                    day: "2-digit",
-                                }
-                            )}
-                            !
-                        </PixelText>
-                        <View
-                            style={{
-                                position: "absolute",
-                                right: -62,
-                                top: -45,
-                                width: 125,
-                                height: 125,
-                                justifyContent: "center",
-                                alignItems: "center",
-                            }}
-                        >
-                            <Image
-                                source={require("../assets/RewardPixel.png")}
-                                style={{
-                                    width: 125,
-                                    height: 125,
-                                    position: "absolute",
-                                }}
-                            />
-                            <PixelText
-                                fontSize={10}
-                                color="#3B2F2F"
-                                style={{
-                                    textAlign: "center",
-                                    zIndex: 10,
-                                    marginTop: Platform.OS === "ios" ? 50 : 50,
-                                }}
-                            >
-                                Worth {quest.baseXP * quest.goal} XP!
-                            </PixelText>
-                        </View>
-                    </View>
-                )}
+                <>
+                    <PixelText fontSize={12} color="#0ff">
+                        🎯 {quest.name}
+                    </PixelText>
+                </>
             </View>
             {quest.initialWeight == null ? (
                 <View
@@ -253,10 +209,12 @@ export default function PixelQuestCard({
                                 }}
                             >
                                 Weight Goal:{" "}
-                                {quest.type === "GAIN"
-                                    ? quest.initialWeight + quest.goal
-                                    : quest.initialWeight - quest.goal}{" "}
-                                lbs
+                                {Math.round(
+                                    quest.type === "GAIN"
+                                        ? quest.initialWeight + quest.goal
+                                        : quest.initialWeight - quest.goal
+                                )}{" "}
+                                {weightSystem === "METRIC" ? "kg" : "lbs"}
                             </PixelText>
 
                             {currentWeight !== null && (
@@ -274,8 +232,22 @@ export default function PixelQuestCard({
                                             : currentWeight -
                                                   (quest.initialWeight -
                                                       quest.goal)
-                                    ).toFixed(1)}{" "}
-                                    lbs to go!
+                                    ).toFixed(1) === "0.0"
+                                        ? 0
+                                        : Math.round(
+                                              Math.max(
+                                                  0,
+                                                  quest.type === "GAIN"
+                                                      ? quest.initialWeight +
+                                                            quest.goal -
+                                                            currentWeight
+                                                      : currentWeight -
+                                                            (quest.initialWeight -
+                                                                quest.goal)
+                                              )
+                                          )}{" "}
+                                    {weightSystem === "METRIC" ? "kg" : "lbs"}{" "}
+                                    to go!
                                 </PixelText>
                             )}
 

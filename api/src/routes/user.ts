@@ -42,6 +42,8 @@ router.delete(
     userController.deleteAllUserWeightEntries
 );
 
+router.patch("/updateWeightSystem/:id", userController.updateWeightSystem);
+
 router.get("/:id", userController.getUserById);
 
 export default router;

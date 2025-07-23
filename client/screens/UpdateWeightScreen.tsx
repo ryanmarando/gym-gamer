@@ -28,8 +28,10 @@ export default function UpdateWeightScreen({ navigation }: any) {
         { id: number; userId: number; weight: number; enteredAt: string }[]
     >([]);
     const [newWeight, setNewWeight] = useState("");
-    const [loading, setLoading] = useState(true); // true until fully ready
-    //const [invalidModalVisible, setInvalidModalVisible] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [weightSystem, setWeightSystem] = useState<"IMPERIAL" | "METRIC">(
+        "IMPERIAL"
+    );
     const [modalConfig, setModalConfig] = useState<{
         visible: boolean;
         title: string;
@@ -53,23 +55,29 @@ export default function UpdateWeightScreen({ navigation }: any) {
         onConfirm: () => {},
     });
 
-    // Load userId once
+    // Load userId and weightSystem once
     useEffect(() => {
-        const loadUserId = async () => {
+        const loadUserData = async () => {
             const idStr = await SecureStore.getItemAsync("userId");
-            if (idStr) {
-                setUserId(Number(idStr));
-            } else {
+            if (!idStr) {
                 Alert.alert("Error", "User ID not found.");
                 setLoading(false);
+                return;
+            }
+
+            setUserId(Number(idStr));
+
+            const weightSystem = await SecureStore.getItemAsync("weightSystem");
+            if (weightSystem === "METRIC" || weightSystem === "IMPERIAL") {
+                setWeightSystem(weightSystem);
             }
         };
-        loadUserId();
+        loadUserData();
     }, []);
 
     // Fetch weights only when userId is valid
     useEffect(() => {
-        if (userId) {
+        if (userId !== null) {
             fetchWeights();
         }
     }, [userId]);
@@ -80,7 +88,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
                 `/user/getAllUserWeightEntries/${userId}`
             );
             if (data?.user?.weightEntries) {
-                const weights = data?.user?.weightEntries;
+                const weights = data.user.weightEntries;
                 setWeights(weights);
                 console.log("✅ Weights:", weights.length, "entries found.");
             } else {
@@ -93,14 +101,11 @@ export default function UpdateWeightScreen({ navigation }: any) {
                 visible: true,
                 title: "Oh no, gamer",
                 message: "Failed to load weight entries!",
-                onConfirm: () => {
-                    setModalConfirmationConfig({
+                onConfirm: () =>
+                    setModalConfirmationConfig((prev) => ({
+                        ...prev,
                         visible: false,
-                        title: "Oh no, gamer",
-                        message: "Failed to load weight entries!",
-                        onConfirm: () => {},
-                    });
-                },
+                    })),
             });
         } finally {
             setLoading(false);
@@ -116,31 +121,29 @@ export default function UpdateWeightScreen({ navigation }: any) {
                 visible: true,
                 title: "Whoa there, gamer",
                 message: "Please enter a valid, positive number!",
-                onConfirm: () => {
-                    setModalConfirmationConfig({
+                onConfirm: () =>
+                    setModalConfirmationConfig((prev) => ({
+                        ...prev,
                         visible: false,
-                        title: "Whoa there, gamer",
-                        message: "Please enter a valid, positive number!",
-                        onConfirm: () => {},
-                    });
-                },
+                    })),
             });
             return;
         }
+
+        // Use dynamic unit here
+        const unit = weightSystem === "METRIC" ? "kg" : "lbs";
+
         setModalConfig({
             visible: true,
             title: "Confirm Weight Entry",
-            message: `Are you sure you want to add ${weightNum} lbs to your progress?`,
+            message: `Are you sure you want to add ${weightNum} ${unit} to your progress?`,
             onConfirm: handleConfirmAddWeight,
         });
     };
 
     const sendNotification = async (newCompletedAchievements: any[]) => {
         const expoPushToken = await SecureStore.getItemAsync("notifToken");
-        console.log("Push token:", expoPushToken);
-        if (!expoPushToken) {
-            return;
-        }
+        if (!expoPushToken) return;
 
         const title = "Hey, Gym Gamer!";
         let body: string;
@@ -170,12 +173,10 @@ export default function UpdateWeightScreen({ navigation }: any) {
                 }
             );
             if (result.newlyCompletedAchievements?.length) {
-                // Send notification
                 sendNotification(result.newlyCompletedAchievements);
 
                 result.newlyCompletedAchievements.forEach((ach: any) => {
                     console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
-                    // Show modal, play sound, push notification, etc.
                 });
             }
             playQuickAddSound();
@@ -188,16 +189,12 @@ export default function UpdateWeightScreen({ navigation }: any) {
                 visible: true,
                 title: "Oh no, gamer",
                 message: "Failed to add weight entry.",
-                onConfirm: () => {
-                    setModalConfirmationConfig({
+                onConfirm: () =>
+                    setModalConfirmationConfig((prev) => ({
+                        ...prev,
                         visible: false,
-                        title: "Oh no, gamer",
-                        message: "Failed to add weight entry.",
-                        onConfirm: () => {},
-                    });
-                },
+                    })),
             });
-
             setLoading(false);
         }
     };
@@ -212,9 +209,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
                 try {
                     await authFetch(
                         `/user/deleteLastUserWeightEntry/${userId}`,
-                        {
-                            method: "DELETE",
-                        }
+                        { method: "DELETE" }
                     );
                     playDeleteSound();
                     await fetchWeights();
@@ -225,14 +220,11 @@ export default function UpdateWeightScreen({ navigation }: any) {
                         visible: true,
                         title: "Oh no, gamer",
                         message: "Failed to delete last entry.",
-                        onConfirm: () => {
-                            setModalConfirmationConfig({
+                        onConfirm: () =>
+                            setModalConfirmationConfig((prev) => ({
+                                ...prev,
                                 visible: false,
-                                title: "Oh no, gamer",
-                                message: "Failed to delete last entry.",
-                                onConfirm: () => {},
-                            });
-                        },
+                            })),
                     });
                 } finally {
                     setModalConfig((prev) => ({ ...prev, visible: false }));
@@ -250,9 +242,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
                 try {
                     await authFetch(
                         `/user/deleteAllUserWeightEntries/${userId}`,
-                        {
-                            method: "DELETE",
-                        }
+                        { method: "DELETE" }
                     );
                     playDeleteSound();
                     await fetchWeights();
@@ -263,14 +253,11 @@ export default function UpdateWeightScreen({ navigation }: any) {
                         visible: true,
                         title: "Oh no, gamer",
                         message: "Failed to delete all entries.",
-                        onConfirm: () => {
-                            setModalConfirmationConfig({
+                        onConfirm: () =>
+                            setModalConfirmationConfig((prev) => ({
+                                ...prev,
                                 visible: false,
-                                title: "Oh no, gamer",
-                                message: "Failed to delete all entries.",
-                                onConfirm: () => {},
-                            });
-                        },
+                            })),
                     });
                 } finally {
                     setModalConfig((prev) => ({ ...prev, visible: false }));
@@ -279,12 +266,10 @@ export default function UpdateWeightScreen({ navigation }: any) {
         });
     };
 
-    // Safe data prep — guard against empty weights
     const sortedWeights = [...weights].sort(
         (a, b) =>
             new Date(a.enteredAt).getTime() - new Date(b.enteredAt).getTime()
     );
-    const weightValues = sortedWeights.map((w) => w.weight);
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -305,7 +290,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
                             {sortedWeights[
                                 sortedWeights.length - 1
                             ].weight.toFixed(1)}{" "}
-                            lbs
+                            {weightSystem === "METRIC" ? "kg" : "lbs"}
                         </PixelText>
                     )}
 
@@ -322,7 +307,9 @@ export default function UpdateWeightScreen({ navigation }: any) {
                     {!loading && (
                         <>
                             <TextInput
-                                placeholder="Enter your weight"
+                                placeholder={`Enter your weight (${
+                                    weightSystem === "METRIC" ? "kg" : "lbs"
+                                })`}
                                 keyboardType="numeric"
                                 value={newWeight}
                                 onChangeText={setNewWeight}
@@ -337,7 +324,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
                                 containerStyle={{ marginBottom: 20 }}
                             />
 
-                            {weightValues.length > 0 && (
+                            {sortedWeights.length > 0 && (
                                 <View
                                     style={{
                                         padding: 10,
@@ -345,7 +332,10 @@ export default function UpdateWeightScreen({ navigation }: any) {
                                         height: 300,
                                     }}
                                 >
-                                    <WeightEntriesList weights={weights} />
+                                    <WeightEntriesList
+                                        weights={weights}
+                                        weightSystem={weightSystem}
+                                    />
                                 </View>
                             )}
 

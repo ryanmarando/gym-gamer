@@ -76,7 +76,8 @@ export default function WorkoutsScreen({ navigation }: any) {
     const [isPixelModalVisible, setPixelModalVisible] = useState(false);
     const [modalSplitMessage, setModalSplitMessage] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const minWorkoutTime = 900; //15 minutes
+    const minWorkoutTime = 1; //15 minutes
+    const [weightSystem, setWeightSystem] = useState<string>();
 
     const addSplitDay = () => {
         if (splitDays.length < 7) {
@@ -240,6 +241,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                                     method: "PATCH",
                                     body: JSON.stringify({
                                         weightLifted: Number(totalWeightLifted),
+                                        workoutName: workout.workout.name,
                                     }),
                                 }
                             );
@@ -269,7 +271,9 @@ export default function WorkoutsScreen({ navigation }: any) {
                 }
 
                 // Now call complete workout endpoint
-                const workoutEndTime = new Date().toISOString();
+                const now = new Date();
+                const workoutEndTime = now.toISOString();
+                const localHour = now.getHours();
                 const workoutProgressData = await authFetch(
                     `/workouts/completeWorkout/${userId}`,
                     {
@@ -277,6 +281,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                         body: JSON.stringify({
                             duration: timer,
                             workoutEndTime: workoutEndTime,
+                            localHour,
                         }),
                     }
                 );
@@ -302,6 +307,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                 setTimer(0);
                 setIsLoading(false);
                 await AsyncStorage.removeItem("workoutStartTime");
+                setSelectedDay(null);
                 setmodalConfirmationTitle("Nice work, gamer!");
                 setModalMessage(
                     `Workout complete! You just gained ${workoutProgressData.xpGiven} XP!`
@@ -365,6 +371,10 @@ export default function WorkoutsScreen({ navigation }: any) {
                     }));
 
                 setWorkoutDays(days);
+            }
+            const weightSystem = await SecureStore.getItemAsync("weightSystem");
+            if (weightSystem === "METRIC" || weightSystem === "IMPERIAL") {
+                setWeightSystem(weightSystem);
             }
         } catch (err) {
             console.error(err);
@@ -655,6 +665,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                                     isPixelModalVisible={isPixelModalVisible}
                                     setPixelModalVisible={setPixelModalVisible}
                                     modalSplitMessage={modalSplitMessage}
+                                    setModalSplitMessage={setModalSplitMessage}
                                 />
 
                                 <ConfirmationPixelModal
@@ -783,6 +794,9 @@ export default function WorkoutsScreen({ navigation }: any) {
                                                         addEntry={addEntry}
                                                         deleteEntry={
                                                             deleteEntry
+                                                        }
+                                                        weightSystem={
+                                                            weightSystem!
                                                         }
                                                     />
                                                 )}

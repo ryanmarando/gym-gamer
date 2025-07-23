@@ -3,6 +3,7 @@ import { View, StyleSheet, TextInput } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
+import WeightSystemSelector from "../components/WeightSystemSelector";
 import * as SecureStore from "expo-secure-store";
 import { playLoginSound } from "../utils/playLoginSound";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
@@ -19,8 +20,10 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
     const [modalTitleMessage, setModalTitleMessage] =
         useState("Whoa there, gamer!");
     const [pendingLogin, setPendingLogin] = useState(false);
-
     const [waiverAccepted, setWaiverAccepted] = useState(false);
+    const [weightSystem, setWeightSystem] = useState<"IMPERIAL" | "METRIC">(
+        "IMPERIAL"
+    );
 
     // Triggered when Register button pressed
     const handleRegisterPress = () => {
@@ -53,6 +56,7 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
                     email,
                     name,
                     password,
+                    userWeightSystem: weightSystem,
                 }),
             });
 
@@ -143,6 +147,11 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
                     onChangeText={setPassword}
                     style={styles.input}
                     secureTextEntry
+                />
+
+                <WeightSystemSelector
+                    selectedSystem={weightSystem}
+                    onSelectSystem={setWeightSystem}
                 />
 
                 <PixelButton

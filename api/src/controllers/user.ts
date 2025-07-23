@@ -3,6 +3,7 @@ import { WorkoutArchitype } from "@prisma/client";
 import { prisma } from "../config.js";
 import { AchievementType } from "@prisma/client";
 import { checkAndProgressAchievements } from "../functions/checkAndProgressAchivements.js";
+import { WeightSystem } from "@prisma/client";
 
 export const getAllUsers = async (
     req: Request,
@@ -449,8 +450,7 @@ export const deleteLastUserWeightEntry = async (
 
 export const deleteAllUserWeightEntries = async (
     req: Request,
-    res: Response,
-    next: NextFunction
+    res: Response
 ) => {
     const userId = parseInt(req.params.id);
 
@@ -467,6 +467,46 @@ export const deleteAllUserWeightEntries = async (
         });
     } catch (error) {
         console.error("Error deleting weight entries:", error);
+        res.status(500).json({ error: "Internal server error." });
+    }
+};
+
+export const updateWeightSystem = async (req: Request, res: Response) => {
+    const userId = parseInt(req.params.id);
+    const rawWeightSystem = req.query.weightSystem;
+
+    // Validate and convert to string (if possible)
+    if (typeof rawWeightSystem !== "string") {
+        res.status(400).json({ message: "Invalid weight system." });
+        return;
+    }
+
+    // Validate enum value
+    if (
+        !Object.values(WeightSystem).includes(rawWeightSystem as WeightSystem)
+    ) {
+        res.status(400).json({ message: "Invalid weight system." });
+        return;
+    }
+
+    const newWeightSystem = rawWeightSystem as WeightSystem;
+
+    if (!newWeightSystem) {
+        res.status(400).json({ message: "Please enter a new weight system." });
+        return;
+    }
+
+    try {
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                weightSystem: newWeightSystem,
+            },
+        });
+
+        res.json(updatedUser);
+    } catch (error) {
+        console.error("Error updating weight system:", error);
         res.status(500).json({ error: "Internal server error." });
     }
 };

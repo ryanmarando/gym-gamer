@@ -374,12 +374,41 @@ export const deleteAllEntriesForUserWorkout = async (
     }
 };
 
+export const deleteAllEntriesForUser = async (req: Request, res: Response) => {
+    try {
+        const userId = Number(req.query.userId);
+
+        if (!userId) {
+            res.status(400).json({
+                message: "Please provide a valid userId.",
+            });
+            return;
+        }
+
+        const deleted = await prisma.workoutEntry.deleteMany({
+            where: {
+                userId: userId,
+            },
+        });
+
+        res.status(200).json({
+            message: `Deleted ${deleted.count} entries for userId ${userId}.`,
+        });
+    } catch (error) {
+        console.error("Error deleting all user workout entries:", error);
+        res.status(500).json({
+            message: "Failed to delete user workout entries.",
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+};
+
 export const completeWorkout = async (req: Request, res: Response) => {
     const userId = Number(req.params.id);
-    const { duration, workoutEndTime } = req.body;
+    const { duration, workoutEndTime, localHour } = req.body;
     let newlyCompleted;
 
-    const minWorkoutTimer = 900; // 15 minutes
+    const minWorkoutTimer = 1; // 15 minutes
     try {
         if (duration < minWorkoutTimer) {
             res.status(400).json({
@@ -402,7 +431,7 @@ export const completeWorkout = async (req: Request, res: Response) => {
                     tx,
                     userId,
                     [AchievementType.WORKOUT, AchievementType.STREAK],
-                    { duration, workoutEndTime }
+                    { duration, workoutEndTime, localHour }
                 );
 
             newlyCompleted = [
@@ -593,7 +622,7 @@ export const addUserWeightLifted = async (
 ) => {
     try {
         const userId = Number(req.params.id);
-        const { weightLifted } = req.body;
+        const { weightLifted, workoutName } = req.body;
 
         if (!userId || !weightLifted) {
             res.status(400).json({
@@ -626,7 +655,12 @@ export const addUserWeightLifted = async (
                     tx,
                     userId,
                     AchievementType.LIFTINGWEIGHT,
-                    { updatedUser, weight: weightLifted }
+                    {
+                        updatedUser,
+                        weight: weightLifted,
+                        weightSystem: user.weightSystem,
+                        workoutName,
+                    }
                 );
 
             return { updatedUser, newlyCompletedAchievements };

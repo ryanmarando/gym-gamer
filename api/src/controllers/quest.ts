@@ -7,8 +7,13 @@ import { AchievementType } from "@prisma/client";
 export const updateUserQuest = async (req: Request, res: Response) => {
     try {
         const userId = req.params.id;
-        const { customType, customGoalAmount, customDeadline, initialWeight } =
-            req.body;
+        const {
+            customType,
+            customGoalAmount,
+            customDeadline,
+            initialWeight,
+            weightSystem,
+        } = req.body;
 
         if (!userId) {
             res.status(400).json({ error: "Missing userId" });
@@ -33,6 +38,16 @@ export const updateUserQuest = async (req: Request, res: Response) => {
                 customType.charAt(0).toUpperCase() +
                 customType.slice(1).toLowerCase();
 
+            const unit = weightSystem === "METRIC" ? "kg" : "lbs";
+
+            // Determine the suffix text based on goal type
+            const dateSuffix =
+                customType.toUpperCase() === "MAINTAIN"
+                    ? `through ${goalDate.toLocaleDateString()}`
+                    : `by ${goalDate.toLocaleDateString()}`;
+
+            const questName = `${formattedType} ${customGoalAmount} ${unit} ${dateSuffix}`;
+
             const updatedQuest = await tx.quest.upsert({
                 where: { userId: userIdInt },
                 update: {
@@ -40,14 +55,14 @@ export const updateUserQuest = async (req: Request, res: Response) => {
                     goal: customGoalAmount,
                     goalDate: goalDate,
                     initialWeight: initialWeight,
-                    name: `${formattedType} ${customGoalAmount} lbs by ${goalDate.toLocaleDateString()}`,
+                    name: questName,
                 },
                 create: {
                     userId: userIdInt,
                     type: customType,
                     goal: customGoalAmount,
                     goalDate: goalDate,
-                    name: `${formattedType} ${customGoalAmount} lbs by ${goalDate.toLocaleDateString()}`,
+                    name: questName,
                 },
             });
 

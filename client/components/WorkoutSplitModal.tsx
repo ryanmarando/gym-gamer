@@ -10,6 +10,8 @@ import {
 import PixelText from "./PixelText";
 import PixelButton from "./PixelButton";
 import ConfirmationPixelModal from "./ConfirmationPixelModal";
+import { Filter } from "bad-words";
+import { playBadMoveSound } from "../utils/playBadMoveSound";
 
 export default function WorkoutSplitModal({
     visible,
@@ -24,6 +26,7 @@ export default function WorkoutSplitModal({
     isPixelModalVisible,
     setPixelModalVisible,
     modalSplitMessage,
+    setModalSplitMessage,
 }: {
     visible: boolean;
     onCancel: () => void;
@@ -37,7 +40,9 @@ export default function WorkoutSplitModal({
     isPixelModalVisible: boolean;
     setPixelModalVisible: (val: boolean) => void;
     modalSplitMessage: string;
+    setModalSplitMessage: (val: string) => void;
 }) {
+    const filter = new Filter();
     return (
         <Modal transparent visible={visible} animationType="fade">
             <ConfirmationPixelModal
@@ -116,7 +121,20 @@ export default function WorkoutSplitModal({
                         />
                         <PixelButton
                             text="Save"
-                            onPress={onConfirm}
+                            onPress={() => {
+                                const hasBadWord = splitDays.some((day) =>
+                                    filter.isProfane(day)
+                                );
+                                if (hasBadWord) {
+                                    playBadMoveSound();
+                                    setModalSplitMessage(
+                                        "Please avoid using profanity in your workout name."
+                                    );
+                                    setPixelModalVisible(true);
+                                } else {
+                                    onConfirm();
+                                }
+                            }}
                             containerStyle={{
                                 flex: 1,
                                 borderColor: "#0f0",

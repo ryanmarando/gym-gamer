@@ -3,6 +3,7 @@ import { prisma, jwtSecret } from "../config.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { assignDefaultAchievementsAndSplitToUser } from "../functions/assignDefaultAchievementsAndSplitToUser.js";
+import { WeightSystem } from "@prisma/client";
 
 export const login = async (
     req: Request,
@@ -84,6 +85,12 @@ export const register = async (
             return;
         }
 
+        const validSystems = ["IMPERIAL", "METRIC"];
+        if (!validSystems.includes(req.body.userWeightSystem)) {
+            res.status(400).json({ error: "Invalid weight system." });
+            return;
+        }
+
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
 
@@ -96,11 +103,15 @@ export const register = async (
                         hash: hashedPassword,
                     },
                 },
+                weightSystem: req.body.userWeightSystem,
             },
         });
         console.log("Successful POST Registered User Id:", newUser.id);
 
-        assignDefaultAchievementsAndSplitToUser(newUser.id);
+        assignDefaultAchievementsAndSplitToUser(
+            newUser.id,
+            newUser.weightSystem
+        );
 
         const token = jwt.sign(
             { id: newUser.id, email: newUser.email, isAdmin: newUser.isAdmin },

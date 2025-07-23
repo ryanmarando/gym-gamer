@@ -11,14 +11,17 @@ type WeightEntry = {
 
 type Props = {
     weights: WeightEntry[];
+    weightSystem: "IMPERIAL" | "METRIC";
 };
 
-export default function WeightEntriesList({ weights }: Props) {
+export default function WeightEntriesList({ weights, weightSystem }: Props) {
     // Sort descending by date
     const sortedWeights = [...weights].sort(
         (a, b) =>
             new Date(b.enteredAt).getTime() - new Date(a.enteredAt).getTime()
     );
+
+    const unit = weightSystem === "METRIC" ? "kg" : "lbs";
 
     return (
         <ScrollView
@@ -35,7 +38,7 @@ export default function WeightEntriesList({ weights }: Props) {
                             {dateStr} {timeStr}
                         </PixelText>
                         <PixelText fontSize={14} color="#0f0">
-                            {item.weight} lbs
+                            {item.weight} {unit}
                         </PixelText>
                     </View>
                 );

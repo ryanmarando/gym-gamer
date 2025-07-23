@@ -11,22 +11,16 @@ const checkWorkoutDuration = (duration: number) => {
 };
 
 const checkWorkoutTimeOfDay = (
-    workoutEndTime: string,
+    localHour: number | undefined,
     achievementName: string
 ) => {
-    console.log("Workout end time checking:", workoutEndTime);
-    if (!workoutEndTime) return false;
-
-    const endDate = new Date(workoutEndTime);
-    const hour = endDate.getHours();
-    //console.log(`🕒 Workout ended at hour: ${hour}`);
-
-    if (achievementName === "complete 5 am workouts" && hour < 12) {
-        //console.log(`✅ Matched AM workout for achievement ${achievementName}`);
+    if (typeof localHour !== "number") return false;
+    console.log("Workout end time checking:", localHour);
+    if (achievementName === "complete 5 am workouts" && localHour < 12) {
         return true;
     }
-    if (achievementName === "complete 5 pm workouts" && hour >= 12) {
-        //console.log(`✅ Matched PM workout for achievement ${achievementName}`);
+
+    if (achievementName === "complete 5 pm workouts" && localHour >= 12) {
         return true;
     }
 
@@ -99,10 +93,7 @@ export async function checkAndProgressAchievements(
                 if (
                     (achievementName === "complete 5 am workouts" ||
                         achievementName === "complete 5 pm workouts") &&
-                    !checkWorkoutTimeOfDay(
-                        context.workoutEndTime,
-                        achievementName
-                    )
+                    !checkWorkoutTimeOfDay(context.localHour, achievementName)
                 ) {
                     continue;
                 }
@@ -171,18 +162,20 @@ export async function checkAndProgressAchievements(
                 }
                 break;
             case AchievementType.LIFTINGWEIGHT:
-                const weight = context.weight;
-                const workoutName = context.workoutName?.toLowerCase();
+                let weight = context.weight;
+                const workoutName = context.workoutName.toLowerCase();
                 const previousMax = context.previousMax;
                 const previousMaxWeight = previousMax?._max.weight;
                 const userForWeightLifted = context?.updatedUser;
-
+                const weightSystem = context.weightSystem;
                 const targetLift = ua.achievement.name.toLowerCase();
+                if (weightSystem === "METRIC") {
+                    weight = weight * 2.20462; // Convert kg → lbs
+                }
 
                 if (
                     ua.achievement.targetValue &&
                     weight > ua.achievement.targetValue &&
-                    workoutName &&
                     targetLift.includes(workoutName.split(" ")[0])
                 ) {
                     progressToAdd = 100;
@@ -199,10 +192,6 @@ export async function checkAndProgressAchievements(
                         .includes("lift a total") &&
                     userForWeightLifted
                 ) {
-                    const totalLiftedWeight =
-                        userForWeightLifted.totalLiftedWeight;
-                    const weeklyWeightLifted =
-                        userForWeightLifted.weeklyWeightLifted;
                     if (goalAmount === 1) {
                         progressToAdd = 100;
                     } else {
@@ -210,9 +199,6 @@ export async function checkAndProgressAchievements(
                     }
                 }
                 break;
-            // case AchievementType.EXERCISE:
-            //     assessAndProgressAchievement(goalAmount, progressToAdd);
-            //     break;
             case AchievementType.LEVEL:
                 const userLevel = context.level;
 
@@ -227,7 +213,7 @@ export async function checkAndProgressAchievements(
                 }
                 break;
             default:
-                continue; // skip if we don't know how to handle it
+                continue;
         }
 
         if (progressToAdd > 0) {
