@@ -41,13 +41,17 @@ export const updateUserQuest = async (req: Request, res: Response) => {
 
             const unit = weightSystem === "METRIC" ? "kg" : "lbs";
 
-            // Determine the suffix text based on goal type
+            let questName;
             const dateSuffix =
                 customType.toUpperCase() === "MAINTAIN"
                     ? `through ${goalDate.toLocaleDateString()}`
                     : `by ${goalDate.toLocaleDateString()}`;
 
-            const questName = `${formattedType} ${customGoalAmount} ${unit} ${dateSuffix}`;
+            if (customType.toUpperCase() === "MAINTAIN") {
+                questName = `${formattedType} ${initialWeight} ${unit} ${dateSuffix}`;
+            } else {
+                questName = `${formattedType} ${customGoalAmount} ${unit} ${dateSuffix}`;
+            }
 
             const updatedQuest = await tx.quest.upsert({
                 where: { userId: userIdInt },

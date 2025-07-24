@@ -203,7 +203,6 @@ export default function AchievementsScreen({ navigation }: any) {
         customGoalAmount: number;
         customDeadline: string;
     }) => {
-        console.log(selectedSystem);
         try {
             const userId = await SecureStore.getItemAsync("userId");
             const result = await authFetch(`/quest/editQuest/${userId}`, {

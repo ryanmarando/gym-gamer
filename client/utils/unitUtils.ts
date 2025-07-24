@@ -71,13 +71,11 @@ export function getConvertedQuestFields(
         quest.initialWeight,
         newSystem
     );
-    console.log("to", newSystem);
-    console.log("og", quest.goal);
+
     let convertedGoalAmount = convertWeight(quest.goal, newSystem);
     if (convertedGoalAmount === 0) {
         convertedGoalAmount = 1;
     }
-    console.log("new", convertedGoalAmount);
 
     return {
         customType: quest.type,
