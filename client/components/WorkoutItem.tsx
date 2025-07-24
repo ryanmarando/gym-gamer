@@ -47,7 +47,6 @@ export default function WorkoutItem({
     useEffect(() => {
         // Whenever the count of entries changes, reset scroll position
         scrollRef.current?.scrollTo({ x: 0, animated: false });
-        console.log(weightSystem);
     }, [entryCount]);
 
     const repsLabel =

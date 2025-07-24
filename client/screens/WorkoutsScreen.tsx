@@ -76,7 +76,7 @@ export default function WorkoutsScreen({ navigation }: any) {
     const [isPixelModalVisible, setPixelModalVisible] = useState(false);
     const [modalSplitMessage, setModalSplitMessage] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const minWorkoutTime = 1; //15 minutes
+    const minWorkoutTime = 900; //15 minutes
     const [weightSystem, setWeightSystem] = useState<string>();
 
     const addSplitDay = () => {
