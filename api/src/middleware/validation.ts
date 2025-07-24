@@ -65,6 +65,7 @@ export const QuestUpdateInputSchema = z.object({
     customDeadline: z.string(),
     initialWeight: z.number(),
     weightSystem: z.string(),
+    isRealUpdate: z.boolean().optional(),
 });
 
 export const UpdateUserQuestionInputSchema = z.object({

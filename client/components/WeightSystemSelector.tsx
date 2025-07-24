@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#0ff",
     },
     buttonText: {
-        fontSize: 12,
+        fontSize: 10,
         color: "#0ff",
     },
     buttonTextSelected: {

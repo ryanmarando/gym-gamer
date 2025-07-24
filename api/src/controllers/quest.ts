@@ -13,6 +13,7 @@ export const updateUserQuest = async (req: Request, res: Response) => {
             customDeadline,
             initialWeight,
             weightSystem,
+            isRealUpdate = true,
         } = req.body;
 
         if (!userId) {
@@ -66,18 +67,25 @@ export const updateUserQuest = async (req: Request, res: Response) => {
                 },
             });
 
-            // Progress related achievements
-            const questUpdatedAchievements = await checkAndProgressAchievements(
-                tx,
-                userIdInt,
-                [AchievementType.CREATION],
-                { creationType: "updateQuest" }
-            );
+            if (isRealUpdate) {
+                console.log("real update");
+                // Progress related achievements
+                const questUpdatedAchievements =
+                    await checkAndProgressAchievements(
+                        tx,
+                        userIdInt,
+                        [AchievementType.CREATION],
+                        { creationType: "updateQuest" }
+                    );
 
-            return {
-                updatedQuest,
-                questUpdatedAchievements,
-            };
+                return {
+                    updatedQuest,
+                    questUpdatedAchievements,
+                };
+            } else {
+                console.log("not real update");
+                return { updatedQuest };
+            }
         });
 
         res.status(200).json({

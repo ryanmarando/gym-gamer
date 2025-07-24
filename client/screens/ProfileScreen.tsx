@@ -300,13 +300,14 @@ export default function ProfileScreen({
                 newSystem
             );
 
-            console.log(questFields);
-
             if (questFields) {
                 await authFetch(`/quest/editQuest/${userId}`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(questFields),
+                    body: JSON.stringify({
+                        ...questFields,
+                        isRealUpdate: false,
+                    }),
                 });
 
                 updatedUserData = {
