@@ -3,6 +3,7 @@ import { View, StyleSheet, TextInput } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
+import PixelModal from "../components/PixelModal";
 import WeightSystemSelector from "../components/WeightSystemSelector";
 import * as SecureStore from "expo-secure-store";
 import { playLoginSound } from "../utils/playLoginSound";
@@ -15,6 +16,7 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
     const [email, setEmail] = useState("");
     const [name, setName] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmedPassword, setConfirmedPassword] = useState("");
     const [showConfirmationModal, setShowConfirmationModal] = useState(false);
     const [modalMessage, setModalMessage] = useState("Login failed.");
     const [modalTitleMessage, setModalTitleMessage] =
@@ -24,9 +26,67 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
     const [weightSystem, setWeightSystem] = useState<"IMPERIAL" | "METRIC">(
         "IMPERIAL"
     );
+    const [modalVisible, setModalVisible] = useState(false);
+    const [modalConfig, setModalConfig] = useState({
+        title: "",
+        message: "",
+        onConfirm: () => {},
+    });
+
+    const handleRegisterStart = () => {
+        // Check password and confirmed password match
+        if (password !== confirmedPassword) {
+            console.log("Passwords did not match...");
+            setModalMessage("Your passwords did not match...");
+            setShowConfirmationModal(true);
+            playBadMoveSound();
+            return;
+        }
+
+        const cleanedEmail = email.replace(/\s+/g, "");
+        setEmail(cleanedEmail);
+
+        if (!email || !name || !password || !confirmedPassword) {
+            setModalMessage("Please enter all fields...");
+            setShowConfirmationModal(true);
+            playBadMoveSound();
+            return;
+        }
+
+        if (!validateEmail(cleanedEmail)) {
+            setModalMessage("Please enter a valid email...");
+            setShowConfirmationModal(true);
+            playBadMoveSound();
+            return;
+        }
+
+        if (
+            email &&
+            validateEmail(cleanedEmail) &&
+            name &&
+            password &&
+            confirmedPassword
+        ) {
+            const message = `Does this look right, gamer?\n\nEmail: ${cleanedEmail}\n\nName: ${name}`;
+            setModalConfig({
+                title: "Wow, Gamer!",
+                message: message,
+                onConfirm: () => {
+                    handleRegisterPress(cleanedEmail);
+                    setModalVisible(false);
+                },
+            });
+            setModalVisible(true);
+        }
+    };
+
+    const validateEmail = (email: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    };
 
     // Triggered when Register button pressed
-    const handleRegisterPress = () => {
+    const handleRegisterPress = (cleanedEmail: string) => {
         if (!waiverAccepted) {
             // Navigate to waiver and auto-register if valid
             navigation.navigate("UserWaiver", {
@@ -34,18 +94,18 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
                     setWaiverAccepted(true);
 
                     // Auto-register if all info is filled
-                    if (email && name && password) {
-                        handleRegister();
+                    if (cleanedEmail && name && password && confirmedPassword) {
+                        handleRegister(cleanedEmail);
                     }
                 },
             });
         } else {
-            handleRegister();
+            handleRegister(cleanedEmail);
         }
     };
 
     // Once waiver accepted, user presses Register again to register
-    const handleRegister = async () => {
+    const handleRegister = async (cleanedEmail: string) => {
         try {
             const response = await fetch(`${API_URL}/auth/register`, {
                 method: "POST",
@@ -53,7 +113,7 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    email,
+                    email: cleanedEmail,
                     name,
                     password,
                     userWeightSystem: weightSystem,
@@ -149,6 +209,15 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
                     secureTextEntry
                 />
 
+                <TextInput
+                    placeholder="Confirm Password"
+                    placeholderTextColor="#888"
+                    value={confirmedPassword}
+                    onChangeText={setConfirmedPassword}
+                    style={styles.input}
+                    secureTextEntry
+                />
+
                 <WeightSystemSelector
                     selectedSystem={weightSystem}
                     onSelectSystem={setWeightSystem}
@@ -156,7 +225,7 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
 
                 <PixelButton
                     text="Register"
-                    onPress={handleRegisterPress}
+                    onPress={handleRegisterStart}
                     color="#0f0"
                     containerStyle={{
                         backgroundColor: waiverAccepted ? "#000" : "#555",
@@ -195,6 +264,21 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
                     title={modalTitleMessage}
                     message={modalMessage}
                 />
+
+                <PixelModal
+                    visible={modalVisible}
+                    title={modalConfig.title}
+                    onConfirm={modalConfig.onConfirm}
+                    onCancel={() => setModalVisible(false)}
+                >
+                    <PixelText
+                        fontSize={11}
+                        color="#fff"
+                        style={{ textAlign: "center" }}
+                    >
+                        {modalConfig.message}
+                    </PixelText>
+                </PixelModal>
             </View>
         </SafeAreaView>
     );
@@ -208,7 +292,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "flex-start",
         paddingHorizontal: "5%",
-        paddingVertical: "20%",
     },
     input: {
         width: "100%",

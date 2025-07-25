@@ -34,13 +34,14 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
             return;
         }
         setLoading(true);
+        const cleanedEmail = String(email || "").replace(/\s+/g, "");
         try {
             const response = await fetch(API_URL + "/auth/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email: cleanedEmail, password }),
             });
 
             const data = await response.json();

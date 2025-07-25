@@ -286,8 +286,7 @@ export default function ProfileScreen({
         try {
             const userId = await SecureStore.getItemAsync("userId");
 
-            // Delete all bodyweight and exercise entries
-            handleDeleteAllBodyWeightEntries(Number(userId));
+            // Delete all exercise entries
             handleDeleteAllExerciseWeightEntires(Number(userId));
 
             await authFetch(
@@ -313,20 +312,9 @@ export default function ProfileScreen({
         setModalMessage(
             `Are you sure you want to switch to ${
                 system === "IMPERIAL" ? "Imperial (lbs)" : "Metric (kg)"
-            }? This will delete all of your bodyweight and exercise entries...`
+            }? This will delete all of your exercise weight entries...`
         );
         setModalVisible(true);
-    };
-
-    const handleDeleteAllBodyWeightEntries = async (userId: number) => {
-        try {
-            await authFetch(`/user/deleteAllUserWeightEntries/${userId}`, {
-                method: "DELETE",
-            });
-        } catch (err) {
-            console.error(err);
-            playBadMoveSound();
-        }
     };
 
     if (loading || !userData) {
