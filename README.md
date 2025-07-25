@@ -2,7 +2,7 @@
 **Level up your fitness like a true gamer.**  
 Gym Gamer is a pixel-themed workout companion built for gamers who hit the gym. With achievements, quests, and retro-inspired visuals, this app turns your fitness journey into a game — making workouts as rewarding as boss battles.
 
----
+[<img src="client/assets/HeadphonePixel.png" alt="Level Up" width="150" />](client/assets/HeadphonePixel.png)
 
 ## 🎯 Core Features  
 - **🎯 Quests & Goals**  
@@ -14,7 +14,7 @@ Gym Gamer is a pixel-themed workout companion built for gamers who hit the gym. 
 - **🔁 Workout Splits**  
   Organize your routines into repeatable splits just like leveling paths.  
 
----
+[<img src="client/assets/ControllerPixel.png" alt="Level Up" width="150" />](client/assets/ControllerPixel.png)
 
 ## 🛠️ Prerequisites  
 Make sure you have the following installed before running the project:
@@ -23,7 +23,7 @@ Make sure you have the following installed before running the project:
 - [npm](https://www.npmjs.com/) (v6+ recommended)  
 - [Expo CLI](https://docs.expo.dev/get-started/installation/) (for mobile app development)
 
----
+[<img src="client/assets/DumbbellPixel.png" alt="Level Up" width="150" />](client/assets/DumbbellPixel.png)
 
 ## 🚀 Getting Started  
 
@@ -71,3 +71,5 @@ The application will launch in Expo Go, allowing you to interact with the backen
 ## Acknowledgements
 Ryan Marando for developing this project.
 For more information, visit the [project repository](https://github.com/ryanmarando/gym-gamer).
+
+[<img src="client/assets/LevelUpPixel.png" alt="Level Up" width="150" />](client/assets/LevelUpPixel.png)
