@@ -11,6 +11,8 @@ import PixelText from "./PixelText";
 import ProgressBar from "./ProgressBar";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
+import { convertWeight, getWeightUnit } from "../utils/unitUtils";
+import { getConvertedQuestFields } from "../utils/unitUtils";
 
 interface Quest {
     name: string;
@@ -82,7 +84,7 @@ export default function PixelQuestCard({
                 const weightSystem = await SecureStore.getItemAsync(
                     "weightSystem"
                 );
-                setWeightSystem(weightSystem!);
+                if (weightSystem) setWeightSystem(weightSystem);
                 const userId = await SecureStore.getItemAsync("userId");
                 if (!userId) throw new Error("Missing userId");
 
@@ -165,7 +167,10 @@ export default function PixelQuestCard({
             >
                 <>
                     <PixelText fontSize={12} color="#0ff">
-                        🎯 {quest.name}
+                        🎯{" "}
+                        {weightSystem === "METRIC"
+                            ? getConvertedQuestFields(quest, "METRIC").name
+                            : quest.name}
                     </PixelText>
                 </>
             </View>
@@ -202,19 +207,27 @@ export default function PixelQuestCard({
                             <PixelText
                                 fontSize={10}
                                 color="#fff"
-                                style={{
-                                    marginBottom: 4,
-                                    width: "70%",
-                                    lineHeight: 12,
-                                }}
+                                style={{ marginBottom: 4 }}
                             >
                                 Weight Goal:{" "}
-                                {Math.round(
-                                    quest.type === "GAIN"
-                                        ? quest.initialWeight + quest.goal
-                                        : quest.initialWeight - quest.goal
-                                )}{" "}
-                                {weightSystem === "METRIC" ? "kg" : "lbs"}
+                                {weightSystem === "METRIC"
+                                    ? Math.round(
+                                          convertWeight(
+                                              quest.type === "GAIN"
+                                                  ? quest.initialWeight +
+                                                        quest.goal
+                                                  : quest.initialWeight -
+                                                        quest.goal,
+                                              "METRIC"
+                                          ) * 2
+                                      ) / 2
+                                    : Math.round(
+                                          (quest.type === "GAIN"
+                                              ? quest.initialWeight + quest.goal
+                                              : quest.initialWeight -
+                                                quest.goal) * 2
+                                      ) / 2}{" "}
+                                {getWeightUnit(weightSystem!)}
                             </PixelText>
 
                             {currentWeight !== null && (
@@ -223,17 +236,22 @@ export default function PixelQuestCard({
                                     color="#fff"
                                     style={{ marginBottom: 4 }}
                                 >
-                                    {Math.max(
-                                        0,
-                                        quest.type === "GAIN"
-                                            ? quest.initialWeight +
-                                                  quest.goal -
-                                                  currentWeight
-                                            : currentWeight -
-                                                  (quest.initialWeight -
-                                                      quest.goal)
-                                    ).toFixed(1) === "0.0"
-                                        ? 0
+                                    {weightSystem === "METRIC"
+                                        ? Math.round(
+                                              convertWeight(
+                                                  Math.max(
+                                                      0,
+                                                      quest.type === "GAIN"
+                                                          ? quest.initialWeight +
+                                                                quest.goal -
+                                                                currentWeight
+                                                          : currentWeight -
+                                                                (quest.initialWeight -
+                                                                    quest.goal)
+                                                  ),
+                                                  "METRIC"
+                                              ) * 2
+                                          ) / 2
                                         : Math.round(
                                               Math.max(
                                                   0,
@@ -244,10 +262,9 @@ export default function PixelQuestCard({
                                                       : currentWeight -
                                                             (quest.initialWeight -
                                                                 quest.goal)
-                                              )
-                                          )}{" "}
-                                    {weightSystem === "METRIC" ? "kg" : "lbs"}{" "}
-                                    to go!
+                                              ) * 2
+                                          ) / 2}{" "}
+                                    {getWeightUnit(weightSystem!)} to go!
                                 </PixelText>
                             )}
 

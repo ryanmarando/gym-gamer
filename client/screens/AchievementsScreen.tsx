@@ -424,12 +424,14 @@ export default function AchievementsScreen({ navigation }: any) {
                                             width: "100%",
                                         }}
                                     >
-                                        {getLocalizedAchievementName(
-                                            item.achievement.name,
-                                            item.achievement.goalType,
-                                            item.achievement.targetValue,
-                                            selectedSystem!
-                                        )}
+                                        {selectedSystem === "IMPERIAL"
+                                            ? item.achievement.name
+                                            : getLocalizedAchievementName(
+                                                  item.achievement.name,
+                                                  item.achievement.goalType,
+                                                  item.achievement.targetValue,
+                                                  selectedSystem!
+                                              )}
                                     </PixelText>
 
                                     <PixelText
@@ -440,11 +442,12 @@ export default function AchievementsScreen({ navigation }: any) {
                                             width: "100%",
                                         }}
                                     >
-                                        {item.achievement.goalType ===
-                                        "LIFTINGWEIGHT"
+                                        {selectedSystem === "IMPERIAL"
+                                            ? item.achievement.description
+                                            : item.achievement.goalType ===
+                                              "LIFTINGWEIGHT"
                                             ? item.achievement.targetValue
-                                                ? // Example: "Deadlift 315 lbs"
-                                                  `Lift at least ${convertWeight(
+                                                ? `Lift at least ${convertWeight(
                                                       item.achievement
                                                           .targetValue,
                                                       selectedSystem!
@@ -457,16 +460,14 @@ export default function AchievementsScreen({ navigation }: any) {
                                                           "lift a total"
                                                       ) &&
                                                   item.achievement.goalAmount
-                                                ? // Example: "Lift a Total of 10,000 lbs in a Week"
-                                                  `Lift a total of ${convertWeight(
+                                                ? `Lift a total of ${convertWeight(
                                                       item.achievement
                                                           .goalAmount,
                                                       selectedSystem!
                                                   )} ${getWeightUnit(
                                                       selectedSystem!
                                                   )} in a week`
-                                                : // Fallback to description
-                                                  item.achievement.description
+                                                : item.achievement.description
                                             : item.achievement.description}
                                     </PixelText>
 

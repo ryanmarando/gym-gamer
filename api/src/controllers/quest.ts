@@ -39,7 +39,7 @@ export const updateUserQuest = async (req: Request, res: Response) => {
                 customType.charAt(0).toUpperCase() +
                 customType.slice(1).toLowerCase();
 
-            const unit = weightSystem === "METRIC" ? "kg" : "lbs";
+            const unit = "lbs";
 
             let questName;
             const dateSuffix =
@@ -72,7 +72,6 @@ export const updateUserQuest = async (req: Request, res: Response) => {
             });
 
             if (isRealUpdate) {
-                console.log("real update");
                 // Progress related achievements
                 const questUpdatedAchievements =
                     await checkAndProgressAchievements(
@@ -87,7 +86,6 @@ export const updateUserQuest = async (req: Request, res: Response) => {
                     questUpdatedAchievements,
                 };
             } else {
-                console.log("not real update");
                 return { updatedQuest };
             }
         });

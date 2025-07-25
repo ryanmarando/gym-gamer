@@ -22,6 +22,8 @@ export default function WeightEntriesList({ weights, weightSystem }: Props) {
     );
 
     const unit = weightSystem === "METRIC" ? "kg" : "lbs";
+    const convertToKg = (lbs: number) => lbs / 2.20462;
+    const roundToNearestHalf = (num: number) => Math.round(num * 2) / 2;
 
     return (
         <ScrollView
@@ -38,7 +40,11 @@ export default function WeightEntriesList({ weights, weightSystem }: Props) {
                             {dateStr} {timeStr}
                         </PixelText>
                         <PixelText fontSize={14} color="#0f0">
-                            {item.weight} {unit}
+                            {weightSystem === "METRIC"
+                                ? `${roundToNearestHalf(
+                                      convertToKg(item.weight)
+                                  )} kg`
+                                : `${roundToNearestHalf(item.weight)} lbs`}
                         </PixelText>
                     </View>
                 );

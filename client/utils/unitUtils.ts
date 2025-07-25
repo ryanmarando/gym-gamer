@@ -1,7 +1,4 @@
-export function convertWeight(
-    value: number,
-    to: "METRIC" | "IMPERIAL"
-): number {
+export function convertWeight(value: number, to: string): number {
     if (to === "METRIC") {
         return +(value * 0.453592).toFixed(1); // lbs → kg
     } else {
@@ -9,7 +6,7 @@ export function convertWeight(
     }
 }
 
-export function getWeightUnit(system: "METRIC" | "IMPERIAL"): string {
+export function getWeightUnit(system: string): string {
     return system === "METRIC" ? "kg" : "lbs";
 }
 
@@ -56,32 +53,64 @@ export function getLocalizedAchievementName(
 
 interface Quest {
     name: string;
-    type: "GAIN" | "LOSE";
+    type: string;
     goal: number;
-    goalDate: string | Date;
+    goalDate: Date | string;
+    initialWeight?: number | null;
     baseXP: number;
-    initialWeight: number;
+}
+
+export function roundToNearestHalf(value: number): number {
+    return Math.round(value * 2) / 2;
 }
 
 export function getConvertedQuestFields(
     quest: Quest,
     newSystem: "IMPERIAL" | "METRIC"
 ) {
-    const convertedInitialWeight = convertWeight(
-        quest.initialWeight,
-        newSystem
+    if (!quest.initialWeight) {
+        quest.initialWeight = 30;
+    }
+
+    const convertedInitialWeight = roundToNearestHalf(
+        convertWeight(quest.initialWeight, newSystem)
     );
 
-    let convertedGoalAmount = convertWeight(quest.goal, newSystem);
+    let convertedGoalAmount = roundToNearestHalf(
+        convertWeight(quest.goal, newSystem)
+    );
+
     if (convertedGoalAmount === 0) {
         convertedGoalAmount = 1;
     }
+
+    let weightSystem = newSystem;
+    if (!weightSystem) {
+        weightSystem = "IMPERIAL";
+    }
+
+    // 🟢 Always reformat the name, regardless of system
+    const formattedType =
+        quest.type.charAt(0).toUpperCase() + quest.type.slice(1).toLowerCase();
+
+    const unit = getWeightUnit(weightSystem);
+
+    const dateSuffix =
+        quest.type.toUpperCase() === "MAINTAIN"
+            ? `through ${new Date(quest.goalDate).toLocaleDateString()}`
+            : `by ${new Date(quest.goalDate).toLocaleDateString()}`;
+
+    const name =
+        quest.type.toUpperCase() === "MAINTAIN"
+            ? `${formattedType} ${convertedInitialWeight} ${unit} ${dateSuffix}`
+            : `${formattedType} ${convertedGoalAmount} ${unit} ${dateSuffix}`;
 
     return {
         customType: quest.type,
         customGoalAmount: convertedGoalAmount,
         customDeadline: quest.goalDate,
         initialWeight: convertedInitialWeight,
-        weightSystem: newSystem,
+        weightSystem,
+        name,
     };
 }

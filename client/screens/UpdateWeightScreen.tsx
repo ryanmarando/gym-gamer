@@ -21,6 +21,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import { playDeleteSound } from "../utils/playDeleteSound";
 import { playQuickAddSound } from "../utils/playQuickAddSound";
+import { convertWeight } from "../utils/unitUtils";
 
 export default function UpdateWeightScreen({ navigation }: any) {
     const [userId, setUserId] = useState<number | null>(null);
@@ -161,7 +162,13 @@ export default function UpdateWeightScreen({ navigation }: any) {
     // Called when user confirms modal
     const handleConfirmAddWeight = async () => {
         setModalConfig((prev) => ({ ...prev, visible: false }));
-        const weightNum = parseFloat(newWeight);
+        let weightNum = parseFloat(newWeight);
+
+        if (weightSystem === "METRIC") {
+            weightNum = convertWeight(weightNum, "IMPERIAL");
+            weightNum = Math.round(weightNum * 2) / 2;
+        }
+
         try {
             setLoading(true);
             const result = await authFetch(
@@ -271,6 +278,9 @@ export default function UpdateWeightScreen({ navigation }: any) {
             new Date(a.enteredAt).getTime() - new Date(b.enteredAt).getTime()
     );
 
+    const convertToKg = (lbs: number) => lbs / 2.20462;
+    const roundToNearestHalf = (num: number) => Math.round(num * 2) / 2;
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <KeyboardAvoidingView
@@ -287,10 +297,18 @@ export default function UpdateWeightScreen({ navigation }: any) {
                             style={{ marginBottom: 10 }}
                         >
                             Latest Weight:{" "}
-                            {sortedWeights[
-                                sortedWeights.length - 1
-                            ].weight.toFixed(1)}{" "}
-                            {weightSystem === "METRIC" ? "kg" : "lbs"}
+                            {weightSystem === "METRIC"
+                                ? `${roundToNearestHalf(
+                                      convertToKg(
+                                          sortedWeights[
+                                              sortedWeights.length - 1
+                                          ].weight
+                                      )
+                                  )} kg`
+                                : `${roundToNearestHalf(
+                                      sortedWeights[sortedWeights.length - 1]
+                                          .weight
+                                  )} lbs`}
                         </PixelText>
                     )}
 

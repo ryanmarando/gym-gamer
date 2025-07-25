@@ -15,7 +15,7 @@ import PixelButton from "./PixelButton";
 import * as SecureStore from "expo-secure-store";
 import { authFetch } from "../utils/authFetch";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
-
+import { convertWeight, roundToNearestHalf } from "../utils/unitUtils";
 import ConfirmationPixelModal from "./ConfirmationPixelModal";
 
 interface UpdateQuestModalProps {
@@ -44,11 +44,17 @@ export default function UpdateQuestModal({
     const [initialWeight, setInitialWeight] = useState<string>("");
     const [isPixelModalVisible, setPixelModalVisible] = useState(false);
     const [modalMessage, setModalMessage] = useState("");
+    const [weightSystem, setWeightSystem] = useState<string>();
 
     React.useEffect(() => {
         const fetchLatestWeight = async () => {
             try {
                 const userId = await SecureStore.getItemAsync("userId");
+
+                const weightSystem = await SecureStore.getItemAsync(
+                    "weightSystem"
+                );
+                if (weightSystem) setWeightSystem(weightSystem);
 
                 const data = await authFetch(
                     `/user/getAllUserWeightEntries/${userId}`
@@ -63,7 +69,11 @@ export default function UpdateQuestModal({
                             new Date(b.enteredAt).getTime() -
                             new Date(a.enteredAt).getTime()
                     );
-                    const latestWeight = sorted[0].weight;
+                    let latestWeight = sorted[0].weight;
+                    if (weightSystem === "METRIC")
+                        latestWeight = roundToNearestHalf(
+                            convertWeight(latestWeight, "METRIC")
+                        );
                     setInitialWeight(latestWeight.toString());
                 } else {
                     console.log(
@@ -154,12 +164,22 @@ export default function UpdateQuestModal({
 
         const deadlineDate = parseLocalDate(deadline);
         const deadlineISO = deadlineDate.toISOString();
+        let initWeight = parseFloat(initialWeight);
+
+        if (weightSystem === "METRIC") {
+            goal = convertWeight(goal, "IMPERIAL");
+            initWeight = convertWeight(parseFloat(initialWeight), "IMPERIAL");
+
+            // Round both to the nearest 0.5
+            goal = Math.round(goal * 2) / 2;
+            initWeight = Math.round(initWeight * 2) / 2;
+        }
 
         onConfirm({
             customType,
             customGoalAmount: goal,
             customDeadline: deadlineISO,
-            initialWeight: parseFloat(initialWeight),
+            initialWeight: initWeight,
         });
 
         setGoalAmount("");

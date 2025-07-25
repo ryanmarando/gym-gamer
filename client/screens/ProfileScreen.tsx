@@ -26,7 +26,7 @@ import { playDeleteSound } from "../utils/playDeleteSound";
 import { playAlertSound } from "../utils/playAlertSound";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
-import { getConvertedQuestFields } from "../utils/unitUtils";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 interface AchievementDetails {
     id: number;
@@ -98,6 +98,7 @@ export default function ProfileScreen({
     const [pendingSystem, setPendingSystem] = useState<
         "IMPERIAL" | "METRIC" | null
     >(null);
+    const tabBarHeight = useBottomTabBarHeight();
 
     const triggerLevelUpImage = () => {
         setShowLevelUpImage(true);
@@ -294,36 +295,8 @@ export default function ProfileScreen({
                 { method: "PATCH" }
             );
 
-            let updatedUserData = { ...userData!, weightSystem: newSystem };
-            const questFields = getConvertedQuestFields(
-                userData!.userQuest.quest,
-                newSystem
-            );
-
-            if (questFields) {
-                await authFetch(`/quest/editQuest/${userId}`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        ...questFields,
-                        isRealUpdate: false,
-                    }),
-                });
-
-                updatedUserData = {
-                    ...updatedUserData,
-                    userQuest: {
-                        ...updatedUserData.userQuest,
-                        quest: {
-                            ...updatedUserData.userQuest.quest,
-                            ...questFields,
-                        },
-                    },
-                };
-            }
-
             setSelectedSystem(newSystem);
-            setUserData(updatedUserData);
+            // setUserData(updatedUserData);
             await SecureStore.setItemAsync("weightSystem", newSystem);
             await fetchUserData();
         } catch (err) {
@@ -379,11 +352,11 @@ export default function ProfileScreen({
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView style={styles.safeArea} edges={["top"]}>
             <View style={styles.container}>
                 <ScrollView
                     style={{ flex: 1 }}
-                    contentContainerStyle={{ padding: 16 }}
+                    contentContainerStyle={{ paddingBottom: tabBarHeight }}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                 >

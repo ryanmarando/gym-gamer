@@ -2,7 +2,7 @@
     "expo": {
         "name": "Gym Gamer",
         "slug": "client",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "owner": "ryanmarando",
         "orientation": "portrait",
         "icon": "./assets/gym-gamer-app-icon.png",
