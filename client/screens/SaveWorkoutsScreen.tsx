@@ -418,7 +418,7 @@ export default function SaveWorkoutScreen() {
                                     key={day.id}
                                     onPress={() => {
                                         setSelectedSplitDay(day.name);
-                                        setSelectedSplitDayId(day.id); // new!
+                                        setSelectedSplitDayId(day.id);
                                     }}
                                     style={{
                                         padding: 10,

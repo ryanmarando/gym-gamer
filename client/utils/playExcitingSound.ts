@@ -1,8 +1,12 @@
 import { Audio } from "expo-av";
-
+import { getMuteSounds } from "./getMuteSounds";
 // Load + play the sound once
 export async function playExcitingSound() {
     try {
+        const isMuted = await getMuteSounds();
+        if (isMuted) {
+            return;
+        }
         const { sound } = await Audio.Sound.createAsync(
             require("../assets/sounds/exciting_waveform_sound.wav")
         );

@@ -169,9 +169,9 @@ export async function checkAndProgressAchievements(
                 const userForWeightLifted = context?.updatedUser;
                 const weightSystem = context.weightSystem;
                 const targetLift = ua.achievement.name.toLowerCase();
-                if (weightSystem === "METRIC") {
-                    weight = weight * 2.20462; // Convert kg → lbs
-                }
+                // if (weightSystem === "METRIC") {
+                //     weight = weight * 2.20462; // Convert kg → lbs
+                // }
 
                 if (
                     ua.achievement.targetValue &&

@@ -3,6 +3,8 @@ import { prisma } from "../config.js";
 import { addXpAndCheckLevelUp } from "../functions/addXPAndCheckLevelUp.js";
 import { checkAndProgressAchievements } from "../functions/checkAndProgressAchivements.js";
 import { AchievementType } from "@prisma/client";
+import { convertKgToLbs } from "../functions/conversions.js";
+import { roundToNearestHalf } from "../functions/conversions.js";
 
 const completedWorkoutProgress = 100;
 
@@ -216,8 +218,8 @@ export const addWorkoutEntry = async (
         }
 
         const result = await prisma.$transaction(async (tx) => {
-            // Make sure the user has this workout saved
-            const userWorkout = await prisma.userWorkout.findUnique({
+            // Ensure user has this workout
+            const userWorkout = await tx.userWorkout.findUnique({
                 where: {
                     userId_workoutId: {
                         userId,
@@ -233,12 +235,30 @@ export const addWorkoutEntry = async (
                 return;
             }
 
-            const workoutToAddEntryOn = await prisma.workout.findFirst({
+            const user = await tx.user.findUnique({
+                where: { id: userId },
+                select: { weightSystem: true },
+            });
+
+            if (!user) {
+                res.status(400).json({ message: "User not found." });
+                return;
+            }
+
+            console.log(user);
+            // Convert to lbs if weightSystem is METRIC
+            if (user.weightSystem === "METRIC") {
+                weight = convertKgToLbs(weight);
+            }
+
+            // Round to nearest 0.5
+            weight = roundToNearestHalf(weight);
+
+            const workoutToAddEntryOn = await tx.workout.findFirst({
                 where: { id: workoutId },
             });
 
             if (!workoutToAddEntryOn) {
-                console.log("Unsuccessful query... no workout id found.");
                 res.status(400).json({
                     message: "Please enter a valid workout id.",
                 });
@@ -253,7 +273,7 @@ export const addWorkoutEntry = async (
                 },
             });
 
-            const entry = await prisma.workoutEntry.create({
+            const entry = await tx.workoutEntry.create({
                 data: {
                     userId: userId,
                     workoutId: workoutId,
@@ -278,7 +298,6 @@ export const addWorkoutEntry = async (
             entry: result?.entry,
             newlyCompletedAchievements: result?.newLiftingWeightAchievements,
         });
-        return;
     } catch (error) {
         console.error("Unsuccessful POST of UserWorkoutEntry:", error);
         res.status(500).json({
@@ -286,7 +305,6 @@ export const addWorkoutEntry = async (
                 "An error occurred while posting the workoutentry from the user.",
             error: error instanceof Error ? error.message : String(error),
         });
-        return;
     }
 };
 
@@ -622,7 +640,7 @@ export const addUserWeightLifted = async (
 ) => {
     try {
         const userId = Number(req.params.id);
-        const { weightLifted, workoutName } = req.body;
+        let { weightLifted, workoutName } = req.body;
 
         if (!userId || !weightLifted) {
             res.status(400).json({
@@ -630,6 +648,8 @@ export const addUserWeightLifted = async (
             });
             return;
         }
+
+        weightLifted = Number(weightLifted);
 
         const result = await prisma.$transaction(async (tx) => {
             const user = await tx.user.findUnique({
@@ -640,6 +660,14 @@ export const addUserWeightLifted = async (
                 res.status(404).json({ message: "User not found." });
                 return;
             }
+
+            // Convert weight if needed
+            if (user.weightSystem === "METRIC") {
+                weightLifted = convertKgToLbs(weightLifted);
+            }
+
+            // Round to nearest 0.5 lbs
+            weightLifted = roundToNearestHalf(weightLifted);
 
             // Update total + weekly lifted weight
             const updatedUser = await tx.user.update({

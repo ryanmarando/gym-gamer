@@ -54,6 +54,14 @@ export default function WorkoutItem({
             ? ["10", ...Array(entryCount - 1).fill("Failure")]
             : ["10"];
 
+    function convertLbsToKg(lbs: number): number {
+        return lbs / 2.20462;
+    }
+
+    function roundToNearestHalf(num: number): number {
+        return Math.round(num * 2) / 2;
+    }
+
     return (
         <TouchableOpacity onPress={Keyboard.dismiss} onLongPress={drag}>
             <View style={styles.workoutCard}>
@@ -71,13 +79,22 @@ export default function WorkoutItem({
                         color="#fff"
                         style={{ marginBottom: 8, textAlign: "left" }}
                     >
-                        {lastWeight > 0
-                            ? `Max weight: ${
-                                  Number.isInteger(lastWeight)
-                                      ? lastWeight
-                                      : lastWeight.toFixed(1)
-                              } ${weightSystem === "METRIC" ? "kg" : "lbs"}`
-                            : "No weight recorded yet"}
+                        {lastWeight > 0 ? (
+                            <>
+                                Max weight:{" "}
+                                {weightSystem === "METRIC"
+                                    ? `${roundToNearestHalf(
+                                          convertLbsToKg(lastWeight)
+                                      ).toFixed(1)} kg`
+                                    : `${
+                                          Number.isInteger(lastWeight)
+                                              ? lastWeight
+                                              : lastWeight.toFixed(1)
+                                      } lbs`}
+                            </>
+                        ) : (
+                            "No weight recorded yet"
+                        )}
                     </PixelText>
                     <ScrollView
                         horizontal

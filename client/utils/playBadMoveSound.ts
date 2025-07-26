@@ -1,8 +1,13 @@
 import { Audio } from "expo-av";
+import { getMuteSounds } from "./getMuteSounds";
 
 // Load + play the sound once
 export async function playBadMoveSound() {
     try {
+        const isMuted = await getMuteSounds();
+        if (isMuted) {
+            return;
+        }
         const { sound } = await Audio.Sound.createAsync(
             require("../assets/sounds/bad_move_sound.mp3")
         );
