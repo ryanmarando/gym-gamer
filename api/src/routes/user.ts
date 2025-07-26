@@ -42,8 +42,11 @@ router.delete(
     userController.deleteAllUserWeightEntries
 );
 
+router.patch("/updateMuteSounds/:id", userController.updateMuteSounds);
+
 router.patch("/updateWeightSystem/:id", userController.updateWeightSystem);
 
+router.delete("/:id", userController.deleteUserById);
 router.get("/:id", userController.getUserById);
 
 export default router;

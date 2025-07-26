@@ -507,6 +507,59 @@ export const updateWeightSystem = async (req: Request, res: Response) => {
         res.json(updatedUser);
     } catch (error) {
         console.error("Error updating weight system:", error);
-        res.status(500).json({ error: "Internal server error." });
+        res.status(500).json({
+            error: "Internal server error for updating weight system.",
+        });
     }
+};
+
+export const updateMuteSounds = async (req: Request, res: Response) => {
+    const userId = parseInt(req.params.id);
+
+    if (!userId) {
+        res.status(400).json({ message: "Please enter a userId" });
+        return;
+    }
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { muteSounds: true },
+        });
+
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        // 2. Update with toggled value
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                muteSounds: !user.muteSounds,
+            },
+        });
+
+        res.json(updatedUser);
+    } catch (error) {
+        console.error("Error updating mute sounds:", error);
+        res.status(500).json({
+            error: "Internal server error for mute sounds.",
+        });
+    }
+};
+
+export const deleteUserById = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const userId = Number(req.params.id);
+
+    const deletedUser = await prisma.user.delete({
+        where: { id: userId },
+    });
+
+    res.status(200).json({
+        message: `Deleted user: ${deletedUser.name}: ${deletedUser.id}`,
+    });
 };

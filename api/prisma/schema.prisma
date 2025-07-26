@@ -33,6 +33,7 @@ model User {
   totalWeightLifted  Float             @default(0)
   weeklyWeightLifted Float             @default(0)
   weightSystem       WeightSystem      @default(IMPERIAL)
+  muteSounds         Boolean           @default(false)
 
   @@map("user")
 }

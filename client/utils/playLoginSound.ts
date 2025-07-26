@@ -1,7 +1,11 @@
 import { Audio } from "expo-av";
-
+import { getMuteSounds } from "./getMuteSounds";
 export async function playLoginSound() {
     try {
+        const isMuted = await getMuteSounds();
+        if (isMuted) {
+            return;
+        }
         const { sound } = await Audio.Sound.createAsync(
             require("../assets/sounds/pixel_login_sound.wav")
         );

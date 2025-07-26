@@ -304,7 +304,7 @@ export default function AchievementsScreen({ navigation }: any) {
                                 onPress={() =>
                                     handleUpdatePress(activeQuest.id)
                                 }
-                                style={{
+                                containerStyle={{
                                     alignItems: "center",
                                     backgroundColor: "#00f",
                                     width: "70%",
@@ -313,7 +313,8 @@ export default function AchievementsScreen({ navigation }: any) {
                                     justifyContent: "center",
                                     borderRadius: 6,
                                 }}
-                            ></PixelButton>
+                            />
+
                             <PixelButton
                                 fontSize={15}
                                 color="#fff"
@@ -321,7 +322,7 @@ export default function AchievementsScreen({ navigation }: any) {
                                 onPress={() =>
                                     confirmCompleteQuest(activeQuest.id)
                                 }
-                                style={{
+                                containerStyle={{
                                     alignItems: "center",
                                     backgroundColor: "#f0f",
                                     width: "70%",
@@ -330,7 +331,7 @@ export default function AchievementsScreen({ navigation }: any) {
                                     justifyContent: "center",
                                     borderRadius: 6,
                                 }}
-                            ></PixelButton>
+                            />
                         </View>
                         <PixelModal
                             visible={modalVisible}

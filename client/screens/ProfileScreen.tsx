@@ -14,7 +14,6 @@ import PixelButton from "../components/PixelButton";
 import PixelModal from "../components/PixelModal";
 import PixelQuestCard from "../components/PixelQuestCard";
 import ProgressBar from "../components/ProgressBar";
-import WeightSystemSelector from "../components/WeightSystemSelector";
 import Sparks from "../components/Sparks";
 import { authFetch } from "../utils/authFetch";
 import { logout } from "../utils/logout";
@@ -27,6 +26,7 @@ import { playAlertSound } from "../utils/playAlertSound";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import SettingsModal from "../components/SettingsModal";
 
 interface AchievementDetails {
     id: number;
@@ -99,6 +99,9 @@ export default function ProfileScreen({
         "IMPERIAL" | "METRIC" | null
     >(null);
     const tabBarHeight = useBottomTabBarHeight();
+    const [showSettings, setShowSettings] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
+    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
     const triggerLevelUpImage = () => {
         setShowLevelUpImage(true);
@@ -178,6 +181,7 @@ export default function ProfileScreen({
             const token = await registerForPushNotificationsAsync();
             if (token) {
                 setExpoPushToken(token);
+                setNotificationsEnabled(true);
                 await SecureStore.setItemAsync("notifToken", token);
             }
         };
@@ -287,7 +291,6 @@ export default function ProfileScreen({
             const userId = await SecureStore.getItemAsync("userId");
 
             // Delete all exercise entries
-            handleDeleteAllExerciseWeightEntires(Number(userId));
 
             await authFetch(
                 `/user/updateWeightSystem/${userId}?weightSystem=${newSystem}`,
@@ -304,17 +307,68 @@ export default function ProfileScreen({
         }
     };
 
-    const handleSystemPress = (system: "IMPERIAL" | "METRIC") => {
-        if (system === selectedSystem) return;
+    function roundToNearestHalf(num: number): number {
+        return Math.round(num * 2) / 2;
+    }
 
-        setPendingSystem(system);
-        setmodalTitleMessage("Change Weight System?");
-        setModalMessage(
-            `Are you sure you want to switch to ${
-                system === "IMPERIAL" ? "Imperial (lbs)" : "Metric (kg)"
-            }? This will delete all of your exercise weight entries...`
-        );
-        setModalVisible(true);
+    function formatWeight(weightInLbs: number, system: "IMPERIAL" | "METRIC") {
+        if (system === "METRIC") {
+            return `${roundToNearestHalf(weightInLbs * 0.453592).toFixed(
+                1
+            )} kg`;
+        }
+        return `${weightInLbs} lbs`;
+    }
+
+    const handleAccountDeletion = async () => {
+        try {
+            const userId = await SecureStore.getItemAsync("userId");
+            await authFetch(`/user/${Number(userId)}`, { method: "DELETE" });
+            console.log("⚠️ Account deletion triggered");
+            setIsLoggedIn(false);
+            playDeleteSound();
+        } catch (error) {
+            playBadMoveSound();
+            console.log("There was an error deleting account...");
+        }
+    };
+
+    const onToggleMuted = async () => {
+        const userId = await SecureStore.getItemAsync("userId");
+
+        try {
+            const data = await authFetch(
+                `/user/updateMuteSounds/${Number(userId)}`,
+                { method: "PATCH" }
+            );
+            console.log(
+                "Successful update sounds will now be muted:",
+                data.muteSounds
+            );
+            setIsMuted(data.muteSounds);
+            const muteSoundsString = String(data.muteSounds);
+
+            await SecureStore.setItemAsync("muteSounds", muteSoundsString);
+        } catch {
+            playBadMoveSound();
+            console.log("There was an error updating sound settings...");
+        }
+    };
+
+    const onToggleNotifications = async () => {
+        if (notificationsEnabled) {
+            await SecureStore.deleteItemAsync("notifToken");
+            setExpoPushToken(null);
+            setNotificationsEnabled(false);
+            console.log("Deactivated notifs");
+        } else {
+            const token = await registerForPushNotificationsAsync();
+            if (token) {
+                setExpoPushToken(token);
+                setNotificationsEnabled(true);
+                await SecureStore.setItemAsync("notifToken", token);
+            }
+        }
     };
 
     if (loading || !userData) {
@@ -325,23 +379,20 @@ export default function ProfileScreen({
         );
     }
 
-    const handleDeleteAllExerciseWeightEntires = async (userId: number) => {
-        try {
-            await authFetch(
-                `/workouts/deleteAllEntriesForUser?userId=${userId}`,
-                {
-                    method: "DELETE",
-                }
-            );
-        } catch (err) {
-            console.error(err);
-            playBadMoveSound();
-        }
-    };
-
     return (
         <SafeAreaView style={styles.safeArea} edges={["top"]}>
             <View style={styles.container}>
+                <PixelButton
+                    onPress={() => setShowSettings(true)}
+                    containerStyle={styles.settingsButton}
+                    playSound={true}
+                >
+                    <Image
+                        source={require("../assets/SettingsCogPixel.png")}
+                        style={{ width: 48, height: 48 }}
+                    />
+                </PixelButton>
+
                 <ScrollView
                     style={{ flex: 1 }}
                     contentContainerStyle={{ paddingBottom: tabBarHeight }}
@@ -419,10 +470,10 @@ export default function ProfileScreen({
                                 >
                                     You've lifted a total of{" "}
                                     {selectedSystem === "METRIC"
-                                        ? `${(
-                                              userData.totalWeightLifted *
-                                              0.453592
-                                          ).toFixed(1)} kg`
+                                        ? `${formatWeight(
+                                              userData.totalWeightLifted,
+                                              selectedSystem
+                                          )}`
                                         : `${userData.totalWeightLifted} lbs`}
                                     !
                                 </PixelText>
@@ -477,30 +528,26 @@ export default function ProfileScreen({
                             onPress={() => navigation.navigate("UpdateWeight")}
                         ></PixelButton>
 
-                        <PixelButton
-                            text="Update Units (lbs/kg)"
-                            onPress={() =>
-                                setShowWeightSelector(!showWeightSelector)
-                            }
-                            color="#FF6F61"
-                            containerStyle={{
-                                borderColor: "#FF6F61",
-                                marginTop: 10,
+                        <SettingsModal
+                            visible={showSettings}
+                            onClose={() => setShowSettings(false)}
+                            selectedSystem={selectedSystem}
+                            onChangeSystem={async (newSystem) => {
+                                await handleUpdateWeightSystem(newSystem);
                             }}
+                            isMuted={isMuted}
+                            onToggleMuted={onToggleMuted}
+                            notificationsEnabled={notificationsEnabled}
+                            onToggleNotifications={onToggleNotifications}
+                            onConfirmDelete={handleAccountDeletion}
                         />
-
-                        {showWeightSelector && (
-                            <WeightSystemSelector
-                                selectedSystem={selectedSystem}
-                                onSelectSystem={handleSystemPress}
-                            />
-                        )}
 
                         <PixelButton
                             text="Log Out"
                             onPress={() => {
                                 setModalAction("logout");
                                 setModalVisible(true);
+                                setmodalTitleMessage("Are you sure?");
                                 const message = "You will be logged out.";
                                 setModalMessage(message);
                             }}
@@ -555,5 +602,12 @@ const styles = StyleSheet.create({
     bottomButtonContainer: {
         alignItems: "center",
         justifyContent: "flex-end",
+    },
+    settingsButton: {
+        position: "absolute",
+        right: 20,
+        zIndex: 20,
+        backgroundColor: "#111",
+        borderColor: "#111",
     },
 });

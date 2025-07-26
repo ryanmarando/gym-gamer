@@ -1,8 +1,13 @@
 import { Audio } from "expo-av";
+import { getMuteSounds } from "./getMuteSounds";
 
 // Load + play the sound once
 export async function playAlertSound() {
     try {
+        const isMuted = await getMuteSounds();
+        if (isMuted) {
+            return;
+        }
         const { sound } = await Audio.Sound.createAsync(
             require("../assets/sounds/alert_sound.wav")
         );

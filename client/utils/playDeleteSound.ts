@@ -1,8 +1,12 @@
 import { Audio } from "expo-av";
-
+import { getMuteSounds } from "./getMuteSounds";
 // Load + play the sound once
 export async function playDeleteSound() {
     try {
+        const isMuted = await getMuteSounds();
+        if (isMuted) {
+            return;
+        }
         const { sound } = await Audio.Sound.createAsync(
             require("../assets/sounds/pixel_delete_sound.wav")
         );
