@@ -31,7 +31,12 @@
         "web": {
             "favicon": "./assets/gym-gamer-app-icon.png"
         },
-        "plugins": ["expo-secure-store", "expo-audio", "expo-notifications"],
+        "plugins": [
+            "expo-secure-store",
+            "expo-audio",
+            "expo-notifications",
+            "expo-splash-screen"
+        ],
         "extra": {
             "eas": {
                 "projectId": "aafdffa4-7a09-4511-a579-35dee4fbcf19"
