@@ -8,6 +8,7 @@ import {
 import PixelModal from "./PixelModal";
 import PixelText from "./PixelText";
 import PixelButton from "./PixelButton";
+import ConfirmationPixelModal from "./ConfirmationPixelModal";
 import { playCompleteSound } from "../utils/playCompleteSound";
 
 interface SettingsModalProps {
@@ -20,6 +21,10 @@ interface SettingsModalProps {
     notificationsEnabled: boolean;
     onToggleNotifications: () => void;
     onConfirmDelete: () => void;
+    confirmationPixelModalVisible: boolean;
+    setConfirmationPixelModalVisible: () => void;
+    confirmationPixelModalTitle: string;
+    confirmationPixelModalMessage: string;
 }
 
 export default function SettingsModal({
@@ -32,6 +37,10 @@ export default function SettingsModal({
     notificationsEnabled,
     onToggleNotifications,
     onConfirmDelete,
+    confirmationPixelModalVisible,
+    setConfirmationPixelModalVisible,
+    confirmationPixelModalTitle,
+    confirmationPixelModalMessage,
 }: SettingsModalProps) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [confirmVisible, setConfirmVisible] = useState(false);
@@ -199,6 +208,18 @@ export default function SettingsModal({
                                 ]}
                             />
 
+                            <ConfirmationPixelModal
+                                visible={confirmationPixelModalVisible}
+                                onConfirm={() =>
+                                    setConfirmationPixelModalVisible()
+                                }
+                                onCancel={() =>
+                                    setConfirmationPixelModalVisible()
+                                }
+                                title={confirmationPixelModalTitle}
+                                message={confirmationPixelModalMessage}
+                            />
+
                             {/* Nested confirmation modal */}
                             {showDeleteConfirm && (
                                 <PixelModal
@@ -208,7 +229,7 @@ export default function SettingsModal({
                                     onConfirm={() => {
                                         onConfirmDelete();
                                         setShowDeleteConfirm(false);
-                                        onClose();
+                                        //onClose();
                                     }}
                                     onCancel={() => setShowDeleteConfirm(false)}
                                     confirmText="Delete"

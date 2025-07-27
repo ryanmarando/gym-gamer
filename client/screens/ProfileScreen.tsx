@@ -25,6 +25,7 @@ import { playDeleteSound } from "../utils/playDeleteSound";
 import { playAlertSound } from "../utils/playAlertSound";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
+import { playLoginSound } from "../utils/playLoginSound";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import SettingsModal from "../components/SettingsModal";
 
@@ -102,6 +103,12 @@ export default function ProfileScreen({
     const [showSettings, setShowSettings] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>();
+    const [confirmationPixelModalVisible, setConfirmationPixelModalVisible] =
+        useState<boolean>(false);
+    const [confirmationPixelModalTitle, setConfirmationPixelModalTitle] =
+        useState<string>("");
+    const [confirmationPixelModalMessage, setConfirmationPixelModalMessage] =
+        useState<string>("");
 
     const triggerLevelUpImage = () => {
         setShowLevelUpImage(true);
@@ -331,6 +338,11 @@ export default function ProfileScreen({
             playDeleteSound();
         } catch (error) {
             playBadMoveSound();
+            setConfirmationPixelModalTitle("Uh oh, gamer!");
+            setConfirmationPixelModalMessage(
+                "There was an error deleting your account... try again later!"
+            );
+            setConfirmationPixelModalVisible(true);
             console.log("There was an error deleting account...");
         }
     };
@@ -351,8 +363,27 @@ export default function ProfileScreen({
             const muteSoundsString = String(data.muteSounds);
 
             await SecureStore.setItemAsync("muteSounds", muteSoundsString);
+            if (data.muteSounds) {
+                setConfirmationPixelModalTitle("Quiet time!");
+                setConfirmationPixelModalMessage(
+                    "Your gamer sounds have been muted!"
+                );
+                setConfirmationPixelModalVisible(true);
+            } else {
+                setConfirmationPixelModalTitle("Get loud, gamer!");
+                setConfirmationPixelModalMessage(
+                    "Your gamer sounds have been unmuted!"
+                );
+                setConfirmationPixelModalVisible(true);
+                playLoginSound();
+            }
         } catch {
             playBadMoveSound();
+            setConfirmationPixelModalTitle("Uh oh, gamer!");
+            setConfirmationPixelModalMessage(
+                "There was an error muting your sounds... try again later!"
+            );
+            setConfirmationPixelModalVisible(true);
             console.log("There was an error updating sound settings...");
         }
     };
@@ -363,12 +394,31 @@ export default function ProfileScreen({
             setExpoPushToken(null);
             setNotificationsEnabled(false);
             console.log("Deactivated notifs");
+            playDeleteSound();
+            setConfirmationPixelModalTitle("Notifications turned off!");
+            setConfirmationPixelModalMessage(
+                "Don't forget to disable notifications in your settings too!"
+            );
+            setConfirmationPixelModalVisible(true);
         } else {
             const token = await registerForPushNotificationsAsync();
+
             if (token) {
                 setExpoPushToken(token);
                 setNotificationsEnabled(true);
                 await SecureStore.setItemAsync("notifToken", token);
+                setConfirmationPixelModalTitle("Notifications activated!");
+                setConfirmationPixelModalMessage(
+                    "You'll now receive notifications, like when achievements are completed!"
+                );
+                setConfirmationPixelModalVisible(true);
+                playCompleteSound();
+            } else {
+                setConfirmationPixelModalTitle("Hold on, gamer!");
+                setConfirmationPixelModalMessage(
+                    "Please activate notifications in your settings to allow notifications!"
+                );
+                setConfirmationPixelModalVisible(true);
             }
         }
     };
@@ -542,6 +592,20 @@ export default function ProfileScreen({
                             notificationsEnabled={notificationsEnabled!}
                             onToggleNotifications={onToggleNotifications}
                             onConfirmDelete={handleAccountDeletion}
+                            confirmationPixelModalVisible={
+                                confirmationPixelModalVisible
+                            }
+                            setConfirmationPixelModalVisible={() =>
+                                setConfirmationPixelModalVisible(
+                                    (prev) => !prev
+                                )
+                            }
+                            confirmationPixelModalTitle={
+                                confirmationPixelModalTitle
+                            }
+                            confirmationPixelModalMessage={
+                                confirmationPixelModalMessage
+                            }
                         />
 
                         <PixelButton
