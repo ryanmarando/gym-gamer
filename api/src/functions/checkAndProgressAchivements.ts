@@ -167,16 +167,15 @@ export async function checkAndProgressAchievements(
                 const previousMax = context.previousMax;
                 const previousMaxWeight = previousMax?._max.weight;
                 const userForWeightLifted = context?.updatedUser;
-                const weightSystem = context.weightSystem;
                 const targetLift = ua.achievement.name.toLowerCase();
-                // if (weightSystem === "METRIC") {
-                //     weight = weight * 2.20462; // Convert kg → lbs
-                // }
+                const checkingSingleWorkoutLift =
+                    context?.checkingSingleWorkoutLift;
 
                 if (
                     ua.achievement.targetValue &&
-                    weight > ua.achievement.targetValue &&
-                    targetLift.includes(workoutName.split(" ")[0])
+                    weight >= ua.achievement.targetValue &&
+                    targetLift.includes(workoutName.split(" ")[0]) &&
+                    checkingSingleWorkoutLift
                 ) {
                     progressToAdd = 100;
                 } else if (

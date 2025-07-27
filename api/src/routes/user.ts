@@ -10,8 +10,8 @@ router.delete("/deleteAllUsers", isAdmin, userController.deleteAllUsers);
 
 router.get("/getUserWorkouts/:id", userController.getUserWorkouts);
 router.get(
-    "/getUserWorkoutsByArchitype/:id/:architype",
-    userController.getUserWorkoutsByArchitype
+    "/getUserWorkoutsByArchitype",
+    userController.getUserWorkoutsBySplit
 );
 router.get("/getAllUserPhotos/:id", userController.getAllUserPhotos);
 

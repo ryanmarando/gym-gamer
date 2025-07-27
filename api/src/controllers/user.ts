@@ -76,39 +76,23 @@ export const getUserWorkouts = async (
     res.status(200).json(userWithWorkouts);
 };
 
-export const getUserWorkoutsByArchitype = async (
+export const getUserWorkoutsBySplit = async (
     req: Request,
     res: Response,
     next: NextFunction
 ) => {
-    const userId = Number(req.params.id);
-    const architypeParam = req.params
-        .architype as keyof typeof WorkoutArchitype;
-    const architype = WorkoutArchitype[architypeParam];
+    const userId = Number(req.query.userId);
+    const splitId = Number(req.query.splitId);
 
-    if (!architype) {
-        res.status(200).json({ message: "No architype found." });
+    if (!splitId || !userId) {
+        res.status(200).json({ message: "No split and/or user Id entered..." });
         return;
     }
 
     try {
-        const workouts = await prisma.userWorkout.findMany({
+        let workouts = await prisma.userWorkout.findMany({
             where: {
                 userId,
-                OR: [
-                    {
-                        workout: {
-                            architype: {
-                                has: architype,
-                            },
-                        },
-                    },
-                    {
-                        day: {
-                            dayName: architype,
-                        },
-                    },
-                ],
             },
             include: {
                 workout: true,
@@ -116,6 +100,8 @@ export const getUserWorkoutsByArchitype = async (
                 entries: true,
             },
         });
+
+        workouts = workouts.filter((w) => w.dayId === splitId);
 
         res.json({ workouts });
     } catch (err) {

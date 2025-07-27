@@ -390,44 +390,13 @@ export default function WorkoutsScreen({ navigation }: any) {
             if (!selectedDay) return;
 
             const data = await authFetch(
-                `/user/getUserWorkoutsByArchitype/${userIdStr}/${selectedDay.name}`
+                `/user/getUserWorkoutsByArchitype?userId=${userIdStr}&splitId=${selectedDay.id}`
             );
-
-            //console.log(data.message === "No architype found.");
-
-            if (data.message === "No architype found.") {
-                const userWorkouts = await authFetch(
-                    `/user/getUserWorkouts/${userIdStr}`
-                );
-
-                const filtered = userWorkouts.workouts.filter(
-                    (w: any) => w.dayId === selectedDay?.id
-                );
-
-                const ordered = filtered.sort(
-                    (a: any, b: any) => (a.order ?? 0) - (b.order ?? 0)
-                );
-                setWorkouts(ordered);
-
-                setAllWorkoutEntries(filtered);
-
-                // Reset weight entries too
-                setWeightEntries((prev) => {
-                    const copy = { ...prev };
-                    filtered.forEach((w: Workout) => {
-                        if (!copy[w.workoutId]) {
-                            copy[w.workoutId] = ["", "", ""];
-                        }
-                    });
-                    return copy;
-                });
-
-                return;
-            }
 
             const ordered = data.workouts.sort(
                 (a: any, b: any) => (a.order ?? 0) - (b.order ?? 0)
             );
+
             setWorkouts(ordered);
 
             //setWorkouts(data.workouts || []);
@@ -839,7 +808,7 @@ export const styles = StyleSheet.create({
         borderColor: "#0ff",
         borderWidth: 2,
         borderRadius: 4,
-        width: 70,
+        width: 80,
         height: Platform.OS === "ios" ? 40 : undefined,
         paddingHorizontal: 8,
         marginRight: 4,

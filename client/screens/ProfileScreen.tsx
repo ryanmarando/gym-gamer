@@ -101,7 +101,7 @@ export default function ProfileScreen({
     const tabBarHeight = useBottomTabBarHeight();
     const [showSettings, setShowSettings] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
-    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+    const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>();
 
     const triggerLevelUpImage = () => {
         setShowLevelUpImage(true);
@@ -183,6 +183,8 @@ export default function ProfileScreen({
                 setExpoPushToken(token);
                 setNotificationsEnabled(true);
                 await SecureStore.setItemAsync("notifToken", token);
+            } else {
+                setNotificationsEnabled(false);
             }
         };
         registerPush();
@@ -537,7 +539,7 @@ export default function ProfileScreen({
                             }}
                             isMuted={isMuted}
                             onToggleMuted={onToggleMuted}
-                            notificationsEnabled={notificationsEnabled}
+                            notificationsEnabled={notificationsEnabled!}
                             onToggleNotifications={onToggleNotifications}
                             onConfirmDelete={handleAccountDeletion}
                         />
@@ -605,6 +607,7 @@ const styles = StyleSheet.create({
     },
     settingsButton: {
         position: "absolute",
+        top: 20,
         right: 20,
         zIndex: 20,
         backgroundColor: "#111",

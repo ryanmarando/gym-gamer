@@ -245,14 +245,12 @@ export const addWorkoutEntry = async (
                 return;
             }
 
-            console.log(user);
             // Convert to lbs if weightSystem is METRIC
             if (user.weightSystem === "METRIC") {
                 weight = convertKgToLbs(weight);
+                // Round to nearest 0.5
+                weight = roundToNearestHalf(weight);
             }
-
-            // Round to nearest 0.5
-            weight = roundToNearestHalf(weight);
 
             const workoutToAddEntryOn = await tx.workout.findFirst({
                 where: { id: workoutId },
@@ -281,13 +279,20 @@ export const addWorkoutEntry = async (
                 },
             });
 
+            const checkingSingleWorkoutLift = true;
+
             const workoutName = workoutToAddEntryOn.name;
             const newLiftingWeightAchievements =
                 await checkAndProgressAchievements(
                     tx,
                     userId,
                     [AchievementType.LIFTINGWEIGHT],
-                    { weight, workoutName, previousMax }
+                    {
+                        weight,
+                        workoutName,
+                        previousMax,
+                        checkingSingleWorkoutLift,
+                    }
                 );
 
             return { entry, newLiftingWeightAchievements };
@@ -664,10 +669,9 @@ export const addUserWeightLifted = async (
             // Convert weight if needed
             if (user.weightSystem === "METRIC") {
                 weightLifted = convertKgToLbs(weightLifted);
+                // Round to nearest 0.5 lbs
+                weightLifted = roundToNearestHalf(weightLifted);
             }
-
-            // Round to nearest 0.5 lbs
-            weightLifted = roundToNearestHalf(weightLifted);
 
             // Update total + weekly lifted weight
             const updatedUser = await tx.user.update({
