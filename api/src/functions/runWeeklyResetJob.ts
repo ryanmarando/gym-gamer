@@ -1,3 +1,5 @@
 import { weeklyReset } from "./weeklyReset.js";
+import { sendWeeklyResetNotifications } from "./sendWeeklyResetNotifications.js";
 
-weeklyReset();
+await weeklyReset();
+await sendWeeklyResetNotifications();

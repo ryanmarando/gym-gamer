@@ -46,6 +46,8 @@ router.patch("/updateMuteSounds/:id", userController.updateMuteSounds);
 
 router.patch("/updateWeightSystem/:id", userController.updateWeightSystem);
 
+router.patch("/updateExpoToken/:id", userController.updateExpoToken);
+
 router.delete("/:id", userController.deleteUserById);
 router.get("/:id", userController.getUserById);
 

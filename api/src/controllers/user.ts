@@ -549,3 +549,38 @@ export const deleteUserById = async (
         message: `Deleted user: ${deletedUser.name}: ${deletedUser.id}`,
     });
 };
+
+export const updateExpoToken = async (req: Request, res: Response) => {
+    const userId = parseInt(req.params.id);
+    const token = String(req.query.token);
+
+    if (!userId) {
+        res.status(400).json({ message: "Please enter a userId" });
+        return;
+    }
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        // 2. Update with toggled value
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                expoPushToken: token,
+            },
+        });
+
+        res.json(updatedUser);
+    } catch (error) {
+        console.error("Error updating mute sounds:", error);
+        res.status(500).json({
+            error: "Internal server error for mute sounds.",
+        });
+    }
+};

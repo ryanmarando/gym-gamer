@@ -34,6 +34,7 @@ model User {
   weeklyWeightLifted Float             @default(0)
   weightSystem       WeightSystem      @default(IMPERIAL)
   muteSounds         Boolean           @default(false)
+  expoPushToken      String?
 
   @@map("user")
 }

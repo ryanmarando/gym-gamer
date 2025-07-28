@@ -190,6 +190,7 @@ export default function ProfileScreen({
                 setExpoPushToken(token);
                 setNotificationsEnabled(true);
                 await SecureStore.setItemAsync("notifToken", token);
+                updateAPIExpoToken(token);
             } else {
                 setNotificationsEnabled(false);
             }
@@ -399,6 +400,7 @@ export default function ProfileScreen({
             setConfirmationPixelModalMessage(
                 "Don't forget to disable notifications in your settings too!"
             );
+            updateAPIExpoToken("turnedOff");
             setConfirmationPixelModalVisible(true);
         } else {
             const token = await registerForPushNotificationsAsync();
@@ -412,6 +414,7 @@ export default function ProfileScreen({
                     "You'll now receive notifications, like when achievements are completed!"
                 );
                 setConfirmationPixelModalVisible(true);
+                updateAPIExpoToken(token);
                 playCompleteSound();
             } else {
                 setConfirmationPixelModalTitle("Hold on, gamer!");
@@ -420,6 +423,20 @@ export default function ProfileScreen({
                 );
                 setConfirmationPixelModalVisible(true);
             }
+        }
+    };
+
+    const updateAPIExpoToken = async (token: string) => {
+        try {
+            const userId = await SecureStore.getItemAsync("userId");
+
+            await authFetch(
+                `/user/updateExpoToken/${userId}?token=${String(token)}`,
+                { method: "PATCH" }
+            );
+            console.log("Updated backend with expo notification token!");
+        } catch (error) {
+            console.log("Error updating user's expo token for the backend...");
         }
     };
 

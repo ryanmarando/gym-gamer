@@ -17,7 +17,8 @@
             "supportsTablet": true,
             "bundleIdentifier": "com.ryanmarando.client",
             "infoPlist": {
-                "ITSAppUsesNonExemptEncryption": false
+                "ITSAppUsesNonExemptEncryption": false,
+                "UIBackgroundModes": ["remote-notification"]
             }
         },
         "android": {
