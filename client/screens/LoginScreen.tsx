@@ -5,6 +5,8 @@ import {
     TextInput,
     Image,
     ActivityIndicator,
+    TouchableWithoutFeedback,
+    Keyboard,
 } from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
@@ -83,97 +85,102 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
-                <PixelText fontSize={20} color="#ff0">
-                    Welcome to Gym Gamer!
-                </PixelText>
+            <TouchableWithoutFeedback
+                onPress={Keyboard.dismiss}
+                accessible={false}
+            >
+                <View style={styles.container}>
+                    <PixelText fontSize={20} color="#ff0">
+                        Welcome to Gym Gamer!
+                    </PixelText>
 
-                <Image
-                    source={require("../assets/ControllerPixel.png")}
-                    style={{ width: 64, height: 64 }}
-                    resizeMode="contain"
-                />
-
-                <PixelText fontSize={20} color="#0ff">
-                    Log In to Continue
-                </PixelText>
-
-                <TextInput
-                    placeholder="Email"
-                    placeholderTextColor="#888"
-                    value={email}
-                    onChangeText={setEmail}
-                    style={styles.input}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                />
-
-                <TextInput
-                    placeholder="Password"
-                    placeholderTextColor="#888"
-                    value={password}
-                    onChangeText={setPassword}
-                    style={styles.input}
-                    secureTextEntry
-                />
-
-                {loading ? (
-                    <ActivityIndicator
-                        size="large"
-                        color="#0ff"
-                        style={{ marginTop: 20 }}
+                    <Image
+                        source={require("../assets/ControllerPixel.png")}
+                        style={{ width: 64, height: 64 }}
+                        resizeMode="contain"
                     />
-                ) : (
+
+                    <PixelText fontSize={20} color="#0ff">
+                        Log In to Continue
+                    </PixelText>
+
+                    <TextInput
+                        placeholder="Email"
+                        placeholderTextColor="#888"
+                        value={email}
+                        onChangeText={setEmail}
+                        style={styles.input}
+                        autoCapitalize="none"
+                        keyboardType="email-address"
+                    />
+
+                    <TextInput
+                        placeholder="Password"
+                        placeholderTextColor="#888"
+                        value={password}
+                        onChangeText={setPassword}
+                        style={styles.input}
+                        secureTextEntry
+                    />
+
+                    {loading ? (
+                        <ActivityIndicator
+                            size="large"
+                            color="#0ff"
+                            style={{ marginTop: 20 }}
+                        />
+                    ) : (
+                        <PixelButton
+                            text="Log In"
+                            onPress={handleLogin}
+                            color="#0f0"
+                            containerStyle={{
+                                backgroundColor: "#000",
+                                borderColor: "#0f0",
+                                marginTop: 20,
+                            }}
+                            disabled={loading} // disable button when loading
+                        />
+                    )}
+
+                    <View style={{ marginTop: 18 }}>
+                        <PixelText fontSize={12} color="#fff">
+                            Register if you don't have an account
+                        </PixelText>
+                    </View>
+
                     <PixelButton
-                        text="Log In"
-                        onPress={handleLogin}
-                        color="#0f0"
+                        text="Sign Up"
+                        onPress={() => navigation.navigate("Register")}
+                        color="#f00"
                         containerStyle={{
                             backgroundColor: "#000",
-                            borderColor: "#0f0",
-                            marginTop: 20,
+                            borderColor: "#f00",
+                            marginTop: 18,
                         }}
-                        disabled={loading} // disable button when loading
                     />
-                )}
 
-                <View style={{ marginTop: 18 }}>
-                    <PixelText fontSize={12} color="#fff">
-                        Register if you don't have an account
-                    </PixelText>
+                    <ConfirmationPixelModal
+                        visible={showConfirmationModal}
+                        onConfirm={() => setShowConfirmationModal(false)}
+                        onCancel={() => setShowConfirmationModal(false)}
+                        title={modalTitleMessage}
+                        message={modalMessage}
+                    />
+
+                    <Image
+                        source={require("../assets/gym-gamer-app-icon.png")}
+                        style={{
+                            width: 126,
+                            height: 126,
+                            borderRadius: 12,
+                            marginTop: 22,
+                            justifyContent: "flex-end",
+                        }}
+                        resizeMode="contain"
+                    />
                 </View>
-
-                <PixelButton
-                    text="Sign Up"
-                    onPress={() => navigation.navigate("Register")}
-                    color="#f00"
-                    containerStyle={{
-                        backgroundColor: "#000",
-                        borderColor: "#f00",
-                        marginTop: 18,
-                    }}
-                />
-
-                <ConfirmationPixelModal
-                    visible={showConfirmationModal}
-                    onConfirm={() => setShowConfirmationModal(false)}
-                    onCancel={() => setShowConfirmationModal(false)}
-                    title={modalTitleMessage}
-                    message={modalMessage}
-                />
-
-                <Image
-                    source={require("../assets/gym-gamer-app-icon.png")}
-                    style={{
-                        width: 126,
-                        height: 126,
-                        borderRadius: 12,
-                        marginTop: 22,
-                        justifyContent: "flex-end",
-                    }}
-                    resizeMode="contain"
-                />
-            </View>
+            </TouchableWithoutFeedback>
         </SafeAreaView>
     );
 }

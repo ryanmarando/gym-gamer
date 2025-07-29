@@ -5,6 +5,7 @@ const expo = new Expo();
 
 export async function sendWeeklyResetNotifications() {
     console.log("Trying to send notification from backend...");
+
     const users = await prisma.user.findMany({
         where: {
             expoPushToken: { not: null },
@@ -12,12 +13,30 @@ export async function sendWeeklyResetNotifications() {
     });
 
     const messages = [];
+    const uniqueTokens = new Set<string>();
+    const tokensSeen = new Map();
 
     for (let user of users) {
-        if (!Expo.isExpoPushToken(user.expoPushToken!)) continue;
+        const token = user.expoPushToken!;
+        if (!Expo.isExpoPushToken(token)) continue;
+
+        // Warn if multiple users share same token
+        if (tokensSeen.has(token)) {
+            console.warn(
+                `⚠️ Duplicate token found: User ${
+                    user.id
+                } shares token with User ${tokensSeen.get(token)}`
+            );
+        } else {
+            tokensSeen.set(token, user.id);
+        }
+
+        // Skip already used tokens
+        if (uniqueTokens.has(token)) continue;
+        uniqueTokens.add(token);
 
         messages.push({
-            to: user.expoPushToken!,
+            to: token,
             sound: "default",
             title: "It's The Weekly Reset!",
             body: "Your weekly achievements have been reset. A new week of new challenges!",

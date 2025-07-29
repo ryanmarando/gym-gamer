@@ -23,17 +23,22 @@ export async function authFetch(endpoint: string, options: RequestInit = {}) {
         headers,
     });
 
-    const res = await response.json();
+    let res;
+    const contentType = response.headers.get("content-type");
 
-    // Handle non-OK responses if you want
+    if (contentType?.includes("application/json")) {
+        res = await response.json();
+    } else {
+        res = await response.text();
+    }
+
     if (!response.ok) {
-        console.error(
-            "❌ AuthFetch failed:",
-            response.status,
-            response.statusText,
-            res.message
-        );
-        throw new Error("API request failed");
+        if (response.status === 401) {
+            throw new Error("TOKEN_EXPIRED");
+        }
+        const message =
+            typeof res === "string" ? res : res.message || "API request failed";
+        throw new Error(message);
     }
 
     return res;

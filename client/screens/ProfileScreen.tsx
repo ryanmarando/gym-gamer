@@ -157,6 +157,11 @@ export default function ProfileScreen({
         });
     };
 
+    async function getAllUsers() {
+        const API_URL = process.env.EXPO_PUBLIC_API_URL;
+        const allUsers = await fetch("/user/getAllUsers");
+    }
+
     useEffect(() => {
         if (!userData) return;
 
@@ -238,8 +243,15 @@ export default function ProfileScreen({
             // Get user weight system
             setSelectedSystem(data.weightSystem);
             await SecureStore.setItemAsync("weightSystem", data.weightSystem);
-        } catch (error) {
-            console.error("❌ Failed to fetch user data:", error);
+        } catch (error: any) {
+            if (error.message === "Forbidden") {
+                console.warn("⛔ Token expired, logging user out...");
+                setIsLoggedIn(null);
+                await SecureStore.deleteItemAsync("userToken");
+                await SecureStore.deleteItemAsync("userId");
+            } else {
+                console.error("❌ Failed to fetch user data:", error.message);
+            }
         } finally {
             setLoading(false);
         }

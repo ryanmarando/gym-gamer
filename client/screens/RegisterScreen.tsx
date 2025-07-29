@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, TextInput } from "react-native";
+import {
+    View,
+    StyleSheet,
+    TextInput,
+    TouchableWithoutFeedback,
+    Keyboard,
+} from "react-native";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
@@ -177,109 +183,114 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
-                <PixelText fontSize={20} color="#0ff">
-                    Create a Gym Gamer Account
-                </PixelText>
-
-                <TextInput
-                    placeholder="Email"
-                    placeholderTextColor="#888"
-                    value={email}
-                    onChangeText={setEmail}
-                    style={styles.input}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                />
-
-                <TextInput
-                    placeholder="Name"
-                    placeholderTextColor="#888"
-                    value={name}
-                    onChangeText={setName}
-                    style={styles.input}
-                />
-
-                <TextInput
-                    placeholder="Password"
-                    placeholderTextColor="#888"
-                    value={password}
-                    onChangeText={setPassword}
-                    style={styles.input}
-                    secureTextEntry
-                />
-
-                <TextInput
-                    placeholder="Confirm Password"
-                    placeholderTextColor="#888"
-                    value={confirmedPassword}
-                    onChangeText={setConfirmedPassword}
-                    style={styles.input}
-                    secureTextEntry
-                />
-
-                <WeightSystemSelector
-                    selectedSystem={weightSystem}
-                    onSelectSystem={setWeightSystem}
-                />
-
-                <PixelButton
-                    text="Register"
-                    onPress={handleRegisterStart}
-                    color="#0f0"
-                    containerStyle={{
-                        backgroundColor: waiverAccepted ? "#000" : "#555",
-                        borderColor: "#0f0",
-                        marginTop: 20,
-                    }}
-                />
-
-                <PixelButton
-                    text="Back to Login"
-                    onPress={() => navigation.navigate("Login")}
-                    color="#f00"
-                    containerStyle={{
-                        backgroundColor: "#000",
-                        borderColor: "#f00",
-                        marginTop: 20,
-                    }}
-                />
-
-                <ConfirmationPixelModal
-                    visible={showConfirmationModal}
-                    onConfirm={() => {
-                        setShowConfirmationModal(false);
-                        if (pendingLogin) {
-                            setIsLoggedIn(true);
-                            setPendingLogin(false);
-                        }
-                    }}
-                    onCancel={() => {
-                        setShowConfirmationModal(false);
-                        if (pendingLogin) {
-                            setIsLoggedIn(true);
-                            setPendingLogin(false);
-                        }
-                    }}
-                    title={modalTitleMessage}
-                    message={modalMessage}
-                />
-
-                <PixelModal
-                    visible={modalVisible}
-                    title={modalConfig.title}
-                    onConfirm={modalConfig.onConfirm}
-                    onCancel={() => setModalVisible(false)}
-                >
-                    <PixelText
-                        fontSize={11}
-                        color="#fff"
-                        style={{ textAlign: "center" }}
-                    >
-                        {modalConfig.message}
+            <TouchableWithoutFeedback
+                onPress={Keyboard.dismiss}
+                accessible={false}
+            >
+                <View style={styles.container}>
+                    <PixelText fontSize={20} color="#0ff">
+                        Create a Gym Gamer Account
                     </PixelText>
-                </PixelModal>
-            </View>
+
+                    <TextInput
+                        placeholder="Email"
+                        placeholderTextColor="#888"
+                        value={email}
+                        onChangeText={setEmail}
+                        style={styles.input}
+                        autoCapitalize="none"
+                        keyboardType="email-address"
+                    />
+
+                    <TextInput
+                        placeholder="Name"
+                        placeholderTextColor="#888"
+                        value={name}
+                        onChangeText={setName}
+                        style={styles.input}
+                    />
+
+                    <TextInput
+                        placeholder="Password"
+                        placeholderTextColor="#888"
+                        value={password}
+                        onChangeText={setPassword}
+                        style={styles.input}
+                        secureTextEntry
+                    />
+
+                    <TextInput
+                        placeholder="Confirm Password"
+                        placeholderTextColor="#888"
+                        value={confirmedPassword}
+                        onChangeText={setConfirmedPassword}
+                        style={styles.input}
+                        secureTextEntry
+                    />
+
+                    <WeightSystemSelector
+                        selectedSystem={weightSystem}
+                        onSelectSystem={setWeightSystem}
+                    />
+
+                    <PixelButton
+                        text="Register"
+                        onPress={handleRegisterStart}
+                        color="#0f0"
+                        containerStyle={{
+                            backgroundColor: waiverAccepted ? "#000" : "#555",
+                            borderColor: "#0f0",
+                            marginTop: 20,
+                        }}
+                    />
+
+                    <PixelButton
+                        text="Back to Login"
+                        onPress={() => navigation.navigate("Login")}
+                        color="#f00"
+                        containerStyle={{
+                            backgroundColor: "#000",
+                            borderColor: "#f00",
+                            marginTop: 20,
+                        }}
+                    />
+
+                    <ConfirmationPixelModal
+                        visible={showConfirmationModal}
+                        onConfirm={() => {
+                            setShowConfirmationModal(false);
+                            if (pendingLogin) {
+                                setIsLoggedIn(true);
+                                setPendingLogin(false);
+                            }
+                        }}
+                        onCancel={() => {
+                            setShowConfirmationModal(false);
+                            if (pendingLogin) {
+                                setIsLoggedIn(true);
+                                setPendingLogin(false);
+                            }
+                        }}
+                        title={modalTitleMessage}
+                        message={modalMessage}
+                    />
+
+                    <PixelModal
+                        visible={modalVisible}
+                        title={modalConfig.title}
+                        onConfirm={modalConfig.onConfirm}
+                        onCancel={() => setModalVisible(false)}
+                    >
+                        <PixelText
+                            fontSize={11}
+                            color="#fff"
+                            style={{ textAlign: "center" }}
+                        >
+                            {modalConfig.message}
+                        </PixelText>
+                    </PixelModal>
+                </View>
+            </TouchableWithoutFeedback>
         </SafeAreaView>
     );
 }
