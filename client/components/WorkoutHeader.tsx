@@ -4,7 +4,6 @@ import PixelText from "./PixelText";
 import PixelButton from "./PixelButton";
 import PixelModal from "./PixelModal";
 import ConfirmationPixelModal from "./ConfirmationPixelModal";
-import Celebration from "./Celebration";
 
 interface WorkoutHeaderProps {
     selectedDay: any;
@@ -23,6 +22,7 @@ interface WorkoutHeaderProps {
     setShowConfirmationModal: (b: boolean) => void;
     modalConfirmationTitle: string;
     showConfetti: boolean;
+    setSelectedDay: (day: { id: number; name: string } | null) => void;
 }
 
 export default function WorkoutHeader({
@@ -42,6 +42,7 @@ export default function WorkoutHeader({
     setShowConfirmationModal,
     modalConfirmationTitle,
     showConfetti,
+    setSelectedDay,
 }: WorkoutHeaderProps) {
     return (
         <View>
@@ -99,10 +100,14 @@ export default function WorkoutHeader({
 
             <ConfirmationPixelModal
                 visible={showConfirmationModal}
-                onConfirm={() => setShowConfirmationModal(false)}
+                onConfirm={() => {
+                    setShowConfirmationModal(false);
+                    setSelectedDay(null);
+                }}
                 onCancel={() => setShowConfirmationModal(false)}
                 title={modalConfirmationTitle}
                 message={modalMessage}
+                confettiVisible={showConfetti}
             />
         </View>
     );

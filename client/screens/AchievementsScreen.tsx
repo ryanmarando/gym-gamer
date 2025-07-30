@@ -268,12 +268,11 @@ export default function AchievementsScreen({ navigation }: any) {
         setModalConfirmationVisible(true);
         setShowConfetti(true);
         playExcitingSound();
-        setTimeout(() => setShowConfetti(false), 5000);
+        setTimeout(() => setShowConfetti(false), 4800);
     };
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            {showConfetti && <Celebration />}
             <View style={styles.container}>
                 {/* Quests Section */}
                 <PixelText
@@ -346,6 +345,7 @@ export default function AchievementsScreen({ navigation }: any) {
                             message={modalConfirmationConfig.message}
                             onConfirm={modalConfirmationConfig.onConfirm}
                             onCancel={() => setModalConfirmationVisible(false)}
+                            confettiVisible={showConfetti}
                         />
                         <UpdateQuestModal
                             visible={updateModalVisible}

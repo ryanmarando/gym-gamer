@@ -25,7 +25,6 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
-
 import WorkoutHeader from "../components/WorkoutHeader";
 import WorkoutItem from "../components/WorkoutItem";
 
@@ -76,7 +75,7 @@ export default function WorkoutsScreen({ navigation }: any) {
     const [isPixelModalVisible, setPixelModalVisible] = useState(false);
     const [modalSplitMessage, setModalSplitMessage] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const minWorkoutTime = 900; //15 minutes
+    const minWorkoutTime = 1; //15 minutes
     const [weightSystem, setWeightSystem] = useState<string>();
 
     const addSplitDay = () => {
@@ -307,7 +306,6 @@ export default function WorkoutsScreen({ navigation }: any) {
                 setTimer(0);
                 setIsLoading(false);
                 await AsyncStorage.removeItem("workoutStartTime");
-                setSelectedDay(null);
                 setmodalConfirmationTitle("Nice work, gamer!");
                 setModalMessage(
                     `Workout complete! You just gained ${workoutProgressData.xpGiven} XP!`
@@ -315,7 +313,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                 setShowConfirmationModal(true);
                 resetWeightEntries();
                 setShowConfetti(true);
-                setTimeout(() => setShowConfetti(false), 5000);
+                setTimeout(() => setShowConfetti(false), 4800);
             } catch (error) {
                 setIsLoading(false);
                 console.error("Complete workout failed", error);
@@ -639,9 +637,9 @@ export default function WorkoutsScreen({ navigation }: any) {
 
                                 <ConfirmationPixelModal
                                     visible={showConfirmationModal}
-                                    onConfirm={() =>
-                                        setShowConfirmationModal(false)
-                                    }
+                                    onConfirm={() => {
+                                        setShowConfirmationModal(false);
+                                    }}
                                     onCancel={() =>
                                         setShowConfirmationModal(false)
                                     }
@@ -718,6 +716,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                                                 modalConfirmationTitle
                                             }
                                             showConfetti={showConfetti}
+                                            setSelectedDay={setSelectedDay}
                                         />
 
                                         {isLoading && (
@@ -727,8 +726,6 @@ export default function WorkoutsScreen({ navigation }: any) {
                                                 style={{ marginTop: 20 }}
                                             />
                                         )}
-
-                                        {showConfetti && <Celebration />}
 
                                         <GestureHandlerRootView
                                             style={{ flex: 1 }}

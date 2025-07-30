@@ -5,9 +5,12 @@ import {
     StyleSheet,
     TouchableOpacity,
     TouchableWithoutFeedback,
+    Image,
+    Platform,
 } from "react-native";
 import PixelText from "./PixelText";
 import PixelButton from "./PixelButton";
+import Celebration from "./Celebration";
 
 interface PixelModalProps {
     visible: boolean;
@@ -15,6 +18,7 @@ interface PixelModalProps {
     message?: string;
     onConfirm: () => void;
     onCancel: () => void;
+    confettiVisible?: boolean; // new prop
 }
 
 export default function ConfirmationPixelModal({
@@ -23,11 +27,24 @@ export default function ConfirmationPixelModal({
     message,
     onConfirm,
     onCancel,
+    confettiVisible = false,
 }: PixelModalProps) {
     return (
         <Modal transparent visible={visible} animationType="fade">
             <TouchableWithoutFeedback onPress={onCancel}>
                 <View style={styles.overlay}>
+                    {/* Confetti absolutely centered on overlay */}
+                    {confettiVisible &&
+                        (Platform.OS === "android" ? (
+                            <Celebration />
+                        ) : (
+                            <Image
+                                source={require("../assets/PixelConfettiAnimation.gif")}
+                                style={styles.confettiImage}
+                                resizeMode="center"
+                            />
+                        ))}
+
                     <TouchableWithoutFeedback>
                         <View style={styles.modalContainer}>
                             {title && (
@@ -86,5 +103,15 @@ const styles = StyleSheet.create({
     },
     button: {
         flex: 1,
+    },
+    confettiImage: {
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        width: 1028,
+        height: 1028,
+        marginLeft: -514,
+        marginTop: -514,
+        zIndex: 10000,
     },
 });
