@@ -8,6 +8,7 @@ import {
     CompleteWorkoutInputSchema,
 } from "../middleware/validation.js";
 import { isAdmin } from "../middleware/isAdmin.js";
+import { isAdminOrUser } from "../middleware/isAdminOrUser.js";
 
 const router = Router();
 
@@ -20,6 +21,7 @@ router.post(
 );
 router.delete(
     "/deleteWorkoutEntryById/:id",
+    isAdminOrUser,
     workoutController.deleteWorkoutEntryById
 );
 router.delete(
@@ -34,6 +36,7 @@ router.delete(
 
 router.patch(
     "/completeWorkout/:id",
+    isAdminOrUser,
     validateBody(CompleteWorkoutInputSchema),
     workoutController.completeWorkout
 );
@@ -46,16 +49,25 @@ router.post(
 
 router.patch(
     "/assignWorkoutSplit/:id",
+    isAdminOrUser,
     validateBody(WorkoutSplitInputSchema),
     workoutController.assignWorkoutSplit
 );
 
-router.patch("/saveWorkoutOrder/:id", workoutController.saveWorkoutOrder);
+router.patch(
+    "/saveWorkoutOrder/:id",
+    isAdminOrUser,
+    workoutController.saveWorkoutOrder
+);
 
-router.patch("/addUserWeightLifted/:id", workoutController.addUserWeightLifted);
+router.patch(
+    "/addUserWeightLifted/:id",
+    isAdminOrUser,
+    workoutController.addUserWeightLifted
+);
 
 router.get("/", workoutController.getAllWorkouts);
 router.delete("/", isAdmin, workoutController.deleteAllWorkouts);
-router.delete("/:id", workoutController.deleteWorkoutById);
+router.delete("/:id", isAdminOrUser, workoutController.deleteWorkoutById);
 
 export default router;

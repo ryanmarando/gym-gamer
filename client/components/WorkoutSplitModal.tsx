@@ -128,7 +128,7 @@ export default function WorkoutSplitModal({
                                 if (hasBadWord) {
                                     playBadMoveSound();
                                     setModalSplitMessage(
-                                        "Please avoid using profanity in your workout name."
+                                        "Please avoid using profanity in your workout split name."
                                     );
                                     setPixelModalVisible(true);
                                 } else {

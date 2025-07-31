@@ -106,7 +106,7 @@ export const getUserWorkoutsBySplit = async (
         res.json({ workouts });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Failed to get workouts" });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -142,10 +142,7 @@ export const getAllUserPhotos = async (
         res.status(200).json({ progressPhotos });
     } catch (error) {
         console.error("Error fetching user photos:", error);
-        res.status(500).json({
-            message: "Something went wrong fetching user photos.",
-            error: String(error),
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -196,7 +193,7 @@ export const getUserQuest = async (
         });
     } catch (error) {
         console.error("Error fetching user quest:", error);
-        res.status(500).json({ error: "Failed to get user quest." });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -258,10 +255,7 @@ export const resetUserStats = async (
         return;
     } catch (error) {
         console.error("Error resetting user stats:", error);
-        res.status(500).json({
-            message: "Something went wrong resetting user stats.",
-            error: String(error),
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -324,10 +318,7 @@ export const addUserWeightEntry = async (req: Request, res: Response) => {
     } catch (error) {
         console.error("Error adding user weight entry:", error);
 
-        res.status(500).json({
-            message: "An error occurred while adding the weight entry.",
-            error: error instanceof Error ? error.message : String(error),
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -358,11 +349,7 @@ export const getAllUserWeightEntries = async (req: Request, res: Response) => {
     } catch (error) {
         console.error("Error GET user weight entries:", error);
 
-        res.status(500).json({
-            message: "An error occurred while GET the weight entries.",
-            error: error instanceof Error ? error.message : String(error),
-        });
-
+        res.status(500).json({ error: "Internal server error." });
         return;
     }
 };
@@ -493,9 +480,7 @@ export const updateWeightSystem = async (req: Request, res: Response) => {
         res.json(updatedUser);
     } catch (error) {
         console.error("Error updating weight system:", error);
-        res.status(500).json({
-            error: "Internal server error for updating weight system.",
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -528,9 +513,7 @@ export const updateMuteSounds = async (req: Request, res: Response) => {
         res.json(updatedUser);
     } catch (error) {
         console.error("Error updating mute sounds:", error);
-        res.status(500).json({
-            error: "Internal server error for mute sounds.",
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -580,7 +563,7 @@ export const updateExpoToken = async (req: Request, res: Response) => {
     } catch (error) {
         console.error("Error updating mute sounds:", error);
         res.status(500).json({
-            error: "Internal server error for mute sounds.",
+            error: "Internal server error.",
         });
     }
 };

@@ -65,9 +65,7 @@ export const login = async (
         console.log("Successful login! Hi", user.name);
     } catch (error) {
         console.log("Unsuccessful Login");
-        res.status(500).json({
-            error: `Unsuccessful Login`,
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -131,8 +129,6 @@ export const register = async (
         });
     } catch (error) {
         console.log("Unsuccessful POST Registering User");
-        res.status(500).json({
-            error: `Unsuccessful POST Registering User...${error}`,
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };

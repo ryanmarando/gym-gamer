@@ -244,7 +244,10 @@ export default function ProfileScreen({
             setSelectedSystem(data.weightSystem);
             await SecureStore.setItemAsync("weightSystem", data.weightSystem);
         } catch (error: any) {
-            if (error.message === "Forbidden") {
+            if (
+                error.message === "Forbidden" ||
+                error.message == "No user found."
+            ) {
                 console.warn("⛔ Token expired, logging user out...");
                 setIsLoggedIn(null);
                 await SecureStore.deleteItemAsync("userToken");

@@ -248,7 +248,6 @@ export default function SaveWorkoutScreen() {
                 method: "POST",
                 body,
             });
-            console.log(result);
 
             if (result.newlyCompletedAchievements?.length) {
                 // Send notification

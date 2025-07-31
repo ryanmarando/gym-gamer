@@ -19,7 +19,7 @@ export const getAllAchievements = async (
         res.status(200).json(achivements);
     } catch (error) {
         console.log(`Error GET of All achievements: ${error}`);
-        res.status(500).json({ message: `Error: ${error}` });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -88,9 +88,7 @@ export const saveAllAchievementsToUser = async (
         return;
     } catch (error) {
         console.error("❌ Error saving all achievements for user:", error);
-        res.status(500).json({
-            error: `Unsuccessful PATCH to save all user achievements: ${error}`,
-        });
+        res.status(500).json({ error: "Internal server error." });
         return;
     }
 };
@@ -122,10 +120,7 @@ export const deleteAchievementByIdFromUser = async (
         });
     } catch (error) {
         console.error("Error deleting all achievements from user:", error);
-        res.status(500).json({
-            message: "Failed to delete all achievements from user.",
-            error: error instanceof Error ? error.message : String(error),
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -138,10 +133,7 @@ export const deleteAllAchievements = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error("Error deleting all achievements:", error);
-        res.status(500).json({
-            message: "Failed to delete all achievements.",
-            error: error instanceof Error ? error.message : String(error),
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -192,7 +184,7 @@ export const updateAchievementProgress = async (
             });
         } else {
             console.error(err);
-            res.status(500).json({ message: "Something went wrong" });
+            res.status(500).json({ error: "Internal server error." });
         }
     }
 };
@@ -203,8 +195,6 @@ export const weeklyAchivementReset = async (req: Request, res: Response) => {
         res.status(200).json({ message: "Weekly reset complete." });
     } catch (error) {
         console.error(error);
-        res.status(500).json({
-            message: "Something went wrong with the weekly rest.",
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };

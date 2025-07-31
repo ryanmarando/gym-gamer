@@ -91,10 +91,7 @@ export const deleteUserPhoto = async (
         });
     } catch (error) {
         console.error("Error deleting progress photo:", error);
-        res.status(500).json({
-            message: "Something went wrong while deleting the photo.",
-            error: String(error),
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -149,9 +146,6 @@ export const deleteAllUserPhotos = async (
         });
     } catch (error) {
         console.error("Error deleting all progress photos:", error);
-        res.status(500).json({
-            message: "Something went wrong while deleting photos.",
-            error: String(error),
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };

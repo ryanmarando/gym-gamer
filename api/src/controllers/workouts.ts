@@ -47,9 +47,7 @@ export const getAllWorkouts = async (
         res.status(200).json(workouts);
     } catch (error) {
         console.log("Unsuccessful GET of Workouts");
-        res.status(500).json({
-            error: `Unsuccessful GET...${error}`,
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -64,9 +62,7 @@ export const deleteAllWorkouts = async (
         res.status(200).json({ message: "Deleted all workouts." });
     } catch (error) {
         console.log("Unsuccessful DELETE of Workouts");
-        res.status(500).json({
-            error: `Unsuccessful DELETE...${error}`,
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -85,9 +81,7 @@ export const deleteWorkoutById = async (
         res.status(200).json({ message: "Deleted workout id " + workoutId });
     } catch (error) {
         console.log("Unsuccessful DELETE of Workout Id" + workoutId);
-        res.status(500).json({
-            error: `Unsuccessful DELETE...${error}`,
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -142,7 +136,7 @@ export const saveToUser = async (
         });
     } catch (error) {
         console.log("Unsuccessful PATCH:", error);
-        res.status(500).json({ error: `Save failed: ${error}` });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -189,11 +183,7 @@ export const deleteFromUser = async (
         return;
     } catch (error) {
         console.error("Unsuccessful DELETE of UserWorkout:", error);
-        res.status(500).json({
-            message:
-                "An error occurred while deleting the workout from the user.",
-            error: error instanceof Error ? error.message : String(error),
-        });
+        res.status(500).json({ error: "Internal server error." });
         return;
     }
 };
@@ -305,11 +295,7 @@ export const addWorkoutEntry = async (
         });
     } catch (error) {
         console.error("Unsuccessful POST of UserWorkoutEntry:", error);
-        res.status(500).json({
-            message:
-                "An error occurred while posting the workoutentry from the user.",
-            error: error instanceof Error ? error.message : String(error),
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -355,10 +341,7 @@ export const deleteWorkoutEntryById = async (req: Request, res: Response) => {
         return;
     } catch (error) {
         console.error("Error deleting workout entry:", error);
-        res.status(500).json({
-            message: "Failed to delete workout entry.",
-            error: error instanceof Error ? error.message : String(error),
-        });
+        res.status(500).json({ error: "Internal server error." });
         return;
     }
 };
@@ -390,10 +373,7 @@ export const deleteAllEntriesForUserWorkout = async (
         });
     } catch (error) {
         console.error("Error deleting all workout entries:", error);
-        res.status(500).json({
-            message: "Failed to delete workout entries.",
-            error: error instanceof Error ? error.message : String(error),
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -419,10 +399,7 @@ export const deleteAllEntriesForUser = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error("Error deleting all user workout entries:", error);
-        res.status(500).json({
-            message: "Failed to delete user workout entries.",
-            error: error instanceof Error ? error.message : String(error),
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -498,9 +475,7 @@ export const completeWorkout = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({
-            message: "Something went wrong completing the workout",
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -559,9 +534,7 @@ export const createCustomWorkout = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({
-            message: "Something went wrong creating a custom workout.",
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -715,10 +688,7 @@ export const addUserWeightLifted = async (
         });
     } catch (error) {
         console.error("Error updating weight lifted:", error);
-        res.status(500).json({
-            message: "Failed to update user's weight lifted.",
-            error: error instanceof Error ? error.message : String(error),
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };
 
@@ -745,6 +715,6 @@ export const saveWorkoutOrder = async (req: Request, res: Response) => {
         res.json({ message: "Workout order saved!" });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Failed to save workout order" });
+        res.status(500).json({ error: "Internal server error." });
     }
 };

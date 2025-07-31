@@ -21,7 +21,11 @@ router.delete(
     achievementController.deleteAllAchievements
 );
 
-router.get("/weeklyReset", achievementController.weeklyAchivementReset);
+router.get(
+    "/weeklyReset",
+    isAdmin,
+    achievementController.weeklyAchivementReset
+);
 
 router.get("/", achievementController.getAllAchievements);
 router.delete(

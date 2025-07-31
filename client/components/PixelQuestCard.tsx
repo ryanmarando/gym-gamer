@@ -47,7 +47,6 @@ export default function PixelQuestCard({
             const data = await authFetch(
                 `/user/getAllUserWeightEntries/${userId}`
             );
-            console.log(data.user.weightEntires);
             if (
                 data?.user?.weightEntries &&
                 data.user.weightEntries.length > 0

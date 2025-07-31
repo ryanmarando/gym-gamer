@@ -175,8 +175,6 @@ export const completeQuest = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({
-            message: "Something went wrong completing the quest",
-        });
+        res.status(500).json({ error: "Internal server error." });
     }
 };

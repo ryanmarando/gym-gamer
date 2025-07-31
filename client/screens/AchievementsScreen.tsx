@@ -21,6 +21,7 @@ import {
     convertWeight,
     getLocalizedAchievementName,
 } from "../utils/unitUtils";
+import { playBadMoveSound } from "../utils/playBadMoveSound";
 
 interface AchievementDetails {
     id: number;
@@ -60,6 +61,7 @@ interface Quest {
     goal: number;
     goalDate: string | Date;
     baseXP: number;
+    initialWeight: number;
 }
 
 export default function AchievementsScreen({ navigation }: any) {
@@ -90,6 +92,7 @@ export default function AchievementsScreen({ navigation }: any) {
         "IMPERIAL" | "METRIC"
     >();
     const [loading, setLoading] = useState(true);
+    const [currentWeight, setCurrentWeight] = useState<number | null>(null);
 
     // Prepare sections for SectionList
     const achievementSections = [
@@ -108,6 +111,25 @@ export default function AchievementsScreen({ navigation }: any) {
             data: userAchievements.filter((ua) => !ua.completed),
         },
     ];
+
+    const fetchWeights = async (userId: number) => {
+        try {
+            const data = await authFetch(
+                `/user/getAllUserWeightEntries/${userId}`
+            );
+            if (data?.user?.weightEntries?.length > 0) {
+                const sorted = data.user.weightEntries.sort(
+                    (a: any, b: any) =>
+                        new Date(b.enteredAt).getTime() -
+                        new Date(a.enteredAt).getTime()
+                );
+                setCurrentWeight(sorted[0].weight);
+                return sorted[0].weight;
+            }
+        } catch (err) {
+            console.error("Error fetching weights:", err);
+        }
+    };
 
     const fetchActiveQuest = async () => {
         if (!userId) return;
@@ -236,10 +258,58 @@ export default function AchievementsScreen({ navigation }: any) {
         setUpdateModalVisible(true);
     };
 
-    const confirmCompleteQuest = (questId: number) => {
+    const calculateQuestProgress = (
+        quest: {
+            type: string;
+            goal: number;
+            initialWeight: number;
+        },
+        currentWeight: number | null
+    ): number | null => {
+        if (
+            quest.initialWeight == null ||
+            currentWeight == null ||
+            quest.goal === 0
+        ) {
+            return null;
+        }
+
+        const isGain = quest.type === "GAIN";
+        const isLose = quest.type === "LOSE";
+
+        const numerator = isGain
+            ? currentWeight - quest.initialWeight
+            : isLose
+            ? quest.initialWeight - currentWeight
+            : 0;
+
+        return Math.max(0, Math.min(1, numerator / quest.goal));
+    };
+
+    const confirmCompleteQuest = async (questId: number) => {
+        const userId = await SecureStore.getItemAsync("userId");
+        const currentBodyWeight = await fetchWeights(Number(userId));
+
+        if (
+            activeQuest &&
+            currentBodyWeight !== null &&
+            calculateQuestProgress(activeQuest, currentBodyWeight)! < 1 &&
+            activeQuest.type !== "MAINTAIN"
+        ) {
+            setModalConfirmationConfig({
+                title: "Almost there, gamer!",
+                message:
+                    "You haven't completed your quest yet. Keep going to finish it!",
+                onConfirm: () => setModalConfirmationVisible(false),
+            });
+            setModalConfirmationVisible(true);
+            playBadMoveSound();
+            return;
+        }
+
         setModalConfig({
             title: "Wow, Gamer!",
-            message: "Are your sure you want to complete your quest!?",
+            message: "Are you sure you want to complete your quest?",
             onConfirm: () => handleCompleteQuest(questId),
         });
         setModalVisible(true);
@@ -247,6 +317,7 @@ export default function AchievementsScreen({ navigation }: any) {
 
     const handleCompleteQuest = async (questId: number) => {
         setModalVisible(false);
+
         const result = await authFetch(`/quest/completeQuest/${userId}`);
 
         if (result.newlyCompletedAchievements?.length) {

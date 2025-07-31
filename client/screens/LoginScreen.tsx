@@ -51,7 +51,6 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
             if (!response.ok) {
                 playBadMoveSound();
 
-                console.log(data);
                 if (data.error) {
                     throw new Error(`${data.error}`);
                 }
