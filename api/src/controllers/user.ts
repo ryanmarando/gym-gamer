@@ -14,9 +14,14 @@ export const getAllUsers = async (
 
     if (!users || users.length === 0) {
         res.status(501).json({ message: "No users found." });
+        return;
     }
 
-    res.status(200).json(users);
+    const sanitizedUsers = users.map(
+        ({ resetCode, resetCodeExpiry, ...rest }) => rest
+    );
+
+    res.status(200).json(sanitizedUsers);
 };
 
 export const getUserById = async (
@@ -31,7 +36,7 @@ export const getUserById = async (
             weightEntries: true,
             workoutSplit: {
                 include: {
-                    days: true, // Include the WorkoutDay[] array
+                    days: true,
                 },
             },
         },
@@ -39,9 +44,13 @@ export const getUserById = async (
 
     if (!user) {
         res.status(501).json({ message: "No user found." });
+        return;
     }
 
-    res.status(200).json(user);
+    // Exclude resetCode and resetCodeExpiry
+    const { resetCode, resetCodeExpiry, ...safeUser } = user;
+
+    res.status(200).json(safeUser);
 };
 
 export const deleteAllUsers = async (

@@ -15,6 +15,7 @@ import { playLoginSound } from "../utils/playLoginSound";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import * as SecureStore from "expo-secure-store";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ResetPasswordModal from "../components/ResetPasswordModal";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -25,7 +26,8 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
     const [modalMessage, setModalMessage] = useState("Login failed.");
     const [modalTitleMessage, setModalTitleMessage] =
         useState("Whoa there, gamer!");
-    const [loading, setLoading] = useState(false); // New loading state
+    const [loading, setLoading] = useState(false);
+    const [showResetModal, setShowResetModal] = useState(false);
 
     const handleLogin = async () => {
         if (!email.trim() || !password.trim()) {
@@ -138,13 +140,29 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
                                 borderColor: "#0f0",
                                 marginTop: 20,
                             }}
-                            disabled={loading} // disable button when loading
+                            disabled={loading}
                         />
                     )}
 
+                    <PixelButton
+                        text="Forgot Password"
+                        onPress={() => setShowResetModal(true)}
+                        color="#fff"
+                        containerStyle={{
+                            backgroundColor: "#000",
+                            borderColor: "#fff",
+                            marginTop: 18,
+                        }}
+                    />
+
+                    <ResetPasswordModal
+                        visible={showResetModal}
+                        onClose={() => setShowResetModal(false)}
+                    />
+
                     <View style={{ marginTop: 18 }}>
                         <PixelText fontSize={12} color="#fff">
-                            Register if you don't have an account
+                            Register if you don't have an account:
                         </PixelText>
                     </View>
 

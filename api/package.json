@@ -19,13 +19,14 @@
     "license": "ISC",
     "description": "",
     "dependencies": {
-        "@prisma/client": "^6.12.0",
+        "@prisma/client": "^6.13.0",
         "bcrypt": "^6.0.0",
         "dotenv": "^16.6.0",
         "expo-server-sdk": "^3.15.0",
         "express": "^5.1.0",
         "jsonwebtoken": "^9.0.2",
         "multer": "^2.0.1",
+        "resend": "^4.7.0",
         "xss": "^1.0.15",
         "zod": "^3.25.73"
     },
@@ -37,7 +38,7 @@
         "@types/multer": "^2.0.0",
         "@types/node": "^24.0.4",
         "nodemon": "^3.1.10",
-        "prisma": "^6.12.0",
+        "prisma": "^6.13.0",
         "ts-node": "^10.9.2",
         "typescript": "^5.8.3"
     }

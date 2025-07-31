@@ -260,15 +260,15 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
                         onConfirm={() => {
                             setShowConfirmationModal(false);
                             if (pendingLogin) {
-                                setIsLoggedIn(true);
                                 setPendingLogin(false);
+                                setIsLoggedIn(true);
                             }
                         }}
                         onCancel={() => {
                             setShowConfirmationModal(false);
                             if (pendingLogin) {
-                                setIsLoggedIn(true);
                                 setPendingLogin(false);
+                                setIsLoggedIn(true);
                             }
                         }}
                         title={modalTitleMessage}

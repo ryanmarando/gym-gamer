@@ -1,9 +1,8 @@
 import { NextFunction, Request, Response } from "express";
-import { prisma, jwtSecret } from "../config.js";
+import { prisma, jwtSecret, resend, resendEmail } from "../config.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { assignDefaultAchievementsAndSplitToUser } from "../functions/assignDefaultAchievementsAndSplitToUser.js";
-import { WeightSystem } from "@prisma/client";
 
 export const login = async (
     req: Request,
@@ -129,6 +128,92 @@ export const register = async (
         });
     } catch (error) {
         console.log("Unsuccessful POST Registering User");
+        res.status(500).json({ error: "Internal server error." });
+    }
+};
+
+export const requestResetPasswordCode = async (req: Request, res: Response) => {
+    try {
+        const { email } = req.body;
+
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user) {
+            res.status(200).json({
+                message: "If that email exists, a code was sent.",
+            });
+
+            return;
+        }
+
+        const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
+        const expiry = new Date(Date.now() + 1000 * 60 * 10); // 10 min expiry
+
+        await prisma.user.update({
+            where: { email },
+            data: {
+                resetCode: code,
+                resetCodeExpiry: expiry,
+            },
+        });
+
+        if (!resendEmail) {
+            console.log("No resend email found...");
+            return;
+        }
+
+        resend.emails.send({
+            from: resendEmail,
+            to: email,
+            subject: "Your Password Reset Code",
+            text: `Your Gym Gamer reset code is: ${code}`,
+        });
+
+        res.json({ message: "Reset code sent if email exists." });
+    } catch (error) {
+        console.log("Unsuccessful request of code...");
+        res.status(500).json({ error: "Internal server error." });
+    }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+    try {
+        const { email, resetCode } = req.body;
+
+        const user = await prisma.user.findFirst({
+            where: {
+                email,
+                resetCode: resetCode,
+                resetCodeExpiry: { gt: new Date() },
+            },
+        });
+
+        if (!user) {
+            res.status(400).json({ error: "Invalid or expired code" });
+            return;
+        }
+
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(
+            req.body.newPassword,
+            saltRounds
+        );
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                password: {
+                    update: {
+                        hash: hashedPassword,
+                    },
+                },
+                resetCode: null,
+                resetCodeExpiry: null,
+            },
+        });
+
+        res.json({ message: "Password reset successful." });
+    } catch (error) {
+        console.log("Unsuccessful reset password...");
         res.status(500).json({ error: "Internal server error." });
     }
 };

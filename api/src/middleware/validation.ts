@@ -17,6 +17,16 @@ const WorkoutArchitypeEnum = z.enum([
     "CALVES",
 ]);
 
+export const RequestResetPasswordCodeSchema = z.object({
+    email: z.string().email(),
+});
+
+export const ResetPasswordSchema = z.object({
+    email: z.string().email(),
+    resetCode: z.string().length(6),
+    newPassword: z.string().min(8),
+});
+
 export const CompleteWorkoutInputSchema = z.object({
     duration: z.number(),
     workoutEndTime: z.string(),

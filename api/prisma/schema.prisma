@@ -35,6 +35,8 @@ model User {
   weightSystem       WeightSystem      @default(IMPERIAL)
   muteSounds         Boolean           @default(false)
   expoPushToken      String?
+  resetCode          String?
+  resetCodeExpiry    DateTime?
 
   @@map("user")
 }
