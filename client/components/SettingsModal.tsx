@@ -4,6 +4,8 @@ import {
     StyleSheet,
     Modal,
     TouchableWithoutFeedback,
+    TextInput,
+    Alert,
 } from "react-native";
 import PixelModal from "./PixelModal";
 import PixelText from "./PixelText";
@@ -25,6 +27,13 @@ interface SettingsModalProps {
     setConfirmationPixelModalVisible: () => void;
     confirmationPixelModalTitle: string;
     confirmationPixelModalMessage: string;
+    handleSupportConfirmSend: (
+        fromEmail: string,
+        message: string
+    ) => Promise<boolean>;
+
+    // New prop for user's email to prefill support modal
+    userEmail: string;
 }
 
 export default function SettingsModal({
@@ -41,12 +50,20 @@ export default function SettingsModal({
     setConfirmationPixelModalVisible,
     confirmationPixelModalTitle,
     confirmationPixelModalMessage,
+    userEmail,
+    handleSupportConfirmSend,
 }: SettingsModalProps) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [confirmVisible, setConfirmVisible] = useState(false);
     const [pendingSystem, setPendingSystem] = useState<
         "IMPERIAL" | "METRIC" | null
     >(null);
+
+    // NEW: Support modal state
+    const [supportModalVisible, setSupportModalVisible] = useState(false);
+    const [supportFromEmail, setSupportFromEmail] = useState(userEmail);
+    const [supportMessage, setSupportMessage] = useState("");
+    const [supportConfirmVisible, setSupportConfirmVisible] = useState(false);
 
     if (!visible) return null;
 
@@ -67,6 +84,29 @@ export default function SettingsModal({
     const handleCancel = () => {
         setConfirmVisible(false);
         setPendingSystem(null);
+    };
+
+    // NEW: Support modal handlers
+    const openSupportModal = () => {
+        setSupportFromEmail(userEmail);
+        setSupportMessage("");
+        setSupportConfirmVisible(false);
+        setSupportModalVisible(true);
+    };
+
+    const closeSupportModal = () => {
+        setSupportModalVisible(false);
+        setSupportConfirmVisible(false);
+    };
+
+    const handleSupportSendPress = async () => {
+        const sent = await handleSupportConfirmSend(
+            supportFromEmail,
+            supportMessage
+        );
+        if (sent) {
+            setSupportModalVisible(false);
+        }
     };
 
     return (
@@ -192,6 +232,13 @@ export default function SettingsModal({
                             />
 
                             <PixelButton
+                                text="Contact Support"
+                                onPress={openSupportModal}
+                                color="#00BFFF"
+                                containerStyle={styles.button}
+                            />
+
+                            <PixelButton
                                 text="Delete Account"
                                 onPress={() => setShowDeleteConfirm(true)}
                                 color="#FF4C4C"
@@ -229,13 +276,221 @@ export default function SettingsModal({
                                     onConfirm={() => {
                                         onConfirmDelete();
                                         setShowDeleteConfirm(false);
-                                        //onClose();
                                     }}
                                     onCancel={() => setShowDeleteConfirm(false)}
                                     confirmText="Delete"
                                     cancelText="Cancel"
                                 />
                             )}
+
+                            {/* NEW: Contact Support Modal */}
+                            <Modal
+                                transparent
+                                visible={supportModalVisible}
+                                animationType="fade"
+                            >
+                                <TouchableWithoutFeedback
+                                    onPress={closeSupportModal}
+                                >
+                                    <View style={styles.overlay}>
+                                        <TouchableWithoutFeedback>
+                                            <View
+                                                style={[
+                                                    styles.modalContainer,
+                                                    { maxHeight: "85%" },
+                                                ]}
+                                            >
+                                                {!supportConfirmVisible ? (
+                                                    <>
+                                                        <PixelText
+                                                            fontSize={18}
+                                                            color="#0ff"
+                                                            style={{
+                                                                marginBottom: 10,
+                                                            }}
+                                                        >
+                                                            Contact Support
+                                                        </PixelText>
+
+                                                        <PixelText
+                                                            fontSize={14}
+                                                            color="#fff"
+                                                            style={{
+                                                                marginBottom: 6,
+                                                            }}
+                                                        >
+                                                            From Email:
+                                                        </PixelText>
+                                                        <TextInput
+                                                            value={
+                                                                supportFromEmail
+                                                            }
+                                                            onChangeText={
+                                                                setSupportFromEmail
+                                                            }
+                                                            keyboardType="email-address"
+                                                            autoCapitalize="none"
+                                                            style={styles.input}
+                                                        />
+
+                                                        <PixelText
+                                                            fontSize={14}
+                                                            color="#fff"
+                                                            style={{
+                                                                marginVertical: 6,
+                                                            }}
+                                                        >
+                                                            Message:
+                                                        </PixelText>
+                                                        <TextInput
+                                                            value={
+                                                                supportMessage
+                                                            }
+                                                            onChangeText={
+                                                                setSupportMessage
+                                                            }
+                                                            multiline
+                                                            numberOfLines={6}
+                                                            style={[
+                                                                styles.input,
+                                                                {
+                                                                    height: 120,
+                                                                    textAlignVertical:
+                                                                        "top",
+                                                                },
+                                                            ]}
+                                                        />
+
+                                                        <View
+                                                            style={{
+                                                                flexDirection:
+                                                                    "row",
+                                                                justifyContent:
+                                                                    "center",
+                                                                marginTop: 15,
+                                                            }}
+                                                        >
+                                                            <PixelButton
+                                                                text="Send"
+                                                                onPress={
+                                                                    handleSupportSendPress
+                                                                }
+                                                                color="#0f0"
+                                                                containerStyle={{
+                                                                    marginHorizontal: 8,
+                                                                }}
+                                                            />
+                                                            <PixelButton
+                                                                text="Cancel"
+                                                                onPress={
+                                                                    closeSupportModal
+                                                                }
+                                                                color="#f00"
+                                                                containerStyle={{
+                                                                    marginHorizontal: 8,
+                                                                }}
+                                                            />
+                                                        </View>
+                                                    </>
+                                                ) : (
+                                                    // Confirmation screen before sending
+                                                    <>
+                                                        <PixelText
+                                                            fontSize={16}
+                                                            color="#fff"
+                                                            style={{
+                                                                marginBottom: 12,
+                                                            }}
+                                                        >
+                                                            Please confirm
+                                                            sending this
+                                                            message:
+                                                        </PixelText>
+
+                                                        <PixelText
+                                                            fontSize={14}
+                                                            color="#0ff"
+                                                            style={{
+                                                                marginBottom: 8,
+                                                            }}
+                                                        >
+                                                            From:{" "}
+                                                            {supportFromEmail}
+                                                        </PixelText>
+
+                                                        <PixelText
+                                                            fontSize={14}
+                                                            color="#fff"
+                                                            style={{
+                                                                marginBottom: 12,
+                                                            }}
+                                                        >
+                                                            Message:
+                                                        </PixelText>
+
+                                                        <View
+                                                            style={{
+                                                                backgroundColor:
+                                                                    "#222",
+                                                                padding: 10,
+                                                                borderRadius: 6,
+                                                                maxHeight: 150,
+                                                            }}
+                                                        >
+                                                            <PixelText
+                                                                fontSize={14}
+                                                                color="#fff"
+                                                                style={{
+                                                                    flexWrap:
+                                                                        "wrap",
+                                                                }}
+                                                            >
+                                                                {supportMessage}
+                                                            </PixelText>
+                                                        </View>
+
+                                                        <View
+                                                            style={{
+                                                                flexDirection:
+                                                                    "row",
+                                                                justifyContent:
+                                                                    "center",
+                                                                marginTop: 15,
+                                                            }}
+                                                        >
+                                                            <PixelButton
+                                                                text="Confirm Send"
+                                                                onPress={() =>
+                                                                    handleSupportConfirmSend(
+                                                                        userEmail,
+                                                                        supportMessage
+                                                                    )
+                                                                }
+                                                                color="#0f0"
+                                                                containerStyle={{
+                                                                    marginHorizontal: 8,
+                                                                }}
+                                                            />
+                                                            <PixelButton
+                                                                text="Cancel"
+                                                                onPress={() =>
+                                                                    setSupportConfirmVisible(
+                                                                        false
+                                                                    )
+                                                                }
+                                                                color="#f00"
+                                                                containerStyle={{
+                                                                    marginHorizontal: 8,
+                                                                }}
+                                                            />
+                                                        </View>
+                                                    </>
+                                                )}
+                                            </View>
+                                        </TouchableWithoutFeedback>
+                                    </View>
+                                </TouchableWithoutFeedback>
+                            </Modal>
                         </View>
                     </TouchableWithoutFeedback>
                 </View>
@@ -263,5 +518,16 @@ const styles = StyleSheet.create({
     button: {
         borderColor: "#fff",
         marginTop: 10,
+    },
+    input: {
+        backgroundColor: "#222",
+        borderColor: "#0ff",
+        borderWidth: 1,
+        borderRadius: 6,
+        color: "#fff",
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        fontSize: 11,
+        fontFamily: "PressStart2P_400Regular",
     },
 });

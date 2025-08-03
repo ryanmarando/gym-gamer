@@ -17,6 +17,11 @@ const WorkoutArchitypeEnum = z.enum([
     "CALVES",
 ]);
 
+export const SupportSendEmailSchema = z.object({
+    fromEmail: z.string().email(),
+    message: z.string(),
+});
+
 export const RequestResetPasswordCodeSchema = z.object({
     email: z.string().email(),
 });

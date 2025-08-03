@@ -80,7 +80,9 @@ export default function ProfileScreen({
     );
     const [modalTitleMessage, setmodalTitleMessage] =
         useState<string>("Are you sure?");
-    const [modalAction, setModalAction] = useState<"logout" | null>(null);
+    const [modalAction, setModalAction] = useState<"logout" | "support" | null>(
+        null
+    );
     const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
     const [sparksActive, setSparksActive] = useState(false);
     const [questExpiredModalVisible, setQuestExpiredModalVisible] =
@@ -109,6 +111,8 @@ export default function ProfileScreen({
         useState<string>("");
     const [confirmationPixelModalMessage, setConfirmationPixelModalMessage] =
         useState<string>("");
+    const [supportEmail, setSupportEmail] = useState<string>("");
+    const [supportMessage, setSupportMessage] = useState<string>("");
 
     const triggerLevelUpImage = () => {
         setShowLevelUpImage(true);
@@ -263,6 +267,8 @@ export default function ProfileScreen({
     const handleModalConfirm = async () => {
         if (modalAction === "logout") {
             logoutUser();
+        } else if (modalAction === "support") {
+            sendEmail(supportEmail, supportMessage);
         }
         if (pendingSystem) {
             await handleUpdateWeightSystem(pendingSystem);
@@ -455,6 +461,62 @@ export default function ProfileScreen({
         }
     };
 
+    const sendEmail = async (fromEmail: string, message: string) => {
+        try {
+            await authFetch(`/user/email`, {
+                method: "POST",
+                body: JSON.stringify({ fromEmail, message }),
+            });
+            playCompleteSound();
+            setConfirmationPixelModalTitle("On the way, gamer!");
+            setConfirmationPixelModalMessage(
+                "Our contact team has recieved your message!"
+            );
+            setConfirmationPixelModalVisible(true);
+        } catch {
+            playBadMoveSound();
+            setConfirmationPixelModalTitle("On no, gamer!");
+            setConfirmationPixelModalMessage(
+                "There was an error sending your message! Try again later."
+            );
+            setConfirmationPixelModalVisible(true);
+        }
+    };
+
+    const handleSupportConfirmSend = async (
+        fromEmail: string,
+        message: string
+    ): Promise<boolean> => {
+        try {
+            if (!fromEmail.trim() || !message.trim()) {
+                playBadMoveSound();
+                setConfirmationPixelModalTitle("On no, gamer!");
+                setConfirmationPixelModalMessage(
+                    "Please fill in both email and message."
+                );
+                setConfirmationPixelModalVisible(true);
+                return false;
+            }
+            setSupportEmail(fromEmail);
+            setSupportMessage(message);
+            setModalAction("support");
+            setModalVisible(true);
+            setmodalTitleMessage("Everything look okay?");
+            const modalMessage = `From: ${fromEmail}
+                             Message: ${message}`;
+            setModalMessage(modalMessage);
+            return true;
+        } catch (e) {
+            playBadMoveSound();
+            setConfirmationPixelModalTitle("On no, gamer!");
+            setConfirmationPixelModalMessage(
+                "There was an error sending your message! Try again later."
+            );
+            setConfirmationPixelModalVisible(true);
+            return false;
+        }
+    };
+
     if (loading || !userData) {
         return (
             <View style={styles.container}>
@@ -638,6 +700,8 @@ export default function ProfileScreen({
                             confirmationPixelModalMessage={
                                 confirmationPixelModalMessage
                             }
+                            userEmail={userData.email}
+                            handleSupportConfirmSend={handleSupportConfirmSend}
                         />
 
                         <PixelButton

@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { WorkoutArchitype } from "@prisma/client";
-import { prisma } from "../config.js";
+import { prisma, resend, resendEmail } from "../config.js";
 import { AchievementType } from "@prisma/client";
 import { checkAndProgressAchievements } from "../functions/checkAndProgressAchivements.js";
 import { WeightSystem } from "@prisma/client";
@@ -571,6 +570,38 @@ export const updateExpoToken = async (req: Request, res: Response) => {
         res.json(updatedUser);
     } catch (error) {
         console.error("Error updating mute sounds:", error);
+        res.status(500).json({
+            error: "Internal server error.",
+        });
+    }
+};
+
+export const sendEmail = async (req: Request, res: Response) => {
+    try {
+        const { fromEmail, message } = req.body;
+
+        if (!fromEmail || !message) {
+            res.status(400).json({
+                message: "Please enter both a fromEmail and message",
+            });
+            return;
+        }
+
+        if (!resendEmail) {
+            console.log("No resend email found...");
+            return;
+        }
+
+        resend.emails.send({
+            from: resendEmail,
+            to: resendEmail,
+            subject: "Requesting Support",
+            text: message,
+            replyTo: fromEmail,
+        });
+        res.status(200).json({ message: "Successfully sent support message." });
+    } catch (error) {
+        console.error("Error sending email:", error);
         res.status(500).json({
             error: "Internal server error.",
         });

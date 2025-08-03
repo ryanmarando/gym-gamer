@@ -1,6 +1,10 @@
 import { Router } from "express";
 import * as userController from "../controllers/user.js";
-import { validateBody, WeightEntrySchema } from "../middleware/validation.js";
+import {
+    validateBody,
+    WeightEntrySchema,
+    SupportSendEmailSchema,
+} from "../middleware/validation.js";
 import { isAdmin } from "../middleware/isAdmin.js";
 import { isAdminOrUser } from "../middleware/isAdminOrUser.js";
 
@@ -76,6 +80,12 @@ router.patch(
     "/updateExpoToken/:id",
     isAdminOrUser,
     userController.updateExpoToken
+);
+
+router.post(
+    "/email",
+    validateBody(SupportSendEmailSchema),
+    userController.sendEmail
 );
 
 router.delete("/:id", isAdminOrUser, userController.deleteUserById);
