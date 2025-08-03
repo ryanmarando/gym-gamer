@@ -718,3 +718,59 @@ export const saveWorkoutOrder = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Internal server error." });
     }
 };
+
+export const updateUserWorkoutRepsAndSets = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const userId = Number(req.params.id);
+        const { workoutId, reps, sets, weightsLifted } = req.body;
+
+        if (!userId || !reps || !sets) {
+            res.status(400).json({
+                message: "Missing userId, reps, or sets.",
+            });
+            return;
+        }
+
+        const userWorkout = await prisma.userWorkout.findUnique({
+            where: {
+                userId_workoutId: {
+                    userId,
+                    workoutId,
+                },
+            },
+        });
+
+        if (!userWorkout) {
+            res.status(400).json({
+                message: "User does not have this workout saved.",
+            });
+            return;
+        }
+
+        // Update the record with new reps and sets
+        const updatedUserWorkout = await prisma.userWorkout.update({
+            where: {
+                userId_workoutId: {
+                    userId,
+                    workoutId,
+                },
+            },
+            data: {
+                sets,
+                reps,
+                weightsLifted,
+            },
+        });
+
+        res.status(200).json({
+            message: "Workout updated successfully",
+            userWorkout: updatedUserWorkout,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error." });
+    }
+};

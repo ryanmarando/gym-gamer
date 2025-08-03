@@ -46,6 +46,13 @@ export const WeightEntrySchema = z.object({
     weight: z.number({ message: "Weight must be a number" }),
 });
 
+export const RepsAndSetsEntrySchema = z.object({
+    workoutId: z.number(),
+    sets: z.number().max(7),
+    reps: z.array(z.string()).max(7),
+    weightsLifted: z.array(z.string()).max(7),
+});
+
 export const CustomWorkoutInputSchema = z.object({
     userId: z.number(),
     customName: z

@@ -25,6 +25,9 @@ interface WorkoutItemProps {
     addEntry: (workoutId: number) => void;
     deleteEntry: (workoutId: number) => void;
     weightSystem: string;
+    repEntries: Record<number, string[]>;
+    handleRepChange: (workoutId: number, index: number, value: string) => void;
+    defaultWeights?: any;
 }
 
 export default function WorkoutItem({
@@ -37,6 +40,9 @@ export default function WorkoutItem({
     addEntry,
     deleteEntry,
     weightSystem,
+    repEntries,
+    handleRepChange,
+    defaultWeights,
 }: WorkoutItemProps) {
     const scrollRef = useRef<ScrollView>(null);
     const entryCount = weightEntries[item.workoutId]?.length || 0;
@@ -108,20 +114,43 @@ export default function WorkoutItem({
                                         key={i}
                                         style={{ alignItems: "center" }}
                                     >
-                                        <PixelText
-                                            fontSize={10}
-                                            color="#fff"
-                                            style={{
-                                                marginBottom: 2,
-                                                textAlign: "center",
-                                                paddingHorizontal: 0,
-                                            }}
-                                        >
-                                            {repsLabel[i]}
-                                        </PixelText>
                                         <TextInput
                                             keyboardType="decimal-pad"
-                                            value={weight.toString()}
+                                            value={
+                                                repEntries[item.workoutId]?.[
+                                                    i
+                                                ] || ""
+                                            }
+                                            onChangeText={(v) =>
+                                                handleRepChange(
+                                                    item.workoutId,
+                                                    i,
+                                                    v
+                                                )
+                                            }
+                                            placeholder={repsLabel[i] ?? "0"}
+                                            placeholderTextColor="#ccc"
+                                            style={{
+                                                fontSize: 11,
+                                                color: "#fff",
+                                                textAlign: "center",
+                                                paddingVertical: 6,
+                                                paddingHorizontal: 6,
+                                                marginBottom: 5,
+                                                borderWidth: 1,
+                                                borderColor: "#0f0",
+                                                borderRadius: 6,
+                                                backgroundColor:
+                                                    "rgba(0, 255, 0, 0.1)",
+                                                includeFontPadding: false,
+                                                textAlignVertical: "center",
+                                                fontFamily:
+                                                    "PressStart2P_400Regular",
+                                            }}
+                                        />
+
+                                        <TextInput
+                                            keyboardType="decimal-pad"
                                             onChangeText={(v) =>
                                                 handleWeightChange(
                                                     item.workoutId,
@@ -130,7 +159,14 @@ export default function WorkoutItem({
                                                 )
                                             }
                                             style={styles.weightInput}
-                                            placeholder="0"
+                                            placeholder={
+                                                // Find matching default weights for this workout
+                                                defaultWeights.find(
+                                                    (w: any) =>
+                                                        w.workoutId ===
+                                                        item.workoutId
+                                                )?.weightsLifted[i] ?? "0"
+                                            }
                                             placeholderTextColor="#555"
                                         />
                                     </View>

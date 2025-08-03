@@ -6,6 +6,7 @@ import {
     CustomWorkoutInputSchema,
     WorkoutSplitInputSchema,
     CompleteWorkoutInputSchema,
+    RepsAndSetsEntrySchema,
 } from "../middleware/validation.js";
 import { isAdmin } from "../middleware/isAdmin.js";
 import { isAdminOrUser } from "../middleware/isAdminOrUser.js";
@@ -64,6 +65,11 @@ router.patch(
     "/addUserWeightLifted/:id",
     isAdminOrUser,
     workoutController.addUserWeightLifted
+);
+router.patch(
+    "/updateRepsAndSets/:id",
+    validateBody(RepsAndSetsEntrySchema),
+    workoutController.updateUserWorkoutRepsAndSets
 );
 
 router.get("/", workoutController.getAllWorkouts);

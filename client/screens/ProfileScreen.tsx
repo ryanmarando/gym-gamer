@@ -461,7 +461,10 @@ export default function ProfileScreen({
         }
     };
 
-    const sendEmail = async (fromEmail: string, message: string) => {
+    const sendEmail = async (
+        fromEmail: string,
+        message: string
+    ): Promise<boolean> => {
         try {
             await authFetch(`/user/email`, {
                 method: "POST",
@@ -473,46 +476,9 @@ export default function ProfileScreen({
                 "Our contact team has recieved your message!"
             );
             setConfirmationPixelModalVisible(true);
+            return true;
         } catch {
             playBadMoveSound();
-            setConfirmationPixelModalTitle("On no, gamer!");
-            setConfirmationPixelModalMessage(
-                "There was an error sending your message! Try again later."
-            );
-            setConfirmationPixelModalVisible(true);
-        }
-    };
-
-    const handleSupportConfirmSend = async (
-        fromEmail: string,
-        message: string
-    ): Promise<boolean> => {
-        try {
-            if (!fromEmail.trim() || !message.trim()) {
-                playBadMoveSound();
-                setConfirmationPixelModalTitle("On no, gamer!");
-                setConfirmationPixelModalMessage(
-                    "Please fill in both email and message."
-                );
-                setConfirmationPixelModalVisible(true);
-                return false;
-            }
-            setSupportEmail(fromEmail);
-            setSupportMessage(message);
-            setModalAction("support");
-            setModalVisible(true);
-            setmodalTitleMessage("Everything look okay?");
-            const modalMessage = `From: ${fromEmail}
-                             Message: ${message}`;
-            setModalMessage(modalMessage);
-            return true;
-        } catch (e) {
-            playBadMoveSound();
-            setConfirmationPixelModalTitle("On no, gamer!");
-            setConfirmationPixelModalMessage(
-                "There was an error sending your message! Try again later."
-            );
-            setConfirmationPixelModalVisible(true);
             return false;
         }
     };
@@ -701,7 +667,7 @@ export default function ProfileScreen({
                                 confirmationPixelModalMessage
                             }
                             userEmail={userData.email}
-                            handleSupportConfirmSend={handleSupportConfirmSend}
+                            handleSupportConfirmSend={sendEmail}
                         />
 
                         <PixelButton

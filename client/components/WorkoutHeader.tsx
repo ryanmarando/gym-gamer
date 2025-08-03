@@ -104,7 +104,10 @@ export default function WorkoutHeader({
                     setShowConfirmationModal(false);
                     setSelectedDay(null);
                 }}
-                onCancel={() => setShowConfirmationModal(false)}
+                onCancel={() => {
+                    setShowConfirmationModal(false);
+                    setSelectedDay(null);
+                }}
                 title={modalConfirmationTitle}
                 message={modalMessage}
                 confettiVisible={showConfetti}

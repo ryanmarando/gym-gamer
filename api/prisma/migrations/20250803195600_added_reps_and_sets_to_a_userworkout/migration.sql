@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "public"."UserWorkout" ADD COLUMN     "reps" INTEGER[] DEFAULT ARRAY[10, 10, 10]::INTEGER[],
+ADD COLUMN     "sets" INTEGER NOT NULL DEFAULT 3;

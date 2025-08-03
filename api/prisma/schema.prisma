@@ -118,7 +118,10 @@ model UserWorkout {
   workout Workout     @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   day     WorkoutDay? @relation(fields: [dayId], references: [id], onDelete: Cascade)
 
-  entries WorkoutEntry[]
+  entries       WorkoutEntry[]
+  sets          Int            @default(3)
+  reps          String[]       @default(["10", "10", "10"])
+  weightsLifted String[]       @default(["0", "0", "0"])
 
   @@id([userId, workoutId])
 }

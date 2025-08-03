@@ -14,7 +14,6 @@ import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import WorkoutSplitModal from "../components/WorkoutSplitModal";
-import Celebration from "../components/Celebration";
 import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import PickWorkoutDay from "../components/PickWorkoutDay";
@@ -35,7 +34,10 @@ interface Workout {
         id: number;
         name: string;
     };
-    entries: any[]; // Adjust as you expand entries shape
+    entries: any[];
+    reps: string[];
+    sets: number;
+    weightsLifted: string[];
 }
 
 type WeightEntries = Record<number, string[]>; // workoutId -> array of weights
@@ -77,6 +79,9 @@ export default function WorkoutsScreen({ navigation }: any) {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const minWorkoutTime = 900; //15 minutes
     const [weightSystem, setWeightSystem] = useState<string>();
+    const [repEntries, setRepEntries] = useState<{
+        [workoutId: number]: string[];
+    }>({});
 
     const addSplitDay = () => {
         if (splitDays.length < 7) {
@@ -164,6 +169,25 @@ export default function WorkoutsScreen({ navigation }: any) {
         setWeightEntries(reset);
     };
 
+    const updateRepsAndSet = async (
+        userId: number,
+        workoutId: number,
+        reps: string[],
+        weightsLifted: string[]
+    ) => {
+        const sets = reps.length;
+
+        await authFetch(`/workouts/updateRepsAndSets/${userId}`, {
+            method: "PATCH",
+            body: JSON.stringify({
+                workoutId,
+                sets,
+                reps,
+                weightsLifted,
+            }),
+        });
+    };
+
     const onModalConfirm = async () => {
         setShowModal(false);
 
@@ -200,7 +224,12 @@ export default function WorkoutsScreen({ navigation }: any) {
                 // Save last weight entry for each workout
                 for (const workout of workouts) {
                     const entries = weightEntries[workout.workoutId];
+                    const workoutId = workout.workoutId;
+                    const reps = repEntries[workoutId] || [];
+                    const weights = weightEntries[workoutId] || [];
+
                     if (!entries || entries.length === 0) continue;
+                    await updateRepsAndSet(userId, workoutId, reps, weights);
 
                     // Sum all weights for this workout (all sets)
                     const sumWeights = entries.reduce((sum, w) => {
@@ -406,12 +435,27 @@ export default function WorkoutsScreen({ navigation }: any) {
 
                 (data.workouts || []).forEach((w: Workout) => {
                     if (!copy[w.workoutId]) {
-                        // Only initialize if missing
-                        copy[w.workoutId] = ["", "", ""];
+                        // Initialize from weightsLifted if it exists, otherwise default to three empty strings
+                        copy[w.workoutId] = w.weightsLifted?.length
+                            ? [...w.weightsLifted]
+                            : ["", "", ""];
                     }
                 });
 
                 return copy;
+            });
+
+            setRepEntries(() => {
+                (data.workouts || []).forEach((w: Workout) => {
+                    const reps =
+                        w.reps && w.reps.length > 0
+                            ? w.reps
+                            : new Array(w.sets ?? 3).fill("");
+
+                    repEntries[w.workoutId] = reps;
+                });
+
+                return repEntries;
             });
         } catch (err) {
             console.log("No workouts found.");
@@ -485,6 +529,28 @@ export default function WorkoutsScreen({ navigation }: any) {
         });
     };
 
+    const handleRepChange = (
+        workoutId: number,
+        index: number,
+        value: string
+    ) => {
+        setRepEntries((prev) => {
+            const copy = { ...prev };
+
+            // Initialize if not present
+            if (!copy[workoutId]) {
+                copy[workoutId] = [];
+            }
+
+            // Update the specific rep entry
+            const newReps = [...copy[workoutId]];
+            newReps[index] = value;
+            copy[workoutId] = newReps;
+
+            return copy;
+        });
+    };
+
     // Add one more weight entry box
     const addEntry = (workoutId: number): void => {
         setWeightEntries((prev) => {
@@ -493,27 +559,54 @@ export default function WorkoutsScreen({ navigation }: any) {
 
             if (arr.length >= 7) {
                 playBadMoveSound();
-                console.log("Cannot add more than 7 entries");
-                return prev; // Do nothing, keep state unchanged
+                console.log("Cannot add more than 7 weight entries");
+                return prev;
             }
 
             arr.push("");
             copy[workoutId] = arr;
+
+            return copy;
+        });
+
+        setRepEntries((prev) => {
+            const copy = { ...prev };
+            const arr = copy[workoutId] ? [...copy[workoutId]] : [];
+
+            if (arr.length >= 7) {
+                // This log is mostly for symmetry; main limit handling is in weights
+                console.log("Cannot add more than 7 rep entries");
+                return prev;
+            }
+
+            arr.push("");
+            copy[workoutId] = arr;
+
             return copy;
         });
     };
 
     // Remove last weight entry box
     const deleteEntry = (workoutId: number): void => {
-        setWeightEntries((prev) => {
-            const copy = { ...prev };
-            if (copy[workoutId] && copy[workoutId].length > 1) {
-                copy[workoutId] = copy[workoutId].slice(0, -1);
+        setWeightEntries((prevWeights) => {
+            const weightsCopy = { ...prevWeights };
+            if (weightsCopy[workoutId] && weightsCopy[workoutId].length > 1) {
+                weightsCopy[workoutId] = weightsCopy[workoutId].slice(0, -1);
             } else {
                 playBadMoveSound();
-                console.log("Cannot delete last entry");
+                console.log("Cannot delete last weight entry");
             }
-            return copy;
+            return weightsCopy;
+        });
+
+        setRepEntries((prevReps) => {
+            const repsCopy = { ...prevReps };
+            if (repsCopy[workoutId] && repsCopy[workoutId].length > 1) {
+                repsCopy[workoutId] = repsCopy[workoutId].slice(0, -1);
+            } else {
+                // No need to log or block here if weights already handled it
+            }
+            return repsCopy;
         });
     };
 
@@ -764,6 +857,13 @@ export default function WorkoutsScreen({ navigation }: any) {
                                                         weightSystem={
                                                             weightSystem!
                                                         }
+                                                        handleRepChange={
+                                                            handleRepChange
+                                                        }
+                                                        repEntries={repEntries}
+                                                        defaultWeights={
+                                                            allWorkoutEntries
+                                                        }
                                                     />
                                                 )}
                                             />
@@ -805,7 +905,7 @@ export const styles = StyleSheet.create({
         borderColor: "#0ff",
         borderWidth: 2,
         borderRadius: 4,
-        width: 80,
+        width: 85,
         height: Platform.OS === "ios" ? 40 : undefined,
         paddingHorizontal: 8,
         marginRight: 4,
