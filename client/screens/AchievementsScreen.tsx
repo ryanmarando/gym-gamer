@@ -97,6 +97,10 @@ export default function AchievementsScreen({ navigation }: any) {
     // Prepare sections for SectionList
     const achievementSections = [
         {
+            title: "In Progress Achievements",
+            data: userAchievements.filter((ua) => !ua.completed),
+        },
+        {
             title: "Completed Achievements",
             data: userAchievements
                 .filter((ua) => ua.completed && ua.completedAt)
@@ -105,10 +109,6 @@ export default function AchievementsScreen({ navigation }: any) {
                         new Date(b.completedAt).getTime() -
                         new Date(a.completedAt).getTime()
                 ),
-        },
-        {
-            title: "In Progress Achievements",
-            data: userAchievements.filter((ua) => !ua.completed),
         },
     ];
 

@@ -159,14 +159,21 @@ export default function WorkoutItem({
                                                 )
                                             }
                                             style={styles.weightInput}
-                                            placeholder={
-                                                // Find matching default weights for this workout
-                                                defaultWeights.find(
-                                                    (w: any) =>
-                                                        w.workoutId ===
-                                                        item.workoutId
-                                                )?.weightsLifted[i] ?? "0"
-                                            }
+                                            placeholder={(() => {
+                                                const defaultWeightObj =
+                                                    defaultWeights.find(
+                                                        (w: any) =>
+                                                            w.workoutId ===
+                                                            item.workoutId
+                                                    );
+                                                const weight =
+                                                    defaultWeightObj
+                                                        ?.weightsLifted?.[i];
+                                                return weight !== undefined &&
+                                                    weight !== ""
+                                                    ? weight
+                                                    : "0";
+                                            })()}
                                             placeholderTextColor="#555"
                                         />
                                     </View>

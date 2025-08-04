@@ -12,6 +12,7 @@ import RegisterScreen from "./screens/RegisterScreen";
 import BottomTabs from "./components/BottomTabs";
 import UpdateWeightScreen from "./screens/UpdateWeightScreen";
 import UserWaiverScreen from "./screens/UserWaiverScreen";
+import ProgressPhotos from "./screens/ProgressPhotos";
 
 const RootStack = createNativeStackNavigator();
 const Stack = createNativeStackNavigator();
@@ -54,6 +55,10 @@ export default function App() {
                         name="UpdateWeight"
                         component={UpdateWeightScreen}
                         options={{ title: "Update Bodyweight" }}
+                    />
+                    <Stack.Screen
+                        name="ProgressPhotos"
+                        component={ProgressPhotos}
                     />
                 </RootStack.Navigator>
             ) : (

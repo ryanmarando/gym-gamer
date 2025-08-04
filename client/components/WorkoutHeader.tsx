@@ -23,6 +23,8 @@ interface WorkoutHeaderProps {
     modalConfirmationTitle: string;
     showConfetti: boolean;
     setSelectedDay: (day: { id: number; name: string } | null) => void;
+    finishedWorkout?: boolean;
+    setWorkoutFinished: (b: boolean) => void;
 }
 
 export default function WorkoutHeader({
@@ -43,6 +45,8 @@ export default function WorkoutHeader({
     modalConfirmationTitle,
     showConfetti,
     setSelectedDay,
+    finishedWorkout = false,
+    setWorkoutFinished,
 }: WorkoutHeaderProps) {
     return (
         <View>
@@ -102,11 +106,17 @@ export default function WorkoutHeader({
                 visible={showConfirmationModal}
                 onConfirm={() => {
                     setShowConfirmationModal(false);
-                    setSelectedDay(null);
+                    if (finishedWorkout) {
+                        setSelectedDay(null);
+                        setWorkoutFinished(false);
+                    }
                 }}
                 onCancel={() => {
                     setShowConfirmationModal(false);
-                    setSelectedDay(null);
+                    if (finishedWorkout) {
+                        setSelectedDay(null);
+                        setWorkoutFinished(false);
+                    }
                 }}
                 title={modalConfirmationTitle}
                 message={modalMessage}

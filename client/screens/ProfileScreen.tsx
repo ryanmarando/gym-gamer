@@ -601,8 +601,6 @@ export default function ProfileScreen({
                                 }}
                                 color="#f0f"
                                 containerStyle={{
-                                    backgroundColor: "#000",
-                                    borderColor: "#f0f",
                                     marginTop: 10,
                                     marginBottom: 20,
                                 }}
@@ -639,6 +637,17 @@ export default function ProfileScreen({
                             text="Update bodyweight"
                             onPress={() => navigation.navigate("UpdateWeight")}
                         ></PixelButton>
+
+                        <PixelButton
+                            text="Progress Photos"
+                            onPress={() =>
+                                navigation.navigate("ProgressPhotos")
+                            }
+                            color="#FF6EC7"
+                            containerStyle={{
+                                marginTop: 5,
+                            }}
+                        />
 
                         <SettingsModal
                             visible={showSettings}

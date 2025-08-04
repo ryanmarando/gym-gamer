@@ -1,47 +1,50 @@
 {
-    "expo": {
-        "name": "Gym Gamer",
-        "slug": "client",
-        "version": "1.0.0",
-        "owner": "ryanmarando",
-        "orientation": "portrait",
-        "icon": "./assets/gym-gamer-app-icon.png",
-        "userInterfaceStyle": "light",
-        "newArchEnabled": true,
-        "splash": {
-            "image": "./assets/gym-gamer-splash-icon.png",
-            "resizeMode": "contain",
-            "backgroundColor": "#ffffff"
-        },
-        "ios": {
-            "supportsTablet": true,
-            "bundleIdentifier": "com.ryanmarando.client",
-            "infoPlist": {
-                "ITSAppUsesNonExemptEncryption": false,
-                "UIBackgroundModes": ["remote-notification"]
-            }
-        },
-        "android": {
-            "adaptiveIcon": {
-                "foregroundImage": "./assets/gym-gamer-app-icon.png",
-                "backgroundColor": "#ffffff"
-            },
-            "edgeToEdgeEnabled": true,
-            "package": "com.ryanmarando.client"
-        },
-        "web": {
-            "favicon": "./assets/gym-gamer-app-icon.png"
-        },
-        "plugins": [
-            "expo-secure-store",
-            "expo-audio",
-            "expo-notifications",
-            "expo-splash-screen"
-        ],
-        "extra": {
-            "eas": {
-                "projectId": "aafdffa4-7a09-4511-a579-35dee4fbcf19"
-            }
-        }
+  "expo": {
+    "name": "Gym Gamer",
+    "slug": "client",
+    "version": "1.0.0",
+    "owner": "ryanmarando",
+    "orientation": "portrait",
+    "icon": "./assets/gym-gamer-app-icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/gym-gamer-splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ryanmarando.client",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/gym-gamer-app-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.ryanmarando.client"
+    },
+    "web": {
+      "favicon": "./assets/gym-gamer-app-icon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-audio",
+      "expo-notifications",
+      "expo-splash-screen",
+      "expo-sqlite"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "aafdffa4-7a09-4511-a579-35dee4fbcf19"
+      }
     }
+  }
 }

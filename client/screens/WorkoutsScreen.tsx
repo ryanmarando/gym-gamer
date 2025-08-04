@@ -45,8 +45,9 @@ type WeightEntries = Record<number, string[]>; // workoutId -> array of weights
 export default function WorkoutsScreen({ navigation }: any) {
     const [workouts, setWorkouts] = useState<Workout[]>([]);
     const [weightEntries, setWeightEntries] = useState<WeightEntries>({});
-    const [timer, setTimer] = useState<number>(0); // seconds elapsed
+    const [timer, setTimer] = useState<number>(0);
     const [workoutStarted, setWorkoutStarted] = useState<boolean>(false);
+    const [workoutFinished, setWorkoutFinished] = useState<boolean>(false);
     const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(
         null
     );
@@ -109,7 +110,7 @@ export default function WorkoutsScreen({ navigation }: any) {
 
             setModalSplitMessage("Please fill in all day names.");
             setPixelModalVisible(true);
-            //alert("Please fill in all day names.");
+
             return;
         }
 
@@ -335,6 +336,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                 setTimer(0);
                 setIsLoading(false);
                 await AsyncStorage.removeItem("workoutStartTime");
+                setWorkoutFinished(true);
                 setmodalConfirmationTitle("Nice work, gamer!");
                 setModalMessage(
                     `Workout complete! You just gained ${workoutProgressData.xpGiven} XP!`
@@ -463,6 +465,21 @@ export default function WorkoutsScreen({ navigation }: any) {
         }
     }, [selectedDay]);
 
+    const resetUserRepEntries = () => {
+        setRepEntries(() => {
+            (allWorkoutEntries || []).forEach((w: Workout) => {
+                const reps =
+                    w.reps && w.reps.length > 0
+                        ? w.reps
+                        : new Array(w.sets ?? 3).fill("");
+
+                repEntries[w.workoutId] = reps;
+            });
+
+            return repEntries;
+        });
+    };
+
     // Fetch workouts on mount
     useEffect(() => {
         fetchUserData();
@@ -482,6 +499,7 @@ export default function WorkoutsScreen({ navigation }: any) {
             if (selectedDay) {
                 console.log("Fetched lastest workouts");
                 fetchUserWorkouts();
+                setWorkoutFinished(false);
             }
         }, [selectedDay, fetchUserWorkouts])
     );
@@ -520,6 +538,12 @@ export default function WorkoutsScreen({ navigation }: any) {
         index: number,
         value: string
     ): void => {
+        if (!workoutStarted) {
+            playBadMoveSound();
+            setModalMessage("Please start a workout to enter in a weight.");
+            setmodalConfirmationTitle("Whoa there, gamer!");
+            setShowConfirmationModal(true);
+        }
         setWeightEntries((prev) => {
             const copy = { ...prev };
             const weights = copy[workoutId] ? [...copy[workoutId]] : [];
@@ -534,6 +558,12 @@ export default function WorkoutsScreen({ navigation }: any) {
         index: number,
         value: string
     ) => {
+        if (!workoutStarted) {
+            playBadMoveSound();
+            setModalMessage("Please start a workout to enter in reps.");
+            setmodalConfirmationTitle("Whoa there, gamer!");
+            setShowConfirmationModal(true);
+        }
         setRepEntries((prev) => {
             const copy = { ...prev };
 
@@ -553,36 +583,25 @@ export default function WorkoutsScreen({ navigation }: any) {
 
     // Add one more weight entry box
     const addEntry = (workoutId: number): void => {
+        const MAX_ENTRIES = 7;
+
+        // Rebuild reps first
+        resetUserRepEntries();
+
+        // Rebuild weights to match new rep count
         setWeightEntries((prev) => {
-            const copy = { ...prev };
-            const arr = copy[workoutId] ? [...copy[workoutId]] : [];
+            const updated = { ...prev };
+            const currentWeights = updated[workoutId] ?? [];
 
-            if (arr.length >= 7) {
-                playBadMoveSound();
-                console.log("Cannot add more than 7 weight entries");
+            if (currentWeights.length >= MAX_ENTRIES) {
+                console.log("❌ Cannot add more than 7 weight entries");
+                playBadMoveSound?.();
                 return prev;
             }
 
-            arr.push("");
-            copy[workoutId] = arr;
-
-            return copy;
-        });
-
-        setRepEntries((prev) => {
-            const copy = { ...prev };
-            const arr = copy[workoutId] ? [...copy[workoutId]] : [];
-
-            if (arr.length >= 7) {
-                // This log is mostly for symmetry; main limit handling is in weights
-                console.log("Cannot add more than 7 rep entries");
-                return prev;
-            }
-
-            arr.push("");
-            copy[workoutId] = arr;
-
-            return copy;
+            // Add blank weight to match reps
+            updated[workoutId] = [...currentWeights, ""];
+            return updated;
         });
     };
 
@@ -601,11 +620,20 @@ export default function WorkoutsScreen({ navigation }: any) {
 
         setRepEntries((prevReps) => {
             const repsCopy = { ...prevReps };
-            if (repsCopy[workoutId] && repsCopy[workoutId].length > 1) {
+            const savedLength =
+                allWorkoutEntries.find((w) => w.workoutId === workoutId)?.reps
+                    .length ?? 0;
+
+            if (
+                repsCopy[workoutId] &&
+                repsCopy[workoutId].length > savedLength
+            ) {
+                // Only delete if there are extra (unsaved) reps
                 repsCopy[workoutId] = repsCopy[workoutId].slice(0, -1);
             } else {
-                // No need to log or block here if weights already handled it
+                // Don't delete saved rep
             }
+
             return repsCopy;
         });
     };
@@ -634,6 +662,7 @@ export default function WorkoutsScreen({ navigation }: any) {
             );
             setmodalConfirmationTitle("Whoa there, gamer!");
             setShowConfirmationModal(true);
+            playBadMoveSound();
             return;
         }
         setSelectedDay(null);
@@ -810,6 +839,10 @@ export default function WorkoutsScreen({ navigation }: any) {
                                             }
                                             showConfetti={showConfetti}
                                             setSelectedDay={setSelectedDay}
+                                            finishedWorkout={workoutFinished}
+                                            setWorkoutFinished={
+                                                setWorkoutFinished
+                                            }
                                         />
 
                                         {isLoading && (
