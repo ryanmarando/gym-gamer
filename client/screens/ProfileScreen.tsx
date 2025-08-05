@@ -594,17 +594,37 @@ export default function ProfileScreen({
                             <PixelText fontSize={12} color="#fff">
                                 Get into the gym:
                             </PixelText>
-                            <PixelButton
-                                text="Start Workout"
-                                onPress={() => {
-                                    navigation.navigate("Workouts");
-                                }}
-                                color="#f0f"
-                                containerStyle={{
-                                    marginTop: 10,
-                                    marginBottom: 20,
-                                }}
-                            />
+                            <View style={{ padding: 5 }}>
+                                <View
+                                    style={{
+                                        position: "relative",
+                                        alignSelf: "flex-start",
+                                    }}
+                                >
+                                    <Image
+                                        source={require("../assets/HeadphonePixel.png")}
+                                        style={{
+                                            width: 50,
+                                            height: 50,
+                                            position: "absolute",
+                                            right: -28,
+                                            transform: [{ rotate: "15deg" }],
+                                            zIndex: 10,
+                                        }}
+                                    />
+                                    <PixelButton
+                                        text="Start Workout"
+                                        onPress={() => {
+                                            navigation.navigate("Workouts");
+                                        }}
+                                        color="#f0f"
+                                        containerStyle={{
+                                            marginTop: 10,
+                                            marginBottom: 20,
+                                        }}
+                                    />
+                                </View>
+                            </View>
                         </View>
                         <PixelText>Your quest:</PixelText>
                         <TouchableOpacity
@@ -633,21 +653,64 @@ export default function ProfileScreen({
                             />
                         </TouchableOpacity>
 
-                        <PixelButton
-                            text="Update bodyweight"
-                            onPress={() => navigation.navigate("UpdateWeight")}
-                        ></PixelButton>
+                        <View style={{ padding: 5 }}>
+                            <View
+                                style={{
+                                    position: "relative",
+                                    alignSelf: "flex-start",
+                                }}
+                            >
+                                <Image
+                                    source={require("../assets/WeightScalePixel.png")}
+                                    style={{
+                                        width: 45,
+                                        height: 45,
+                                        position: "absolute",
 
-                        <PixelButton
-                            text="Progress Photos"
-                            onPress={() =>
-                                navigation.navigate("ProgressPhotos")
-                            }
-                            color="#FF6EC7"
-                            containerStyle={{
-                                marginTop: 5,
-                            }}
-                        />
+                                        left: -28,
+                                        transform: [{ rotate: "-15deg" }],
+                                        zIndex: 10,
+                                    }}
+                                />
+                                <PixelButton
+                                    text="Update bodyweight"
+                                    onPress={() =>
+                                        navigation.navigate("UpdateWeight")
+                                    }
+                                />
+                            </View>
+                        </View>
+
+                        <View style={{ padding: 5 }}>
+                            <View
+                                style={{
+                                    position: "relative",
+                                    alignSelf: "flex-start",
+                                }}
+                            >
+                                <Image
+                                    source={require("../assets/PictureAndDumbbellPixel.png")}
+                                    style={{
+                                        width: 50,
+                                        height: 50,
+                                        position: "absolute",
+                                        right: -28,
+                                        transform: [{ rotate: "15deg" }],
+                                        zIndex: 10,
+                                    }}
+                                />
+                                <PixelButton
+                                    text="Progress Photos"
+                                    onPress={() =>
+                                        navigation.navigate("ProgressPhotos")
+                                    }
+                                    color="#FF6EC7"
+                                    containerStyle={{
+                                        marginTop: 5,
+                                    }}
+                                />
+                            </View>
+                        </View>
 
                         <SettingsModal
                             visible={showSettings}
