@@ -411,12 +411,12 @@ export default function WorkoutsScreen({ navigation }: any) {
     }, []);
 
     // Fetch user workouts from API
-    const fetchUserWorkouts = useCallback(async () => {
+    const fetchUserWorkouts = useCallback(async (): Promise<Workout[]> => {
         try {
             const userIdStr = await SecureStore.getItemAsync("userId");
-            if (!userIdStr) return;
+            if (!userIdStr) return [];
 
-            if (!selectedDay) return;
+            if (!selectedDay) return [];
 
             const data = await authFetch(
                 `/user/getUserWorkoutsByArchitype?userId=${userIdStr}&splitId=${selectedDay.id}`
@@ -447,21 +447,10 @@ export default function WorkoutsScreen({ navigation }: any) {
                 return copy;
             });
 
-            setRepEntries(() => {
-                (data.workouts || []).forEach((w: Workout) => {
-                    const reps =
-                        w.reps && w.reps.length > 0
-                            ? w.reps
-                            : new Array(w.sets ?? 3).fill("");
-
-                    repEntries[w.workoutId] = reps;
-                });
-
-                return repEntries;
-            });
+            return ordered;
         } catch (err) {
             console.log("No workouts found.");
-            //console.error(err);
+            return [];
         }
     }, [selectedDay]);
 
@@ -482,16 +471,34 @@ export default function WorkoutsScreen({ navigation }: any) {
 
     // Fetch workouts on mount
     useEffect(() => {
-        fetchUserData();
-        fetchUserWorkouts();
-        const restoreStartTime = async () => {
+        const initializeWorkoutData = async () => {
+            fetchUserData();
+            const allWorkouts = await fetchUserWorkouts();
+
             const savedTime = await AsyncStorage.getItem("workoutStartTime");
             if (savedTime) {
                 setWorkoutStarted(true);
                 setWorkoutStartTime(Number(savedTime));
             }
+
+            //console.log(allWorkoutEntries)
+            // Now that workouts are fetched and allWorkoutEntries is set
+            setRepEntries(() => {
+                const newEntries: Record<string, string[]> = {};
+                (allWorkouts || []).forEach((w: Workout) => {
+                    const reps =
+                        w.reps && w.reps.length > 0
+                            ? w.reps
+                            : new Array(w.sets ?? 3).fill("");
+                    newEntries[w.workoutId] = reps;
+                });
+
+                return newEntries;
+            });
+            console.log("Initialized workout data...");
         };
-        restoreStartTime();
+
+        initializeWorkoutData();
     }, [fetchUserWorkouts, fetchUserData]);
 
     useFocusEffect(

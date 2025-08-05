@@ -15,9 +15,12 @@ import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import CustomWorkoutModal from "../components/CustomWorkoutModal";
 import PixelModal from "../components/PixelModal";
+import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import { sendPushNotification } from "../utils/notification";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { playDeleteSound } from "../utils/playDeleteSound";
+import { playSwordSelectionSound } from "../utils/playSwordSelectionSound";
+import { playCompleteSound } from "../utils/playCompleteSound";
 
 export default function SaveWorkoutScreen() {
     const [userWorkouts, setUserWorkouts] = useState<any[]>([]);
@@ -45,6 +48,13 @@ export default function SaveWorkoutScreen() {
         null
     );
     const [searchQuery, setSearchQuery] = useState("");
+    const [modalConfirmationVisible, setModalConfirmationVisible] =
+        useState(false);
+    const [modalConfirmationConfig, setModalConfirmationConfig] = useState({
+        title: "",
+        message: "",
+        onConfirm: () => {},
+    });
 
     const workoutCategories = [
         { label: "💪 Push Workouts", architype: "PUSH" },
@@ -129,6 +139,7 @@ export default function SaveWorkoutScreen() {
         );
         const added = allWorkouts.find((w) => w.id === workoutId);
         if (added) setUserWorkouts((prev) => [...prev, added]);
+        playSwordSelectionSound();
         fetchWorkouts();
     };
 
@@ -261,6 +272,13 @@ export default function SaveWorkoutScreen() {
 
             console.log("Workout created:", result);
             fetchWorkouts();
+            playCompleteSound();
+            setModalConfirmationConfig({
+                title: "Nice work, gamer!",
+                message: `${result.workout.name} is now a new workout created just by you & for you!`,
+                onConfirm: () => setModalConfirmationVisible(false),
+            });
+            setModalConfirmationVisible(true);
         } catch (error) {
             console.error("Error creating workout:", error);
         }
@@ -304,6 +322,7 @@ export default function SaveWorkoutScreen() {
                                 message:
                                     "Deleting this custom workout entirely removes the exercise.",
                                 onConfirm: () => {
+                                    playDeleteSound();
                                     deleteCustomWorkout(item.id);
                                     setModalVisible(false);
                                 },
@@ -461,6 +480,14 @@ export default function SaveWorkoutScreen() {
                         message={modalConfig.message}
                         onConfirm={modalConfig.onConfirm}
                         onCancel={() => setModalVisible(false)}
+                    />
+
+                    <ConfirmationPixelModal
+                        visible={modalConfirmationVisible}
+                        title={modalConfirmationConfig.title}
+                        message={modalConfirmationConfig.message}
+                        onConfirm={modalConfirmationConfig.onConfirm}
+                        onCancel={() => setModalConfirmationVisible(false)}
                     />
                 </View>
             </View>

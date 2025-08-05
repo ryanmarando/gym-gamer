@@ -120,7 +120,7 @@ model UserWorkout {
 
   entries       WorkoutEntry[]
   sets          Int            @default(3)
-  reps          String[]       @default(["10", "10", "10"])
+  reps          String[]       @default([])
   weightsLifted String[]       @default(["0", "0", "0"])
 
   @@id([userId, workoutId])

@@ -49,6 +49,7 @@ export default function WorkoutItem({
     const lastWeight = getLastWorkoutWeight(item.workoutId);
     const convertedWeight =
         weightSystem === "METRIC" ? lastWeight * 0.453592 : lastWeight;
+    const weightPlaceholder = weightSystem === "METRIC" ? "kg" : "lbs";
 
     useEffect(() => {
         // Whenever the count of entries changes, reset scroll position
@@ -57,8 +58,8 @@ export default function WorkoutItem({
 
     const repsLabel =
         entryCount > 0
-            ? ["10", ...Array(entryCount - 1).fill("Failure")]
-            : ["10"];
+            ? ["Reps", ...Array(entryCount - 1).fill("Reps")]
+            : ["Reps"];
 
     function convertLbsToKg(lbs: number): number {
         return lbs / 2.20462;
@@ -131,18 +132,17 @@ export default function WorkoutItem({
                                             placeholder={repsLabel[i] ?? "0"}
                                             placeholderTextColor="#ccc"
                                             style={{
-                                                fontSize: 11,
+                                                fontSize: 13,
                                                 color: "#fff",
                                                 textAlign: "center",
-                                                paddingVertical: 6,
-                                                paddingHorizontal: 6,
+                                                padding: 7,
                                                 marginBottom: 5,
                                                 borderWidth: 1,
                                                 borderColor: "#0f0",
                                                 borderRadius: 6,
                                                 backgroundColor:
                                                     "rgba(0, 255, 0, 0.1)",
-                                                includeFontPadding: false,
+
                                                 textAlignVertical: "center",
                                                 fontFamily:
                                                     "PressStart2P_400Regular",
@@ -169,10 +169,18 @@ export default function WorkoutItem({
                                                 const weight =
                                                     defaultWeightObj
                                                         ?.weightsLifted?.[i];
-                                                return weight !== undefined &&
-                                                    weight !== ""
-                                                    ? weight
-                                                    : "0";
+
+                                                // If weight is undefined, empty string, or 0 (number or string), use the placeholder
+                                                if (
+                                                    weight === undefined ||
+                                                    weight === "" ||
+                                                    weight === 0 ||
+                                                    weight === "0"
+                                                ) {
+                                                    return weightPlaceholder;
+                                                }
+
+                                                return weight;
                                             })()}
                                             placeholderTextColor="#555"
                                         />
