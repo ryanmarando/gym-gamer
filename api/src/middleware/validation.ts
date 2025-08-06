@@ -68,6 +68,7 @@ export const RegisterInputSchema = z.object({
     name: z.string().min(1),
     password: z.string().min(8),
     userWeightSystem: z.string().optional(),
+    optedIn: z.boolean(),
 });
 
 export const LoginInputSchema = z.object({

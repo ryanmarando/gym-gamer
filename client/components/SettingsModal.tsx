@@ -32,8 +32,9 @@ interface SettingsModalProps {
         fromEmail: string,
         message: string
     ) => Promise<boolean>;
-    // New prop for user's email to prefill support modal
     userEmail: string;
+    optedIn: boolean;
+    toggleOpt: () => void;
 }
 
 export default function SettingsModal({
@@ -52,6 +53,8 @@ export default function SettingsModal({
     confirmationPixelModalMessage,
     userEmail,
     handleSupportConfirmSend,
+    optedIn,
+    toggleOpt,
 }: SettingsModalProps) {
     const [showPixelModal, setShowPixelModal] = useState(false);
     const [pixelModalTitle, setPixelModalTitle] = useState<string>("");
@@ -243,6 +246,17 @@ export default function SettingsModal({
                                     }
                                     onPress={onToggleMuted}
                                     color="#FFD700"
+                                    containerStyle={styles.button}
+                                />
+
+                                <PixelButton
+                                    text={
+                                        optedIn
+                                            ? "Opt Out Of Emails"
+                                            : "Opt Into Emails & Offers"
+                                    }
+                                    onPress={toggleOpt}
+                                    color="#9B59B6"
                                     containerStyle={styles.button}
                                 />
 

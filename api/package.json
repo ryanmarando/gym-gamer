@@ -10,9 +10,6 @@
         "weeklyReset": "tsc && node dist/functions/runWeeklyResetJob.js",
         "sendNotif": "tsc && node dist/functions/sendWeeklyResetNotifications.js"
     },
-    "prisma": {
-        "seed": "node dist/seed.js"
-    },
     "type": "module",
     "keywords": [],
     "author": "",

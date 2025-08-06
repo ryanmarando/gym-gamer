@@ -91,6 +91,7 @@ export const register = async (
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
 
+        console.log("emails opted:", req.body.optedIn);
         const newUser = await prisma.user.create({
             data: {
                 email: email,
@@ -101,6 +102,7 @@ export const register = async (
                     },
                 },
                 weightSystem: req.body.userWeightSystem,
+                optedIn: req.body.optedIn,
             },
         });
         console.log("Successful POST Registered User Id:", newUser.id);

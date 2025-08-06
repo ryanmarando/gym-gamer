@@ -38,6 +38,7 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
         message: "",
         onConfirm: () => {},
     });
+    const [optOutEmails, setOptOutEmails] = useState(false);
 
     const handleRegisterStart = () => {
         // Check password and confirmed password match
@@ -113,6 +114,7 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
     // Once waiver accepted, user presses Register again to register
     const handleRegister = async (cleanedEmail: string) => {
         try {
+            console.log("emails opted:", optOutEmails);
             const response = await fetch(`${API_URL}/auth/register`, {
                 method: "POST",
                 headers: {
@@ -123,6 +125,7 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
                     name,
                     password,
                     userWeightSystem: weightSystem,
+                    optedIn: !optOutEmails,
                 }),
             });
 
@@ -233,6 +236,35 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
                         onSelectSystem={setWeightSystem}
                     />
 
+                    <View style={styles.centeredContainer}>
+                        <TouchableWithoutFeedback
+                            onPress={() => {
+                                setOptOutEmails((prev) => !prev);
+                            }}
+                        >
+                            <View style={styles.checkboxContainer}>
+                                <View
+                                    style={[
+                                        styles.checkbox,
+                                        {
+                                            backgroundColor: optOutEmails
+                                                ? "#0ff"
+                                                : "#000",
+                                        },
+                                    ]}
+                                />
+                                <PixelText
+                                    fontSize={11}
+                                    color="#0ff"
+                                    style={styles.checkboxText}
+                                >
+                                    I do not want to receive emails or special
+                                    offers.
+                                </PixelText>
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+
                     <PixelButton
                         text="Register"
                         onPress={handleRegisterStart}
@@ -316,5 +348,25 @@ const styles = StyleSheet.create({
         fontSize: 14,
         marginTop: 20,
         backgroundColor: "#000",
+    },
+    centeredContainer: {
+        width: "80%",
+        alignItems: "center",
+        marginTop: 20,
+    },
+    checkboxContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+    },
+    checkbox: {
+        width: 20,
+        height: 20,
+        borderWidth: 2,
+        borderColor: "#0ff",
+    },
+    checkboxText: {
+        textAlign: "center",
     },
 });

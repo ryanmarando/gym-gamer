@@ -37,6 +37,7 @@ model User {
   expoPushToken      String?
   resetCode          String?
   resetCodeExpiry    DateTime?
+  optedIn            Boolean           @default(true)
 
   @@map("user")
 }

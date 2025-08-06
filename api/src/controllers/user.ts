@@ -23,6 +23,25 @@ export const getAllUsers = async (
     res.status(200).json(sanitizedUsers);
 };
 
+export const getAllUsersOptedIn = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const users = await prisma.user.findMany({ where: { optedIn: true } });
+
+    if (!users || users.length === 0) {
+        res.status(501).json({ message: "No users found that are opted in." });
+        return;
+    }
+
+    const sanitizedUsers = users.map(
+        ({ resetCode, resetCodeExpiry, ...rest }) => rest
+    );
+
+    res.status(200).json(sanitizedUsers);
+};
+
 export const getUserById = async (
     req: Request,
     res: Response,
@@ -602,6 +621,42 @@ export const sendEmail = async (req: Request, res: Response) => {
         res.status(200).json({ message: "Successfully sent support message." });
     } catch (error) {
         console.error("Error sending email:", error);
+        res.status(500).json({
+            error: "Internal server error.",
+        });
+    }
+};
+
+export const opt = async (req: Request, res: Response) => {
+    const userId = parseInt(req.params.id);
+
+    if (!userId) {
+        res.status(400).json({ message: "Please enter a userId" });
+        return;
+    }
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        const newOptStatus = !user.optedIn;
+
+        // 2. Update with toggled value
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                optedIn: newOptStatus,
+            },
+        });
+
+        res.json(updatedUser);
+    } catch (error) {
+        console.error("Error updating opted settings:", error);
         res.status(500).json({
             error: "Internal server error.",
         });

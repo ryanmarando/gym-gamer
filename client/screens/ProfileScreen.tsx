@@ -113,6 +113,7 @@ export default function ProfileScreen({
         useState<string>("");
     const [supportEmail, setSupportEmail] = useState<string>("");
     const [supportMessage, setSupportMessage] = useState<string>("");
+    const [optedEnabled, setOptedEnabled] = useState<boolean>(false);
 
     const triggerLevelUpImage = () => {
         setShowLevelUpImage(true);
@@ -160,11 +161,6 @@ export default function ProfileScreen({
             animateLevelUp(remainingLevels - 1);
         });
     };
-
-    async function getAllUsers() {
-        const API_URL = process.env.EXPO_PUBLIC_API_URL;
-        const allUsers = await fetch("/user/getAllUsers");
-    }
 
     useEffect(() => {
         if (!userData) return;
@@ -247,6 +243,9 @@ export default function ProfileScreen({
             // Get user weight system
             setSelectedSystem(data.weightSystem);
             await SecureStore.setItemAsync("weightSystem", data.weightSystem);
+
+            // Get user opted in settings
+            setOptedEnabled(data.optedIn);
         } catch (error: any) {
             if (
                 error.message === "Forbidden" ||
@@ -483,6 +482,30 @@ export default function ProfileScreen({
         }
     };
 
+    const toggleOpt = async () => {
+        try {
+            const userId = await SecureStore.getItemAsync("userId");
+            const updatedUser = await authFetch(`/user/opt/${userId}`, {
+                method: "PATCH",
+            });
+            if (updatedUser.optedIn) {
+                playCompleteSound();
+                setConfirmationPixelModalTitle("Nice gamer, gamer!");
+                setConfirmationPixelModalMessage(
+                    "You just opted into recieveing special emails and offers!"
+                );
+                setConfirmationPixelModalVisible(true);
+            } else {
+                playDeleteSound();
+                setConfirmationPixelModalTitle("Opted out, gamer!");
+                setConfirmationPixelModalMessage(
+                    "You can opt back into emails and special offers anytime!"
+                );
+                setConfirmationPixelModalVisible(true);
+            }
+        } catch (error) {}
+    };
+
     if (loading || !userData) {
         return (
             <View style={styles.container}>
@@ -568,17 +591,33 @@ export default function ProfileScreen({
                             )}
                         </View>
 
+                        <PixelText
+                            fontSize={12}
+                            color="#E67E22"
+                            style={{ marginTop: 8 }}
+                        >
+                            {userData.levelProgress}% progress to level{" "}
+                            {userData.level + 1}!
+                        </PixelText>
+
                         <View
                             style={{
                                 alignItems: "center",
-                                marginTop: 20,
+                                marginTop: 14,
                             }}
                         >
                             {userData.totalWeightLifted > 0 && (
                                 <PixelText
                                     fontSize={12}
                                     color="#fff"
-                                    style={{ marginBottom: 10 }}
+                                    style={{
+                                        marginBottom: 18,
+                                        lineHeight: 18,
+                                        borderWidth: 2,
+                                        padding: 6,
+                                        borderColor: "#fff",
+                                        borderRadius: 10,
+                                    }}
                                 >
                                     You've lifted a total of{" "}
                                     {selectedSystem === "METRIC"
@@ -594,7 +633,7 @@ export default function ProfileScreen({
                             <PixelText fontSize={12} color="#fff">
                                 Get into the gym:
                             </PixelText>
-                            <View style={{ padding: 5 }}>
+                            <View style={{ padding: 5, marginTop: -10 }}>
                                 <View
                                     style={{
                                         position: "relative",
@@ -740,6 +779,8 @@ export default function ProfileScreen({
                             }
                             userEmail={userData.email}
                             handleSupportConfirmSend={sendEmail}
+                            optedIn={optedEnabled}
+                            toggleOpt={toggleOpt}
                         />
 
                         <PixelButton
