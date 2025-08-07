@@ -195,3 +195,9 @@ model UserWeightEntry {
   userId Int
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+model SqueezePageUser {
+  id    Int    @id @default(autoincrement())
+  name  String
+  email String @unique
+}

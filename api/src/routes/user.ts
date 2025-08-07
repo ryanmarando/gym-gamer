@@ -13,6 +13,7 @@ const router = Router();
 router.get("/getAllUsers", isAdmin, userController.getAllUsers);
 router.get("/getAllUsersOptedIn", isAdmin, userController.getAllUsersOptedIn);
 router.delete("/deleteAllUsers", isAdmin, userController.deleteAllUsers);
+router.get("/getAllSqueezeUsers", isAdmin, userController.getAllSqueezeUsers);
 
 router.get(
     "/getUserWorkouts/:id",

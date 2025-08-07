@@ -42,6 +42,21 @@ export const getAllUsersOptedIn = async (
     res.status(200).json(sanitizedUsers);
 };
 
+export const getAllSqueezeUsers = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const users = await prisma.squeezePageUser.findMany();
+
+    if (!users || users.length === 0) {
+        res.status(501).json({ message: "No users found that are opted in." });
+        return;
+    }
+
+    res.status(200).json(users);
+};
+
 export const getUserById = async (
     req: Request,
     res: Response,

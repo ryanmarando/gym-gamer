@@ -6,7 +6,9 @@ import {
     LoginInputSchema,
     RequestResetPasswordCodeSchema,
     ResetPasswordSchema,
+    SqueezePageUserSchema,
 } from "../middleware/validation.js";
+import auth from "../middleware/auth.js";
 
 const router = Router();
 
@@ -25,6 +27,17 @@ router.patch(
     "/resetPassword",
     validateBody(ResetPasswordSchema),
     authController.resetPassword
+);
+
+router.post(
+    "/createSqueezeUser",
+    validateBody(SqueezePageUserSchema),
+    authController.createSqueezeUser
+);
+
+router.delete(
+    "/deleteSqueezeUserByEmail/:email",
+    authController.deleteSqueezeUserByEmail
 );
 
 export default router;

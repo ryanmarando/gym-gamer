@@ -1,0 +1,15 @@
+@keyframes pixelGlow {
+    0%,
+    100% {
+        box-shadow: 0 0 6px #00ffcc;
+    }
+    50% {
+        box-shadow: 0 0 12px #00ffcc;
+    }
+}
+
+input:focus,
+button:hover {
+    animation: pixelGlow 1s infinite;
+    outline: none;
+}

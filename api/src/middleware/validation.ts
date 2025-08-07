@@ -17,6 +17,11 @@ const WorkoutArchitypeEnum = z.enum([
     "CALVES",
 ]);
 
+export const SqueezePageUserSchema = z.object({
+    name: z.string(),
+    email: z.string().email(),
+});
+
 export const SupportSendEmailSchema = z.object({
     fromEmail: z.string().email(),
     message: z.string(),

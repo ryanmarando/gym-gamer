@@ -221,3 +221,98 @@ export const resetPassword = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Internal server error." });
     }
 };
+
+export const createSqueezeUser = async (req: Request, res: Response) => {
+    const { email, name } = req.body;
+    if (!email || !name) {
+        res.status(400).json({
+            error: "All fields are required.",
+        });
+        return;
+    }
+
+    try {
+        const existingUser = await prisma.squeezePageUser.findFirst({
+            where: {
+                email: email,
+                name: name,
+            },
+        });
+
+        if (!existingUser) {
+            await prisma.squeezePageUser.create({
+                data: {
+                    email: email,
+                    name: name,
+                },
+            });
+        }
+
+        if (!resendEmail) {
+            console.log("No resend email found...");
+            return;
+        }
+
+        resend.emails.send({
+            from: resendEmail,
+            to: email,
+            subject: "Your Gym Gamer Plan Is Here!",
+            html: `
+              <div style="font-family: sans-serif; font-size: 16px; color: #333;">
+                <h1>Your Gym Gamer Plan Is Here! 💪</h1>
+                <p>Hey there, ${name}!</p>
+                <p>Here’s your gym gamering workout plan with 3 simple workout splits:</p>
+                <ul>
+                  <li>🏋️‍♂️ Chest, Shoulders, & Triceps on Monday</li>
+                  <li>🦵 Legs on Wednesday</li>
+                  <li>💪 Back & Biceps on Friday</li>
+                </ul>
+                <p>Chest/Shoulders/Tricep Day:</p>
+                <ul>
+                  <li>Bench Press</li>
+                  <li>Lateral Raises</li>
+                  <li>Tricep Pushdowns</li>
+                </ul>
+                <p>💡Tips to keep you on track and gamify the experience:</p>
+                <ol>
+                  <li>Write down in your notes app the weight you lifted for each workout and how many reps you did</li>
+                  <li>Take a photo of yourself so you can track your progress (even if it feels cringe)</li>
+                  <li>The easiest way to start is drinking a scoop of protein powder after a workout. Ideally you eat a little under 1 g of protein per lb of bodyweight...</li>
+                </ol>
+                <p>Keep grinding — you got this!</p>
+                <p>– The Gym Gamer Team</p>
+              </div>
+            `,
+        });
+
+        res.status(200).json({ message: "Added user to squeeze" });
+    } catch (error) {
+        console.log(
+            "Unsuccessful creation of squeeze user and/or sending items..."
+        );
+        res.status(500).json({ error: "Internal server error." });
+    }
+};
+
+export const deleteSqueezeUserByEmail = async (req: Request, res: Response) => {
+    const email = req.params.email;
+    if (!email) {
+        res.status(400).json({
+            error: "No userId provided.",
+        });
+        return;
+    }
+
+    try {
+        await prisma.squeezePageUser.delete({
+            where: {
+                email: email,
+            },
+        });
+
+        res.status(200).json({ message: "Removed user " + email });
+    } catch (error) {
+        console.log("Unsuccessful delete squeeze user ...");
+        res.status(500).json({ error: "Internal server error." });
+    }
+};
