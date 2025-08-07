@@ -18,7 +18,7 @@ app.use(
         origin: [
             "http://localhost:3000",
             "http://admin.localhost:3000",
-            "https://gymgamer.fit",
+            "https://www.gymgamer.fit",
             "https://admin.gymgamer.fit",
         ],
         credentials: true,
