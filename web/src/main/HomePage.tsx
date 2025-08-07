@@ -155,7 +155,8 @@ function HomePage() {
                 {submitted ? (
                     <div>
                         <p style={styles.success}>
-                            🎉 Thanks, {name.split(" ")[0]}! You're on the list.
+                            🎉 Thanks, {name.split(" ")[0]}! You're first step
+                            to being a true gym gamer!
                         </p>
                         <img
                             src={AnimationPixel}
