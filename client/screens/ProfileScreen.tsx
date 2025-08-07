@@ -114,6 +114,8 @@ export default function ProfileScreen({
     const [supportEmail, setSupportEmail] = useState<string>("");
     const [supportMessage, setSupportMessage] = useState<string>("");
     const [optedEnabled, setOptedEnabled] = useState<boolean>(false);
+    const [showLevelProgress, setShowLevelProgress] = useState<boolean>(false);
+    const opacity = useRef(new Animated.Value(0)).current;
 
     const triggerLevelUpImage = () => {
         setShowLevelUpImage(true);
@@ -129,6 +131,7 @@ export default function ProfileScreen({
     };
 
     const animateLevelUp = (remainingLevels: number) => {
+        setShowLevelProgress(false);
         if (remainingLevels <= 0) {
             // Final bar for current level's progress
             Animated.timing(animatedProgress, {
@@ -138,6 +141,7 @@ export default function ProfileScreen({
             }).start(() => {
                 setSparksActive(false);
                 setDisplayLevel(userData!.level);
+                setShowLevelProgress(true);
             });
             return;
         }
@@ -163,6 +167,14 @@ export default function ProfileScreen({
     };
 
     useEffect(() => {
+        Animated.timing(opacity, {
+            toValue: showLevelProgress ? 1 : 0,
+            duration: 500,
+            useNativeDriver: true,
+        }).start();
+    }, [showLevelProgress]);
+
+    useEffect(() => {
         if (!userData) return;
 
         const prevLevel = prevLevelRef.current ?? userData.level;
@@ -181,6 +193,7 @@ export default function ProfileScreen({
                 useNativeDriver: false,
             }).start(() => {
                 setSparksActive(false);
+                setShowLevelProgress(true);
             });
         }
 
@@ -591,14 +604,22 @@ export default function ProfileScreen({
                             )}
                         </View>
 
-                        <PixelText
-                            fontSize={12}
-                            color="#E67E22"
-                            style={{ marginTop: 8 }}
+                        <Animated.View
+                            style={{
+                                opacity,
+                                minHeight: 20,
+                                justifyContent: "center",
+                            }}
                         >
-                            {userData.levelProgress}% progress to level{" "}
-                            {userData.level + 1}!
-                        </PixelText>
+                            <PixelText
+                                fontSize={12}
+                                color="#E67E22"
+                                style={{ marginTop: 8 }}
+                            >
+                                {userData.levelProgress}% progress to level{" "}
+                                {userData.level + 1}!
+                            </PixelText>
+                        </Animated.View>
 
                         <View
                             style={{
