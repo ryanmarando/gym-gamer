@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import logging from "./middleware/logging.js";
 import authRouter from "./routes/auth.js";
 import workoutRouter from "./routes/workouts.js";
@@ -11,6 +12,18 @@ import authenticated from "./middleware/auth.js";
 
 const app = express();
 const port = Number(process.env.PORT);
+
+app.use(
+    cors({
+        origin: [
+            "http://localhost:3000",
+            "http://admin.localhost:3000",
+            "https://gymgamer.fit",
+            "https://admin.gymgamer.fit",
+        ],
+        credentials: true,
+    })
+);
 
 app.get("/", (req, res) => {
     res.send("Welcome To The Gym Gamer API!");

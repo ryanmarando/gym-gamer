@@ -3,6 +3,7 @@ import { prisma, jwtSecret, resend, resendEmail } from "../config.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { assignDefaultAchievementsAndSplitToUser } from "../functions/assignDefaultAchievementsAndSplitToUser.js";
+import { isAdmin } from "../middleware/isAdmin.js";
 
 export const login = async (
     req: Request,
@@ -59,6 +60,7 @@ export const login = async (
                 id: user.id,
                 email: user.email,
                 name: user.name,
+                isAdmin: user.isAdmin,
             },
         });
         console.log("Successful login! Hi", user.name);
