@@ -258,30 +258,56 @@ export const createSqueezeUser = async (req: Request, res: Response) => {
             to: email,
             subject: "Your Gym Gamer Plan Is Here!",
             html: `
-              <div style="font-family: sans-serif; font-size: 16px; color: #333;">
-                <h1>Your Gym Gamer Plan Is Here! 💪</h1>
-                <p>Hey there, ${name}!</p>
-                <p>Here’s your gym gamering workout plan with 3 simple workout splits:</p>
-                <ul>
-                  <li>🏋️‍♂️ Chest, Shoulders, & Triceps on Monday</li>
-                  <li>🦵 Legs on Wednesday</li>
-                  <li>💪 Back & Biceps on Friday</li>
-                </ul>
-                <p>Chest/Shoulders/Tricep Day:</p>
-                <ul>
-                  <li>Bench Press</li>
-                  <li>Lateral Raises</li>
-                  <li>Tricep Pushdowns</li>
-                </ul>
-                <p>💡Tips to keep you on track and gamify the experience:</p>
-                <ol>
-                  <li>Write down in your notes app the weight you lifted for each workout and how many reps you did</li>
-                  <li>Take a photo of yourself so you can track your progress (even if it feels cringe)</li>
-                  <li>The easiest way to start is drinking a scoop of protein powder after a workout. Ideally you eat a little under 1 g of protein per lb of bodyweight...</li>
-                </ol>
-                <p>Keep grinding — you got this!</p>
-                <p>– The Gym Gamer Team</p>
-              </div>
+            <div style="font-family: sans-serif; font-size: 16px; color: #333;">
+              <h1>Your Gym Gamer Plan Is Here! 💪</h1>
+              <p>Hey there, ${name}!</p>
+              <p>Here’s your Gym Gamering workout plan with 3 simple workout splits:</p>
+              <ul>
+                <li>🏋️‍♂️ Push Day on Monday (Chest / Shoulders / Triceps)</li>
+                <li>🦵 Leg Day on Wednesday (Quads / Hamstrings / Calves)</li>
+                <li>💪 Pull Day on Friday (Back / Arms / Triceps)</li>
+              </ul>
+
+              <p>For each exercise below: do 1 warmup set of 10 reps, then 2 working sets to failure (until you can’t lift anymore).</p>
+
+              <p><strong>Push Day:</strong></p>
+              <ul>
+                <li>Bench Press</li>
+                <li>Incline Dumbbell Press</li>
+                <li>Overhead Press</li>
+                <li>Lateral Raises</li>
+                <li>Tricep Pushdowns</li>
+                <li>Reverse Pec Deck</li>
+              </ul>
+
+              <p><strong>Leg Day:</strong></p>
+              <ul>
+                <li>Squats</li>
+                <li>Seated or Standing Calf Raises</li>
+                <li>Reverse Lunges (10 reps each leg)</li>
+                <li>Leg Curls</li>
+                <li>Leg Extensions</li>
+              </ul>
+
+              <p><strong>Pull Day:</strong></p>
+              <ul>
+                <li>Lat Pulldowns</li>
+                <li>Bicep Curls (10 reps each arm)</li>
+                <li>Preacher Curls</li>
+                <li>Seated Cable Row</li>
+                <li>Overhead Tricep Extensions</li>
+              </ul>
+
+              <p>💡 <strong>Tips to keep you on track and gamify the grind:</strong></p>
+              <ol>
+                <li>Track the weight and reps for each exercise in your notes app (think of it like logging XP).</li>
+                <li>Take a progress photo each week — it’s like a real-life save point, even if it feels a bit cringe at first.</li>
+                <li>Start small: a scoop of protein after your workout is an easy first win. Aim for ~1g of protein per pound of bodyweight daily for gains.</li>
+              </ol>
+
+              <p>Keep grinding — you got this!</p>
+              <p>– Ryan, A Gym Gamer</p>
+            </div>
             `,
         });
 
