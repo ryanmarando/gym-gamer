@@ -13,6 +13,7 @@ import BottomTabs from "./components/BottomTabs";
 import UpdateWeightScreen from "./screens/UpdateWeightScreen";
 import UserWaiverScreen from "./screens/UserWaiverScreen";
 import ProgressPhotos from "./screens/ProgressPhotos";
+import CreditsScreen from "./screens/CreditsScreen";
 
 const RootStack = createNativeStackNavigator();
 const Stack = createNativeStackNavigator();
@@ -59,6 +60,10 @@ export default function App() {
                     <Stack.Screen
                         name="ProgressPhotos"
                         component={ProgressPhotos}
+                    />
+                    <Stack.Screen
+                        name="CreditsScreen"
+                        component={CreditsScreen}
                     />
                 </RootStack.Navigator>
             ) : (

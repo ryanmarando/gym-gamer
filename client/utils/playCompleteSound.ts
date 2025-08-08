@@ -9,7 +9,7 @@ export async function playCompleteSound() {
             return;
         }
         const { sound } = await Audio.Sound.createAsync(
-            require("../assets/sounds/pixel_complete_sound.wav")
+            require("../assets/sounds/pixel_safe_complete_sound.wav")
         );
         await sound.playAsync();
 

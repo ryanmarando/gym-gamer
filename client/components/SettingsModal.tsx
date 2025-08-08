@@ -13,6 +13,7 @@ import PixelButton from "./PixelButton";
 import ConfirmationPixelModal from "./ConfirmationPixelModal";
 import { playCompleteSound } from "../utils/playCompleteSound";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
+import { NavigationProp } from "@react-navigation/native";
 
 interface SettingsModalProps {
     visible: boolean;
@@ -35,6 +36,7 @@ interface SettingsModalProps {
     userEmail: string;
     optedIn: boolean;
     toggleOpt: () => void;
+    navigation: any;
 }
 
 export default function SettingsModal({
@@ -55,6 +57,7 @@ export default function SettingsModal({
     handleSupportConfirmSend,
     optedIn,
     toggleOpt,
+    navigation,
 }: SettingsModalProps) {
     const [showPixelModal, setShowPixelModal] = useState(false);
     const [pixelModalTitle, setPixelModalTitle] = useState<string>("");
@@ -275,6 +278,20 @@ export default function SettingsModal({
                                     text="Contact Support"
                                     onPress={openSupportModal}
                                     color="#00BFFF"
+                                    containerStyle={styles.button}
+                                />
+
+                                <PixelButton
+                                    text="Credits"
+                                    onPress={() => {
+                                        onClose();
+                                        setTimeout(() => {
+                                            navigation.navigate(
+                                                "CreditsScreen"
+                                            );
+                                        }, 100);
+                                    }}
+                                    color="#FF00FF"
                                     containerStyle={styles.button}
                                 />
 

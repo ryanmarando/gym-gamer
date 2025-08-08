@@ -6,7 +6,7 @@ export default {
     schema: path.join("prisma", "schema.prisma"),
     migrations: {
         path: path.join("prisma", "migrations"),
-        seed: "node dist/seed.js",
+        seed: "node dist/src/seed.js",
     },
     views: {
         path: path.join("prisma", "views"),

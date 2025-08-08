@@ -802,6 +802,7 @@ export default function ProfileScreen({
                             handleSupportConfirmSend={sendEmail}
                             optedIn={optedEnabled}
                             toggleOpt={toggleOpt}
+                            navigation={navigation}
                         />
 
                         <PixelButton
