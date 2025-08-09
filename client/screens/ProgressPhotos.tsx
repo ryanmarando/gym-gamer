@@ -51,6 +51,7 @@ export default function ProgressPhotos({ navigation }: any) {
 
     const loadPhotos = () => {
         try {
+            db.runSync("DELETE FROM photos WHERE path IS NULL OR path = '';");
             const result = db.getAllSync("SELECT * FROM photos;");
             setPhotos(result as any); // result is already typed
         } catch (err) {
@@ -89,10 +90,23 @@ export default function ProgressPhotos({ navigation }: any) {
             } catch (error) {
                 console.error("Error saving image:", error);
             }
+        } else {
+            console.log("No image selected, skipping insert.");
         }
     };
 
     const deletePhoto = async (id: number, path: string) => {
+        if (!FileSystem.documentDirectory) {
+            throw new Error(
+                "Document directory is not available on this platform"
+            );
+        }
+        if (!path || !path.startsWith(FileSystem.documentDirectory)) {
+            console.warn("Skipping delete — invalid path:", path);
+            db.runSync("DELETE FROM photos WHERE id = ?;", [id]);
+            loadPhotos();
+            return;
+        }
         try {
             await FileSystem.deleteAsync(path, { idempotent: true });
             db.runSync("DELETE FROM photos WHERE id = ?;", [id]);
