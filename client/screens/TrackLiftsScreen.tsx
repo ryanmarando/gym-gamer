@@ -76,10 +76,9 @@ export default function TrackLiftsScreen({ navigation }: any) {
         entries: { weight: number; date: string }[]
     ) {
         return entries.map((entry) => {
-            // Convert pounds to kilograms if system is METRIC
             const value =
                 weightSystem === "METRIC"
-                    ? Math.round(entry.weight * 0.453592 * 10) / 10 // rounded to 1 decimal kg
+                    ? Math.round(entry.weight * 0.453592 * 10) / 10
                     : entry.weight;
 
             return {
@@ -105,103 +104,132 @@ export default function TrackLiftsScreen({ navigation }: any) {
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
-                <ScrollView contentContainerStyle={{ padding: 8 }}>
-                    {workouts.map((workout: any) => {
-                        const chartData = mapEntriesToChartData(
-                            workout.entries
-                        );
+                {workouts.length === 0 ? (
+                    <View
+                        style={{
+                            flex: 1,
+                            justifyContent: "center",
+                            alignContent: "center",
+                            alignItems: "center",
+                        }}
+                    >
+                        <PixelText>No workouts found...</PixelText>
+                        <PixelButton
+                            text="Get Workouts"
+                            color="#E67E22"
+                            containerStyle={{ marginTop: 12 }}
+                            onPress={() =>
+                                navigation.navigate("MainTabs", {
+                                    screen: "Workout Shop",
+                                })
+                            }
+                        ></PixelButton>
+                    </View>
+                ) : (
+                    <ScrollView contentContainerStyle={{ padding: 8 }}>
+                        {workouts.map((workout: any) => {
+                            const chartData = mapEntriesToChartData(
+                                workout.entries
+                            );
 
-                        const firstValue =
-                            chartData.length > 0 ? chartData[0].value : 0;
-                        const yAxisMinValue =
-                            firstValue > 0 ? firstValue * 0.95 : 0;
+                            const firstValue =
+                                chartData.length > 0 ? chartData[0].value : 0;
+                            const yAxisMinValue =
+                                firstValue > 0 ? firstValue * 0.95 : 0;
 
-                        return (
-                            <View key={workout.workout.id} style={styles.card}>
-                                <PixelText fontSize={16} color="#0ff">
-                                    {workout.workout.name}
-                                </PixelText>
+                            return (
+                                <View
+                                    key={workout.workout.id}
+                                    style={styles.card}
+                                >
+                                    <PixelText fontSize={16} color="#0ff">
+                                        {workout.workout.name}
+                                    </PixelText>
 
-                                {chartData.length === 0 && (
-                                    <View
-                                        style={{
-                                            position: "absolute",
-                                            marginTop: 100,
-                                            zIndex: 1000,
-                                        }}
-                                    >
-                                        <PixelText>
-                                            No weight entries to track.
-                                        </PixelText>
-                                    </View>
-                                )}
+                                    {chartData.length === 0 && (
+                                        <View
+                                            style={{
+                                                position: "absolute",
+                                                marginTop: 100,
+                                                zIndex: 1000,
+                                            }}
+                                        >
+                                            <PixelText>
+                                                No weight entries to track.
+                                            </PixelText>
+                                        </View>
+                                    )}
 
-                                <LineChart
-                                    data={chartData}
-                                    areaChart={true}
-                                    curved
-                                    height={200}
-                                    width={Dimensions.get("window").width - 56}
-                                    showVerticalLines={false}
-                                    spacing={100}
-                                    color1="#0ff"
-                                    thickness={3}
-                                    startFillColor="#0ff"
-                                    startOpacity={0.2}
-                                    endOpacity={0}
-                                    hideRules={false}
-                                    rulesColor="rgba(255,255,255,0.2)"
-                                    initialSpacing={40}
-                                    dataPointsRadius={4}
-                                    dataPointsColor="#0ff"
-                                    animateOnDataChange
-                                    animationDuration={800}
-                                    isAnimated
-                                    hideYAxisText={true}
-                                    textFontSize={13}
-                                    textShiftY={-8}
-                                    textShiftX={-8}
-                                    xAxisIndicesColor="#0ff"
-                                    xAxisColor="#0ff"
-                                    yAxisColor="#0ff"
-                                    showValuesAsDataPointsText
-                                    backgroundColor="#111"
-                                    yAxisOffset={yAxisMinValue}
-                                />
-
-                                {chartData.length !== 0 && (
-                                    <PixelButton
-                                        text="Delete All Entries"
-                                        color="#f00"
-                                        onPress={() => {
-                                            handleDeleteWorkoutEntries(
-                                                workout.workout.name
-                                            );
-                                            setWorkoutIdToDelete(
-                                                workout.workout.id
-                                            );
-                                        }}
-                                        containerStyle={{ marginTop: 8 }}
-                                    />
-                                )}
-                                <PixelModal
-                                    visible={modalVisible}
-                                    title={modalTitleMessage}
-                                    message={modalMessage}
-                                    onConfirm={() => {
-                                        if (workoutIdToDelete !== null) {
-                                            deleteWorkoutEntries(
-                                                workoutIdToDelete
-                                            );
+                                    <LineChart
+                                        data={chartData}
+                                        areaChart
+                                        curved
+                                        height={200}
+                                        width={
+                                            Dimensions.get("window").width - 56
                                         }
-                                        setModalVisible(false);
-                                    }}
-                                    onCancel={() => setModalVisible(false)}
-                                />
-                            </View>
-                        );
-                    })}
-                </ScrollView>
+                                        showVerticalLines={false}
+                                        spacing={100}
+                                        color1="#0ff"
+                                        thickness={3}
+                                        startFillColor="#0ff"
+                                        startOpacity={0.2}
+                                        endOpacity={0}
+                                        hideRules={false}
+                                        rulesColor="rgba(255,255,255,0.2)"
+                                        initialSpacing={40}
+                                        dataPointsRadius={4}
+                                        dataPointsColor="#0ff"
+                                        animateOnDataChange
+                                        animationDuration={800}
+                                        isAnimated
+                                        hideYAxisText
+                                        textFontSize={13}
+                                        textShiftY={-8}
+                                        textShiftX={-8}
+                                        xAxisIndicesColor="#0ff"
+                                        xAxisColor="#0ff"
+                                        yAxisColor="#0ff"
+                                        showValuesAsDataPointsText
+                                        backgroundColor="#111"
+                                        yAxisOffset={yAxisMinValue}
+                                    />
+
+                                    {chartData.length !== 0 && (
+                                        <PixelButton
+                                            text="Delete All Entries"
+                                            color="#f00"
+                                            onPress={() => {
+                                                handleDeleteWorkoutEntries(
+                                                    workout.workout.name
+                                                );
+                                                setWorkoutIdToDelete(
+                                                    workout.workout.id
+                                                );
+                                            }}
+                                            containerStyle={{ marginTop: 8 }}
+                                        />
+                                    )}
+
+                                    <PixelModal
+                                        visible={modalVisible}
+                                        title={modalTitleMessage}
+                                        message={modalMessage}
+                                        onConfirm={() => {
+                                            if (workoutIdToDelete !== null) {
+                                                deleteWorkoutEntries(
+                                                    workoutIdToDelete
+                                                );
+                                            }
+                                            setModalVisible(false);
+                                        }}
+                                        onCancel={() => setModalVisible(false)}
+                                    />
+                                </View>
+                            );
+                        })}
+                    </ScrollView>
+                )}
                 <View style={styles.bottomButtonContainer}>
                     <PixelButton
                         text="Back to Profile"

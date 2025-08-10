@@ -537,7 +537,7 @@ export default function ProfileScreen({
                 >
                     <Image
                         source={require("../assets/SettingsCogPixel.png")}
-                        style={{ width: 48, height: 48 }}
+                        style={{ width: 48, height: 48, borderRadius: 50 }}
                     />
                 </PixelButton>
 

@@ -374,13 +374,6 @@ export default function UpdateWeightScreen({ navigation }: any) {
                                 />
                             )}
 
-                            <PixelButton
-                                text="Go Back"
-                                onPress={() => navigation.goBack()}
-                                color="#00f"
-                                containerStyle={{ marginTop: 20 }}
-                            />
-
                             {/* Confirmation Modal */}
                             <PixelModal
                                 visible={modalConfig.visible}
@@ -408,6 +401,14 @@ export default function UpdateWeightScreen({ navigation }: any) {
                         </>
                     )}
                 </View>
+                <View style={styles.bottomButtonContainer}>
+                    <PixelButton
+                        text="Back to Profile"
+                        color="rgba(200, 0, 255, 1)"
+                        onPress={() => navigation.goBack()}
+                        containerStyle={{ paddingHorizontal: 20 }}
+                    />
+                </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -434,5 +435,11 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontFamily: "PressStart2P_400Regular",
         paddingVertical: Platform.OS === "android" ? 18 : 0,
+    },
+    bottomButtonContainer: {
+        padding: 12,
+        backgroundColor: "#111",
+        borderTopWidth: 1,
+        borderTopColor: "rgba(255,255,255,0.1)",
     },
 });

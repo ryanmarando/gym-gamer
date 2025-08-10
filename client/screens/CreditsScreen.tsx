@@ -105,14 +105,15 @@ export default function CreditsScreen({ navigation }: any) {
                         )}
                     </View>
                 ))}
-
+            </ScrollView>
+            <View style={styles.bottomButtonContainer}>
                 <PixelButton
                     text="Back to Profile"
+                    color="rgba(200, 0, 255, 1)"
                     onPress={() => navigation.goBack()}
-                    color="#888"
-                    containerStyle={[styles.button, { marginTop: 30 }]}
+                    containerStyle={{ paddingHorizontal: 20 }}
                 />
-            </ScrollView>
+            </View>
         </SafeAreaView>
     );
 }
@@ -136,5 +137,11 @@ const styles = StyleSheet.create({
     button: {
         borderColor: "#fff",
         marginBottom: 14,
+    },
+    bottomButtonContainer: {
+        padding: 12,
+        backgroundColor: "#111",
+        borderTopWidth: 1,
+        borderTopColor: "rgba(255,255,255,0.1)",
     },
 });

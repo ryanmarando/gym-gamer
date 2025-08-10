@@ -438,14 +438,6 @@ export default function AchievementsScreen({ navigation }: any) {
 
                 {/* User's Achievements Section */}
 
-                <PixelText
-                    fontSize={20}
-                    color="#0ff"
-                    style={{ marginBottom: 20 }}
-                >
-                    💪 Your Achievements
-                </PixelText>
-
                 {userAchievements.length === 0 ? (
                     <PixelText
                         fontSize={14}

@@ -180,12 +180,14 @@ export default function ProgressPhotos({ navigation }: any) {
                     )}
                 />
 
-                <PixelButton
-                    text="Go Back"
-                    onPress={() => navigation.goBack()}
-                    color="#00f"
-                    containerStyle={{ marginTop: 20 }}
-                />
+                <View style={styles.bottomButtonContainer}>
+                    <PixelButton
+                        text="Back to Profile"
+                        color="rgba(200, 0, 255, 1)"
+                        onPress={() => navigation.goBack()}
+                        containerStyle={{ paddingHorizontal: 20 }}
+                    />
+                </View>
 
                 <PixelModal
                     visible={modalVisible}
@@ -273,5 +275,11 @@ const styles = StyleSheet.create({
         padding: 10,
         backgroundColor: "rgba(0,0,0,0.5)",
         borderRadius: 8,
+    },
+    bottomButtonContainer: {
+        padding: 12,
+        backgroundColor: "#111",
+        borderTopWidth: 1,
+        borderTopColor: "rgba(255,255,255,0.1)",
     },
 });
