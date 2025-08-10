@@ -556,15 +556,6 @@ export default function ProfileScreen({
                             🎮 Welcome, {userData.name}!
                         </PixelText>
 
-                        <Image
-                            source={require("../assets/DumbbellPixel.png")}
-                            style={{
-                                width: 50,
-                                height: 50,
-                                marginBottom: 20,
-                            }}
-                        />
-
                         <PixelText
                             fontSize={12}
                             color="#fff"
@@ -654,38 +645,72 @@ export default function ProfileScreen({
                             <PixelText fontSize={12} color="#fff">
                                 Get into the gym:
                             </PixelText>
-                            <View style={{ padding: 5, marginTop: -10 }}>
-                                <View
+                        </View>
+
+                        <View style={{ padding: 5 }}>
+                            <View
+                                style={{
+                                    position: "relative",
+                                    alignSelf: "flex-start",
+                                }}
+                            >
+                                <Image
+                                    source={require("../assets/HeadphonePixel.png")}
                                     style={{
-                                        position: "relative",
-                                        alignSelf: "flex-start",
+                                        width: 50,
+                                        height: 50,
+                                        position: "absolute",
+                                        right: -28,
+                                        transform: [{ rotate: "15deg" }],
+                                        zIndex: 10,
                                     }}
-                                >
-                                    <Image
-                                        source={require("../assets/HeadphonePixel.png")}
-                                        style={{
-                                            width: 50,
-                                            height: 50,
-                                            position: "absolute",
-                                            right: -28,
-                                            transform: [{ rotate: "15deg" }],
-                                            zIndex: 10,
-                                        }}
-                                    />
-                                    <PixelButton
-                                        text="Start Workout"
-                                        onPress={() => {
-                                            navigation.navigate("Workouts");
-                                        }}
-                                        color="#f0f"
-                                        containerStyle={{
-                                            marginTop: 10,
-                                            marginBottom: 20,
-                                        }}
-                                    />
-                                </View>
+                                />
+                                <PixelButton
+                                    text="Start Workout"
+                                    onPress={() => {
+                                        navigation.navigate("Workouts");
+                                    }}
+                                    color="#f0f"
+                                    containerStyle={{
+                                        marginTop: 10,
+                                        marginBottom: 5,
+                                    }}
+                                />
                             </View>
                         </View>
+
+                        <View style={{ padding: 5 }}>
+                            <View
+                                style={{
+                                    position: "relative",
+                                    alignSelf: "flex-start",
+                                }}
+                            >
+                                <Image
+                                    source={require("../assets/DumbbellPixel.png")}
+                                    style={{
+                                        width: 45,
+                                        height: 45,
+                                        position: "absolute",
+
+                                        left: -28,
+                                        transform: [{ rotate: "-15deg" }],
+                                        zIndex: 10,
+                                    }}
+                                />
+                                <PixelButton
+                                    text="Track Your Lifts"
+                                    onPress={() => {
+                                        navigation.navigate("TrackLifts");
+                                    }}
+                                    color="#A3E635"
+                                    containerStyle={{
+                                        marginBottom: 5,
+                                    }}
+                                />
+                            </View>
+                        </View>
+
                         <PixelText>Your quest:</PixelText>
                         <TouchableOpacity
                             onPress={() => navigation.navigate("Achievements")}

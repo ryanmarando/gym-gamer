@@ -117,11 +117,6 @@ export default function WorkoutItem({
                                     >
                                         <TextInput
                                             keyboardType="decimal-pad"
-                                            value={
-                                                repEntries[item.workoutId]?.[
-                                                    i
-                                                ] || ""
-                                            }
                                             onChangeText={(v) =>
                                                 handleRepChange(
                                                     item.workoutId,
@@ -129,7 +124,28 @@ export default function WorkoutItem({
                                                     v
                                                 )
                                             }
-                                            placeholder={repsLabel[i] ?? "0"}
+                                            placeholder={(() => {
+                                                const defaultRepObj =
+                                                    defaultWeights.find(
+                                                        (r: any) =>
+                                                            r.workoutId ===
+                                                            item.workoutId
+                                                    );
+                                                const rep =
+                                                    defaultRepObj?.reps?.[i];
+
+                                                // If rep is undefined, empty, or 0 — show "Reps"
+                                                if (
+                                                    rep === undefined ||
+                                                    rep === "" ||
+                                                    rep === 0 ||
+                                                    rep === "0"
+                                                ) {
+                                                    return "Reps";
+                                                }
+
+                                                return rep;
+                                            })()}
                                             placeholderTextColor="#ccc"
                                             style={{
                                                 fontSize: 13,
