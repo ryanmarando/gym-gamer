@@ -20,12 +20,14 @@ import PickWorkoutDay from "../components/PickWorkoutDay";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sendPushNotification } from "../utils/notification";
 import { playCompleteSound } from "../utils/playCompleteSound";
+import { playExcitingSound } from "../utils/playExcitingSound";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import WorkoutHeader from "../components/WorkoutHeader";
 import WorkoutItem from "../components/WorkoutItem";
+import SubscriptionWebView from "../components/SubscriptionWebView";
 
 interface Workout {
     userId: number;
@@ -83,6 +85,12 @@ export default function WorkoutsScreen({ navigation }: any) {
     const [repEntries, setRepEntries] = useState<{
         [workoutId: number]: string[];
     }>({});
+    const [isSubscribed, setIsSubscribed] = useState<boolean>(false);
+    const [subscribeModalVisible, setSubscribeModalVisible] =
+        useState<boolean>(false);
+    const [sessionUrl, setSessionUrl] = useState(null);
+    const [isConfirmingSubscribed, setIsConfirmingSubscribed] =
+        useState<boolean>(false);
 
     const addSplitDay = () => {
         if (splitDays.length < 7) {
@@ -143,6 +151,16 @@ export default function WorkoutsScreen({ navigation }: any) {
 
     const openStartModal = () => {
         setModalAction("start");
+        if (!isSubscribed) {
+            playBadMoveSound();
+            setmodalConfirmationTitle("Oh no, gamer!");
+            setModalMessage(
+                "You're not actively subscribed... become a true gym gamer to track workouts!"
+            );
+            setIsConfirmingSubscribed(true);
+            setShowConfirmationModal(true);
+            return;
+        }
         setModalMessage("Are you sure you want to start a workout?");
         setShowModal(true);
     };
@@ -405,6 +423,8 @@ export default function WorkoutsScreen({ navigation }: any) {
             if (weightSystem === "METRIC" || weightSystem === "IMPERIAL") {
                 setWeightSystem(weightSystem);
             }
+
+            setIsSubscribed(userData.isSubscribed);
         } catch (err) {
             console.error(err);
         }
@@ -700,6 +720,62 @@ export default function WorkoutsScreen({ navigation }: any) {
         });
     };
 
+    const createCheckoutSession = async (userId: string) => {
+        const response = await authFetch(
+            `/subscription/createCheckoutSession/${userId}`,
+            {
+                method: "POST",
+            }
+        );
+
+        return response.url;
+    };
+
+    const handleSubscribePress = async () => {
+        const userId = await SecureStore.getItemAsync("userId");
+        if (!userId) {
+            return console.log("No userId found...");
+        }
+
+        const url = await createCheckoutSession(userId);
+        setSessionUrl(url);
+        setSubscribeModalVisible(true);
+    };
+
+    const onSuccess = async () => {
+        try {
+            playExcitingSound();
+            setSubscribeModalVisible(false);
+            setmodalConfirmationTitle("Hey, gamer!");
+            setModalMessage(
+                "Thanks so much! Your subscription was activated successfully. Good luck out there!"
+            );
+            setIsSubscribed(true);
+            setIsConfirmingSubscribed(false);
+            setShowConfirmationModal(true);
+            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(false), 4800);
+            fetchUserData();
+        } catch (error) {
+            console.error(
+                "Error refreshing user data after subscription:",
+                error
+            );
+        }
+    };
+
+    const onCancel = () => {
+        setSubscribeModalVisible(false);
+        playBadMoveSound();
+        setmodalConfirmationTitle("Hey, gamer!");
+        setModalMessage(
+            "No worries! You can come back at any time to start your gym gamer journey!"
+        );
+        setIsSubscribed(false);
+        setIsConfirmingSubscribed(false);
+        setShowConfirmationModal(true);
+    };
+
     return (
         <SafeAreaView style={styles.safeArea} edges={["top"]}>
             <KeyboardAvoidingView
@@ -769,9 +845,9 @@ export default function WorkoutsScreen({ navigation }: any) {
                                     onConfirm={() => {
                                         setShowConfirmationModal(false);
                                     }}
-                                    onCancel={() =>
-                                        setShowConfirmationModal(false)
-                                    }
+                                    onCancel={() => {
+                                        setShowConfirmationModal(false);
+                                    }}
                                     title={modalConfirmationTitle}
                                     message={modalMessage}
                                 />
@@ -850,7 +926,26 @@ export default function WorkoutsScreen({ navigation }: any) {
                                             setWorkoutFinished={
                                                 setWorkoutFinished
                                             }
+                                            handleSubscribePress={
+                                                handleSubscribePress
+                                            }
+                                            isConfirmingSubscribed={
+                                                isConfirmingSubscribed
+                                            }
                                         />
+
+                                        {subscribeModalVisible && (
+                                            <SubscriptionWebView
+                                                sessionUrl={sessionUrl!}
+                                                onSuccess={onSuccess}
+                                                onCancel={onCancel}
+                                                onClose={() =>
+                                                    setSubscribeModalVisible(
+                                                        false
+                                                    )
+                                                }
+                                            />
+                                        )}
 
                                         {isLoading && (
                                             <ActivityIndicator

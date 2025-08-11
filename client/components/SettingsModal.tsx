@@ -5,7 +5,6 @@ import {
     Modal,
     TouchableWithoutFeedback,
     TextInput,
-    Alert,
 } from "react-native";
 import PixelModal from "./PixelModal";
 import PixelText from "./PixelText";
@@ -37,9 +36,11 @@ interface SettingsModalProps {
     onToggleNotifications: () => void;
     onConfirmDelete: () => void;
     confirmationPixelModalVisible: boolean;
-    setConfirmationPixelModalVisible: () => void;
+    setConfirmationPixelModalVisible: (b: boolean) => void;
     confirmationPixelModalTitle: string;
+    setConfirmationPixelModalTitle: (b: string) => void;
     confirmationPixelModalMessage: string;
+    setConfirmationPixelModalMessage: (b: string) => void;
     handleSupportConfirmSend: (
         fromEmail: string,
         message: string
@@ -50,6 +51,7 @@ interface SettingsModalProps {
     navigation: any;
     subscription: SubscriptionState;
     fetchUserData: () => void;
+    setShowSettings: (b: boolean) => void;
 }
 
 export default function SettingsModal({
@@ -65,7 +67,9 @@ export default function SettingsModal({
     confirmationPixelModalVisible,
     setConfirmationPixelModalVisible,
     confirmationPixelModalTitle,
+    setConfirmationPixelModalTitle,
     confirmationPixelModalMessage,
+    setConfirmationPixelModalMessage,
     userEmail,
     handleSupportConfirmSend,
     optedIn,
@@ -73,6 +77,7 @@ export default function SettingsModal({
     navigation,
     subscription,
     fetchUserData,
+    setShowSettings,
 }: SettingsModalProps) {
     const [showPixelModal, setShowPixelModal] = useState(false);
     const [pixelModalTitle, setPixelModalTitle] = useState<string>("");
@@ -83,13 +88,14 @@ export default function SettingsModal({
     const [pendingSystem, setPendingSystem] = useState<
         "IMPERIAL" | "METRIC" | null
     >(null);
-
     const [supportModalVisible, setSupportModalVisible] = useState(false);
     const [supportFromEmail, setSupportFromEmail] = useState(userEmail);
     const [supportMessage, setSupportMessage] = useState("");
     const [supportConfirmVisible, setSupportConfirmVisible] = useState(false);
     const [sessionUrl, setSessionUrl] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
+    const [isConfirmingSucessSubscription, setIsConfirmingSuccessSubscription] =
+        useState<boolean>(false);
 
     if (!visible) return null;
 
@@ -169,7 +175,11 @@ export default function SettingsModal({
             return console.log("No userId found...");
         }
         if (subscription.isSubscribed) {
-            alert("Already subscribed!");
+            setPixelModalTitle("Hey, gamer!");
+            setPixelModalMessage("You're already subscribed!");
+            setPixelModalButton("Got it");
+            setShowPixelModal(true);
+
             return;
         }
         const url = await createCheckoutSession(userId);
@@ -187,14 +197,40 @@ export default function SettingsModal({
             console.log(response);
 
             if (response.success) {
-                alert("Subscription canceled successfully");
+                console.log("Deleted");
+                setConfirmationPixelModalTitle("Thanks though, gamer!");
+                setConfirmationPixelModalMessage(
+                    `Your subscription was cancelled successfully... you have until ${
+                        subscription.subscriptionEndDate
+                            ? subscription.subscriptionEndDate.toLocaleDateString(
+                                  undefined,
+                                  {
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                  }
+                              )
+                            : "N/A"
+                    } to use your workouts.`
+                );
+
+                setConfirmationPixelModalVisible(true);
                 playDeleteSound();
                 fetchUserData();
             } else {
-                alert("Failed to cancel subscription");
+                setConfirmationPixelModalTitle("Oh no, gamer!");
+                setConfirmationPixelModalMessage(
+                    "There was an error canceling subscription. Try again later or contact support."
+                );
+                setConfirmationPixelModalVisible(true);
             }
         } catch (error) {
-            alert("Error canceling subscription");
+            setPixelModalTitle("Oh no, gamer!");
+            setConfirmationPixelModalMessage(
+                "There was an error canceling subscription. Try again later or contact support."
+            );
+            setConfirmationPixelModalVisible(true);
+
             console.error(error);
         }
     };
@@ -203,9 +239,12 @@ export default function SettingsModal({
         try {
             playExcitingSound();
             setModalVisible(false);
-            fetchUserData();
-            navigation.navigate("Workouts");
-            alert("Subscription successful!");
+            setIsConfirmingSuccessSubscription(true);
+            setConfirmationPixelModalTitle("Hey, gamer!");
+            setConfirmationPixelModalMessage(
+                "Thanks so much! Your subscription was activated successfully. Good luck out there!"
+            );
+            setConfirmationPixelModalVisible(true);
         } catch (error) {
             console.error(
                 "Error refreshing user data after subscription:",
@@ -217,6 +256,11 @@ export default function SettingsModal({
     const onCancel = () => {
         setModalVisible(false);
         playBadMoveSound();
+        setConfirmationPixelModalTitle("Hey, gamer!");
+        setConfirmationPixelModalMessage(
+            "No worries! You can come back at any time to start your gym gamer journey!"
+        );
+        setConfirmationPixelModalVisible(true);
     };
 
     return (
@@ -450,11 +494,22 @@ export default function SettingsModal({
 
                                 <ConfirmationPixelModal
                                     visible={confirmationPixelModalVisible}
-                                    onConfirm={() =>
-                                        setConfirmationPixelModalVisible()
-                                    }
+                                    onConfirm={() => {
+                                        if (!isConfirmingSucessSubscription) {
+                                            setConfirmationPixelModalVisible(
+                                                false
+                                            );
+                                            return;
+                                        }
+                                        setShowSettings(false);
+                                        fetchUserData();
+                                        setConfirmationPixelModalVisible(false);
+                                        setIsConfirmingSuccessSubscription(
+                                            false
+                                        );
+                                    }}
                                     onCancel={() =>
-                                        setConfirmationPixelModalVisible()
+                                        setConfirmationPixelModalVisible(false)
                                     }
                                     title={confirmationPixelModalTitle}
                                     message={confirmationPixelModalMessage}

@@ -848,9 +848,15 @@ export default function ProfileScreen({
                             confirmationPixelModalTitle={
                                 confirmationPixelModalTitle
                             }
+                            setConfirmationPixelModalTitle={(title: string) =>
+                                setConfirmationPixelModalTitle(title)
+                            }
                             confirmationPixelModalMessage={
                                 confirmationPixelModalMessage
                             }
+                            setConfirmationPixelModalMessage={(
+                                message: string
+                            ) => setConfirmationPixelModalMessage(message)}
                             userEmail={userData.email}
                             handleSupportConfirmSend={sendEmail}
                             optedIn={optedEnabled}
@@ -858,6 +864,9 @@ export default function ProfileScreen({
                             navigation={navigation}
                             subscription={subscription}
                             fetchUserData={fetchUserData}
+                            setShowSettings={() =>
+                                setShowSettings((prev) => !prev)
+                            }
                         />
 
                         <PixelButton

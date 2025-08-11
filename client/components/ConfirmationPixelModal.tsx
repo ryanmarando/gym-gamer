@@ -18,7 +18,7 @@ interface PixelModalProps {
     message?: string;
     onConfirm: () => void;
     onCancel: () => void;
-    confettiVisible?: boolean; // new prop
+    confettiVisible?: boolean;
 }
 
 export default function ConfirmationPixelModal({
