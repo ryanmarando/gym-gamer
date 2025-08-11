@@ -17,7 +17,13 @@ export const getAllUsers = async (
     }
 
     const sanitizedUsers = users.map(
-        ({ resetCode, resetCodeExpiry, ...rest }) => rest
+        ({
+            stripeCustomerId,
+            stripeSubscriptionId,
+            resetCode,
+            resetCodeExpiry,
+            ...rest
+        }) => rest
     );
 
     res.status(200).json(sanitizedUsers);
@@ -36,7 +42,13 @@ export const getAllUsersOptedIn = async (
     }
 
     const sanitizedUsers = users.map(
-        ({ resetCode, resetCodeExpiry, ...rest }) => rest
+        ({
+            stripeCustomerId,
+            stripeSubscriptionId,
+            resetCode,
+            resetCodeExpiry,
+            ...rest
+        }) => rest
     );
 
     res.status(200).json(sanitizedUsers);

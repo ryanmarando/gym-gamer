@@ -148,6 +148,7 @@ export default function DashboardPage({ token, name }: DashboardPageProps) {
                         }}
                     >
                         <h3>All Squeeze Users:</h3>
+                        <h5>{squeezeUsers.length} users</h5>
                         <ul
                             style={{
                                 paddingLeft: "1.5rem",

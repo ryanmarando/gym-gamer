@@ -14,30 +14,34 @@ datasource db {
 }
 
 model User {
-  id                 Int               @id @default(autoincrement())
-  email              String            @unique
-  name               String
-  createdAt          DateTime          @default(now()) @map("created_at")
-  password           Password?
-  isAdmin            Boolean           @default(false)
-  level              Int               @default(1)
-  levelProgress      Int               @default(0)
-  xp                 Int               @default(0)
-  weightEntries      UserWeightEntry[]
-  workouts           UserWorkout[]
-  createdWorkouts    Workout[]
-  progressPhotos     ProgressPhoto[]
-  achievements       UserAchievement[]
-  workoutSplit       WorkoutSplit[]
-  quest              Quest[]
-  totalWeightLifted  Float             @default(0)
-  weeklyWeightLifted Float             @default(0)
-  weightSystem       WeightSystem      @default(IMPERIAL)
-  muteSounds         Boolean           @default(false)
-  expoPushToken      String?
-  resetCode          String?
-  resetCodeExpiry    DateTime?
-  optedIn            Boolean           @default(true)
+  id                   Int               @id @default(autoincrement())
+  email                String            @unique
+  name                 String
+  createdAt            DateTime          @default(now()) @map("created_at")
+  password             Password?
+  isAdmin              Boolean           @default(false)
+  level                Int               @default(1)
+  levelProgress        Int               @default(0)
+  xp                   Int               @default(0)
+  weightEntries        UserWeightEntry[]
+  workouts             UserWorkout[]
+  createdWorkouts      Workout[]
+  progressPhotos       ProgressPhoto[]
+  achievements         UserAchievement[]
+  workoutSplit         WorkoutSplit[]
+  quest                Quest[]
+  totalWeightLifted    Float             @default(0)
+  weeklyWeightLifted   Float             @default(0)
+  weightSystem         WeightSystem      @default(IMPERIAL)
+  muteSounds           Boolean           @default(false)
+  expoPushToken        String?
+  resetCode            String?
+  resetCodeExpiry      DateTime?
+  optedIn              Boolean           @default(true)
+  isSubscribed         Boolean           @default(false)
+  subscriptionEndDate  DateTime?
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
 
   @@map("user")
 }

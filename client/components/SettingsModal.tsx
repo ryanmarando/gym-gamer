@@ -13,7 +13,18 @@ import PixelButton from "./PixelButton";
 import ConfirmationPixelModal from "./ConfirmationPixelModal";
 import { playCompleteSound } from "../utils/playCompleteSound";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
-import { NavigationProp } from "@react-navigation/native";
+import { playDeleteSound } from "../utils/playDeleteSound";
+import * as SecureStore from "expo-secure-store";
+import { authFetch } from "../utils/authFetch";
+import SubscriptionWebView from "./SubscriptionWebView";
+import { playExcitingSound } from "../utils/playExcitingSound";
+
+type SubscriptionState = {
+    isSubscribed: boolean;
+    subscriptionEndDate: Date | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+};
 
 interface SettingsModalProps {
     visible: boolean;
@@ -37,6 +48,8 @@ interface SettingsModalProps {
     optedIn: boolean;
     toggleOpt: () => void;
     navigation: any;
+    subscription: SubscriptionState;
+    fetchUserData: () => void;
 }
 
 export default function SettingsModal({
@@ -58,6 +71,8 @@ export default function SettingsModal({
     optedIn,
     toggleOpt,
     navigation,
+    subscription,
+    fetchUserData,
 }: SettingsModalProps) {
     const [showPixelModal, setShowPixelModal] = useState(false);
     const [pixelModalTitle, setPixelModalTitle] = useState<string>("");
@@ -73,6 +88,8 @@ export default function SettingsModal({
     const [supportFromEmail, setSupportFromEmail] = useState(userEmail);
     const [supportMessage, setSupportMessage] = useState("");
     const [supportConfirmVisible, setSupportConfirmVisible] = useState(false);
+    const [sessionUrl, setSessionUrl] = useState(null);
+    const [modalVisible, setModalVisible] = useState(false);
 
     if (!visible) return null;
 
@@ -133,6 +150,73 @@ export default function SettingsModal({
             }
             setSupportConfirmVisible(true);
         }
+    };
+
+    const createCheckoutSession = async (userId: string) => {
+        const response = await authFetch(
+            `/subscription/createCheckoutSession/${userId}`,
+            {
+                method: "POST",
+            }
+        );
+
+        return response.url;
+    };
+
+    const handleSubscribePress = async () => {
+        const userId = await SecureStore.getItemAsync("userId");
+        if (!userId) {
+            return console.log("No userId found...");
+        }
+        if (subscription.isSubscribed) {
+            alert("Already subscribed!");
+            return;
+        }
+        const url = await createCheckoutSession(userId);
+        setSessionUrl(url);
+        setModalVisible(true);
+    };
+
+    const handleCancelSubscription = async () => {
+        const userId = await SecureStore.getItemAsync("userId");
+        try {
+            const response = await authFetch(`/subscription/cancel/${userId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+            });
+            console.log(response);
+
+            if (response.success) {
+                alert("Subscription canceled successfully");
+                playDeleteSound();
+                fetchUserData();
+            } else {
+                alert("Failed to cancel subscription");
+            }
+        } catch (error) {
+            alert("Error canceling subscription");
+            console.error(error);
+        }
+    };
+
+    const onSuccess = async () => {
+        try {
+            playExcitingSound();
+            setModalVisible(false);
+            fetchUserData();
+            navigation.navigate("Workouts");
+            alert("Subscription successful!");
+        } catch (error) {
+            console.error(
+                "Error refreshing user data after subscription:",
+                error
+            );
+        }
+    };
+
+    const onCancel = () => {
+        setModalVisible(false);
+        playBadMoveSound();
     };
 
     return (
@@ -240,6 +324,37 @@ export default function SettingsModal({
                                         </View>
                                     </View>
                                 )}
+
+                                <PixelButton
+                                    text={
+                                        subscription.isSubscribed
+                                            ? "Cancel Subscription"
+                                            : "Activate Subscription"
+                                    }
+                                    onPress={
+                                        subscription.isSubscribed
+                                            ? handleCancelSubscription
+                                            : handleSubscribePress
+                                    }
+                                    color="#ff0"
+                                    containerStyle={styles.button}
+                                />
+
+                                {modalVisible && (
+                                    <SubscriptionWebView
+                                        sessionUrl={sessionUrl!}
+                                        onSuccess={onSuccess}
+                                        onCancel={onCancel}
+                                        onClose={() => setModalVisible(false)}
+                                    />
+                                )}
+
+                                <PixelButton
+                                    text="Contact Support"
+                                    onPress={openSupportModal}
+                                    color="#00BFFF"
+                                    containerStyle={styles.button}
+                                />
 
                                 <PixelButton
                                     text={

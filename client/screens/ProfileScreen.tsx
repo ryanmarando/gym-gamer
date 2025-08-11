@@ -64,7 +64,18 @@ interface UserData {
     weeklyWeightLifted: number;
     weightSystem: "IMPERIAL" | "METRIC";
     userQuest: UserQuest;
+    isSubscribed: boolean;
+    subscriptionEndDate: Date | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
 }
+
+type SubscriptionState = {
+    isSubscribed: boolean;
+    subscriptionEndDate: Date | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+};
 
 export default function ProfileScreen({
     navigation,
@@ -116,6 +127,12 @@ export default function ProfileScreen({
     const [optedEnabled, setOptedEnabled] = useState<boolean>(false);
     const [showLevelProgress, setShowLevelProgress] = useState<boolean>(false);
     const opacity = useRef(new Animated.Value(0)).current;
+    const [subscription, setSubscription] = useState<SubscriptionState>({
+        isSubscribed: false,
+        subscriptionEndDate: null,
+        stripeCustomerId: null,
+        stripeSubscriptionId: null,
+    });
 
     const triggerLevelUpImage = () => {
         setShowLevelUpImage(true);
@@ -243,6 +260,7 @@ export default function ProfileScreen({
 
             console.log("✅ Profile screen loaded");
             setUserData(userDataWithQuest);
+            console.log(data);
 
             // Check if quest is expired
             if (
@@ -259,6 +277,16 @@ export default function ProfileScreen({
 
             // Get user opted in settings
             setOptedEnabled(data.optedIn);
+
+            // Get user subscription status
+            setSubscription({
+                isSubscribed: data.isSubscribed,
+                subscriptionEndDate: data.subscriptionEndDate
+                    ? new Date(data.subscriptionEndDate)
+                    : null,
+                stripeCustomerId: data.stripeCustomerId ?? null,
+                stripeSubscriptionId: data.stripeSubscriptionId ?? null,
+            });
         } catch (error: any) {
             if (
                 error.message === "Forbidden" ||
@@ -828,6 +856,8 @@ export default function ProfileScreen({
                             optedIn={optedEnabled}
                             toggleOpt={toggleOpt}
                             navigation={navigation}
+                            subscription={subscription}
+                            fetchUserData={fetchUserData}
                         />
 
                         <PixelButton
