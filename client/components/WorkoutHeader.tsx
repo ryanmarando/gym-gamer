@@ -116,6 +116,7 @@ export default function WorkoutHeader({
                         return;
                     }
                     if (isConfirmingSubscribed) {
+                        setSelectedDay(null);
                         navigation.navigate("SubscriptionScreen");
                         return;
                     }
