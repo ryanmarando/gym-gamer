@@ -1,15 +1,13 @@
 import { Router } from "express";
-import * as subController from "../controllers/subscription.js";
+import * as subscriptionController from "../controllers/subscription.js";
 import { isAdminOrUser } from "../middleware/isAdminOrUser.js";
 
 const router = Router();
 
-router.post(
-    "/createCheckoutSession/:id",
+router.patch(
+    "/toggle/:id",
     isAdminOrUser,
-    subController.createCheckoutSession
+    subscriptionController.toggleSubscription
 );
-
-router.post("/cancel/:id", isAdminOrUser, subController.cancelSubscription);
 
 export default router;

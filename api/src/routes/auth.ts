@@ -8,7 +8,6 @@ import {
     ResetPasswordSchema,
     SqueezePageUserSchema,
 } from "../middleware/validation.js";
-import auth from "../middleware/auth.js";
 
 const router = Router();
 

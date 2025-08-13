@@ -260,7 +260,6 @@ export default function ProfileScreen({
 
             console.log("✅ Profile screen loaded");
             setUserData(userDataWithQuest);
-            console.log(data);
 
             // Check if quest is expired
             if (

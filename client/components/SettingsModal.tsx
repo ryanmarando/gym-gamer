@@ -12,11 +12,6 @@ import PixelButton from "./PixelButton";
 import ConfirmationPixelModal from "./ConfirmationPixelModal";
 import { playCompleteSound } from "../utils/playCompleteSound";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
-import { playDeleteSound } from "../utils/playDeleteSound";
-import * as SecureStore from "expo-secure-store";
-import { authFetch } from "../utils/authFetch";
-import SubscriptionWebView from "./SubscriptionWebView";
-import { playExcitingSound } from "../utils/playExcitingSound";
 
 type SubscriptionState = {
     isSubscribed: boolean;
@@ -158,111 +153,6 @@ export default function SettingsModal({
         }
     };
 
-    const createCheckoutSession = async (userId: string) => {
-        const response = await authFetch(
-            `/subscription/createCheckoutSession/${userId}`,
-            {
-                method: "POST",
-            }
-        );
-
-        return response.url;
-    };
-
-    const handleSubscribePress = async () => {
-        const userId = await SecureStore.getItemAsync("userId");
-        if (!userId) {
-            return console.log("No userId found...");
-        }
-        if (subscription.isSubscribed) {
-            setPixelModalTitle("Hey, gamer!");
-            setPixelModalMessage("You're already subscribed!");
-            setPixelModalButton("Got it");
-            setShowPixelModal(true);
-
-            return;
-        }
-        const url = await createCheckoutSession(userId);
-        setSessionUrl(url);
-        setModalVisible(true);
-    };
-
-    const handleCancelSubscription = async () => {
-        const userId = await SecureStore.getItemAsync("userId");
-        try {
-            const response = await authFetch(`/subscription/cancel/${userId}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-            });
-            console.log(response);
-
-            if (response.success) {
-                console.log("Deleted");
-                setConfirmationPixelModalTitle("Thanks though, gamer!");
-                setConfirmationPixelModalMessage(
-                    `Your subscription was cancelled successfully... you have until ${
-                        subscription.subscriptionEndDate
-                            ? subscription.subscriptionEndDate.toLocaleDateString(
-                                  undefined,
-                                  {
-                                      year: "numeric",
-                                      month: "long",
-                                      day: "numeric",
-                                  }
-                              )
-                            : "N/A"
-                    } to use your workouts.`
-                );
-
-                setConfirmationPixelModalVisible(true);
-                playDeleteSound();
-                fetchUserData();
-            } else {
-                setConfirmationPixelModalTitle("Oh no, gamer!");
-                setConfirmationPixelModalMessage(
-                    "There was an error canceling subscription. Try again later or contact support."
-                );
-                setConfirmationPixelModalVisible(true);
-            }
-        } catch (error) {
-            setPixelModalTitle("Oh no, gamer!");
-            setConfirmationPixelModalMessage(
-                "There was an error canceling subscription. Try again later or contact support."
-            );
-            setConfirmationPixelModalVisible(true);
-
-            console.error(error);
-        }
-    };
-
-    const onSuccess = async () => {
-        try {
-            playExcitingSound();
-            setModalVisible(false);
-            setIsConfirmingSuccessSubscription(true);
-            setConfirmationPixelModalTitle("Hey, gamer!");
-            setConfirmationPixelModalMessage(
-                "Thanks so much! Your subscription was activated successfully. Good luck out there!"
-            );
-            setConfirmationPixelModalVisible(true);
-        } catch (error) {
-            console.error(
-                "Error refreshing user data after subscription:",
-                error
-            );
-        }
-    };
-
-    const onCancel = () => {
-        setModalVisible(false);
-        playBadMoveSound();
-        setConfirmationPixelModalTitle("Hey, gamer!");
-        setConfirmationPixelModalMessage(
-            "No worries! You can come back at any time to start your gym gamer journey!"
-        );
-        setConfirmationPixelModalVisible(true);
-    };
-
     return (
         <>
             <Modal transparent visible={visible} animationType="fade">
@@ -370,28 +260,18 @@ export default function SettingsModal({
                                 )}
 
                                 <PixelButton
-                                    text={
-                                        subscription.isSubscribed
-                                            ? "Cancel Subscription"
-                                            : "Activate Subscription"
-                                    }
-                                    onPress={
-                                        subscription.isSubscribed
-                                            ? handleCancelSubscription
-                                            : handleSubscribePress
-                                    }
+                                    text="Gym Gamer Pass"
+                                    onPress={() => {
+                                        onClose();
+                                        setTimeout(() => {
+                                            navigation.navigate(
+                                                "SubscriptionScreen"
+                                            );
+                                        }, 100);
+                                    }}
                                     color="#ff0"
                                     containerStyle={styles.button}
                                 />
-
-                                {modalVisible && (
-                                    <SubscriptionWebView
-                                        sessionUrl={sessionUrl!}
-                                        onSuccess={onSuccess}
-                                        onCancel={onCancel}
-                                        onClose={() => setModalVisible(false)}
-                                    />
-                                )}
 
                                 <PixelButton
                                     text="Contact Support"

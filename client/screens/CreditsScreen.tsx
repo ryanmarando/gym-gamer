@@ -42,6 +42,12 @@ export default function CreditsScreen({ navigation }: any) {
             license: "CC0",
         },
         {
+            title: '"Happy 8bit Pixel Adenture.wav"',
+            author: "edtijo",
+            url: "https://freesound.org/s/240376/",
+            license: "CC0",
+        },
+        {
             title: '"8bit-style bonus effect"',
             author: "complex_waveform",
             url: "https://freesound.org/s/213149/",

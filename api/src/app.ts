@@ -7,8 +7,7 @@ import userRouter from "./routes/user.js";
 import progressPhotoRouter from "./routes/progressPhoto.js";
 import achievementRouter from "./routes/achievement.js";
 import questRouter from "./routes/quest.js";
-import subcriptionRouter from "./routes/subscription.js";
-import * as subController from "./controllers/subscription.js";
+import subscriptionRouter from "./routes/subscription.js";
 import xss from "./middleware/xss.js";
 import authenticated from "./middleware/auth.js";
 
@@ -31,13 +30,6 @@ app.get("/", (req, res) => {
     res.send("Welcome To The Gym Gamer API!");
 });
 
-// Raw subscription payload
-app.post(
-    "/subscription/webhook",
-    express.raw({ type: "application/json" }),
-    subController.webhook
-);
-
 // Middleware
 app.use(express.json());
 app.use(logging.logRequest);
@@ -47,9 +39,6 @@ app.use(xss);
 
 // Login and Register
 app.use("/auth", authRouter);
-
-// Subscription
-app.use("/subscription", subcriptionRouter);
 
 // Uploaded photos access
 app.use("/uploads", express.static("uploads"));
@@ -63,6 +52,7 @@ app.use("/user", userRouter);
 app.use("/progressPhoto", progressPhotoRouter);
 app.use("/achievement", achievementRouter);
 app.use("/quest", questRouter);
+app.use("/subscription", subscriptionRouter);
 
 // Origin Point
 app.listen(port, "0.0.0.0", () => {
