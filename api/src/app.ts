@@ -10,6 +10,7 @@ import questRouter from "./routes/quest.js";
 import subscriptionRouter from "./routes/subscription.js";
 import xss from "./middleware/xss.js";
 import authenticated from "./middleware/auth.js";
+import { sendEmail } from "./controllers/user.js";
 
 const app = express();
 const port = Number(process.env.PORT);
@@ -36,6 +37,9 @@ app.use(logging.logRequest);
 
 // Sanitize
 app.use(xss);
+
+// Web Email Support
+app.post("/email", sendEmail);
 
 // Login and Register
 app.use("/auth", authRouter);
