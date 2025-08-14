@@ -66,8 +66,6 @@ interface UserData {
     userQuest: UserQuest;
     isSubscribed: boolean;
     subscriptionEndDate: Date | null;
-    stripeCustomerId: string | null;
-    stripeSubscriptionId: string | null;
 }
 
 type SubscriptionState = {
@@ -82,7 +80,6 @@ export default function ProfileScreen({
     isLoggedIn,
     setIsLoggedIn,
 }: any) {
-    const scrollRef = useRef<ScrollView>(null);
     const [userData, setUserData] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -668,6 +665,38 @@ export default function ProfileScreen({
                                     !
                                 </PixelText>
                             )}
+
+                            {userData.subscriptionEndDate &&
+                                !userData.isSubscribed &&
+                                (() => {
+                                    const now = new Date();
+                                    const endDate = new Date(
+                                        userData.subscriptionEndDate
+                                    ); // Ensure it's a Date
+                                    const msInDay = 1000 * 60 * 60 * 24;
+
+                                    const timeDiff =
+                                        endDate.getTime() - now.getTime();
+                                    const daysLeft = Math.max(
+                                        0,
+                                        Math.floor(timeDiff / msInDay)
+                                    );
+
+                                    return (
+                                        <PixelText
+                                            fontSize={11}
+                                            color="#fff"
+                                            style={{
+                                                marginBottom: 18,
+                                                lineHeight: 18,
+                                            }}
+                                        >
+                                            You have {daysLeft} day
+                                            {daysLeft !== 1 ? "s" : ""} left of
+                                            your Gym Gamer Pass!
+                                        </PixelText>
+                                    );
+                                })()}
 
                             <PixelText fontSize={12} color="#fff">
                                 Get into the gym:

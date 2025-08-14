@@ -20,7 +20,6 @@ import PickWorkoutDay from "../components/PickWorkoutDay";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sendPushNotification } from "../utils/notification";
 import { playCompleteSound } from "../utils/playCompleteSound";
-import { playExcitingSound } from "../utils/playExcitingSound";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -41,7 +40,7 @@ interface Workout {
     weightsLifted: string[];
 }
 
-type WeightEntries = Record<number, string[]>; // workoutId -> array of weights
+type WeightEntries = Record<number, string[]>;
 
 export default function WorkoutsScreen({ navigation }: any) {
     const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -85,10 +84,9 @@ export default function WorkoutsScreen({ navigation }: any) {
         [workoutId: number]: string[];
     }>({});
     const [isSubscribed, setIsSubscribed] = useState<boolean>(false);
-    const [subscribeModalVisible, setSubscribeModalVisible] =
-        useState<boolean>(false);
     const [isConfirmingSubscribed, setIsConfirmingSubscribed] =
         useState<boolean>(false);
+    const [subscriptionEndDate, setSubscriptionEndDate] = useState<Date>();
 
     const addSplitDay = () => {
         if (splitDays.length < 7) {
@@ -149,8 +147,14 @@ export default function WorkoutsScreen({ navigation }: any) {
 
     const openStartModal = () => {
         setModalAction("start");
+        const now = new Date();
 
-        if (!isSubscribed) {
+        if (
+            !(
+                isSubscribed ||
+                (subscriptionEndDate && new Date(subscriptionEndDate) > now)
+            )
+        ) {
             playBadMoveSound();
             setmodalConfirmationTitle("Oh no, gamer!");
             setModalMessage(
@@ -160,6 +164,7 @@ export default function WorkoutsScreen({ navigation }: any) {
             setShowConfirmationModal(true);
             return;
         }
+        setmodalConfirmationTitle("Alright, gamer!");
         setModalMessage("Are you sure you want to start a workout?");
         setShowModal(true);
     };
@@ -171,9 +176,11 @@ export default function WorkoutsScreen({ navigation }: any) {
                 "Are you sure you want to complete the workout? Workouts under 15 minutes will not save."
             );
         } else {
+            setmodalConfirmationTitle("Alright, gamer!");
             setModalMessage("Are you sure you want to complete the workout?");
         }
         setShowModal(true);
+        setIsConfirmingSubscribed(false);
     };
 
     const resetWeightEntries = () => {
@@ -424,6 +431,7 @@ export default function WorkoutsScreen({ navigation }: any) {
             }
 
             setIsSubscribed(userData.isSubscribed);
+            setSubscriptionEndDate(userData.subscriptionEndDate);
         } catch (err) {
             console.error(err);
         }
