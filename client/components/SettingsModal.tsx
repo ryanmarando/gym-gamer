@@ -12,13 +12,7 @@ import PixelButton from "./PixelButton";
 import ConfirmationPixelModal from "./ConfirmationPixelModal";
 import { playCompleteSound } from "../utils/playCompleteSound";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
-
-type SubscriptionState = {
-    isSubscribed: boolean;
-    subscriptionEndDate: Date | null;
-    stripeCustomerId: string | null;
-    stripeSubscriptionId: string | null;
-};
+import { ScrollView } from "react-native";
 
 interface SettingsModalProps {
     visible: boolean;
@@ -44,7 +38,6 @@ interface SettingsModalProps {
     optedIn: boolean;
     toggleOpt: () => void;
     navigation: any;
-    subscription: SubscriptionState;
     fetchUserData: () => void;
     setShowSettings: (b: boolean) => void;
 }
@@ -70,7 +63,6 @@ export default function SettingsModal({
     optedIn,
     toggleOpt,
     navigation,
-    subscription,
     fetchUserData,
     setShowSettings,
 }: SettingsModalProps) {
@@ -87,11 +79,6 @@ export default function SettingsModal({
     const [supportFromEmail, setSupportFromEmail] = useState(userEmail);
     const [supportMessage, setSupportMessage] = useState("");
     const [supportConfirmVisible, setSupportConfirmVisible] = useState(false);
-    const [sessionUrl, setSessionUrl] = useState(null);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [isConfirmingSucessSubscription, setIsConfirmingSuccessSubscription] =
-        useState<boolean>(false);
-
     if (!visible) return null;
 
     const handleSystemSelect = (system: "IMPERIAL" | "METRIC") => {
@@ -168,196 +155,196 @@ export default function SettingsModal({
                                     Settings
                                 </PixelText>
 
-                                <PixelText
-                                    fontSize={16}
-                                    color="#fff"
-                                    style={{ marginBottom: 8 }}
+                                <ScrollView
+                                    showsVerticalScrollIndicator={false}
+                                    contentContainerStyle={{
+                                        paddingBottom: 20,
+                                    }}
                                 >
-                                    Update Units (lbs/kg)
-                                </PixelText>
-
-                                {!confirmVisible ? (
-                                    <View
-                                        style={{
-                                            flexDirection: "row",
-                                            justifyContent: "center",
-                                            marginBottom: 10,
-                                        }}
+                                    <PixelText
+                                        fontSize={16}
+                                        color="#fff"
+                                        style={{ marginBottom: 8 }}
                                     >
-                                        <PixelButton
-                                            text="lbs"
-                                            onPress={() =>
-                                                handleSystemSelect("IMPERIAL")
-                                            }
-                                            disabled={
-                                                selectedSystem === "IMPERIAL"
-                                            }
-                                            containerStyle={{
-                                                backgroundColor:
-                                                    selectedSystem ===
-                                                    "IMPERIAL"
-                                                        ? "#555"
-                                                        : "#000",
-                                                borderColor: "#fff",
-                                                marginHorizontal: 8,
-                                            }}
-                                        />
-                                        <PixelButton
-                                            text="kg"
-                                            onPress={() =>
-                                                handleSystemSelect("METRIC")
-                                            }
-                                            disabled={
-                                                selectedSystem === "METRIC"
-                                            }
-                                            containerStyle={{
-                                                backgroundColor:
-                                                    selectedSystem === "METRIC"
-                                                        ? "#555"
-                                                        : "#000",
-                                                borderColor: "#fff",
-                                                marginHorizontal: 8,
-                                            }}
-                                        />
-                                    </View>
-                                ) : (
-                                    <View style={{ marginBottom: 20 }}>
-                                        <PixelText
-                                            fontSize={14}
-                                            color="#fff"
-                                            style={{ marginBottom: 12 }}
-                                        >
-                                            Are you sure you want to switch to{" "}
-                                            {pendingSystem === "IMPERIAL"
-                                                ? "Imperial (lbs)"
-                                                : "Metric (kg)"}
-                                            ?
-                                        </PixelText>
+                                        Update Units (lbs/kg)
+                                    </PixelText>
+
+                                    {!confirmVisible ? (
                                         <View
                                             style={{
                                                 flexDirection: "row",
                                                 justifyContent: "center",
+                                                marginBottom: 10,
                                             }}
                                         >
                                             <PixelButton
-                                                text="Confirm"
-                                                onPress={handleConfirm}
-                                                color="#0f0"
+                                                text="lbs"
+                                                onPress={() =>
+                                                    handleSystemSelect(
+                                                        "IMPERIAL"
+                                                    )
+                                                }
+                                                disabled={
+                                                    selectedSystem ===
+                                                    "IMPERIAL"
+                                                }
                                                 containerStyle={{
+                                                    backgroundColor:
+                                                        selectedSystem ===
+                                                        "IMPERIAL"
+                                                            ? "#555"
+                                                            : "#000",
+                                                    borderColor: "#fff",
                                                     marginHorizontal: 8,
                                                 }}
                                             />
                                             <PixelButton
-                                                text="Cancel"
-                                                onPress={handleCancel}
-                                                color="#f00"
+                                                text="kg"
+                                                onPress={() =>
+                                                    handleSystemSelect("METRIC")
+                                                }
+                                                disabled={
+                                                    selectedSystem === "METRIC"
+                                                }
                                                 containerStyle={{
+                                                    backgroundColor:
+                                                        selectedSystem ===
+                                                        "METRIC"
+                                                            ? "#555"
+                                                            : "#000",
+                                                    borderColor: "#fff",
                                                     marginHorizontal: 8,
                                                 }}
                                             />
                                         </View>
-                                    </View>
-                                )}
+                                    ) : (
+                                        <View style={{ marginBottom: 20 }}>
+                                            <PixelText
+                                                fontSize={14}
+                                                color="#fff"
+                                                style={{ marginBottom: 12 }}
+                                            >
+                                                Are you sure you want to switch
+                                                to{" "}
+                                                {pendingSystem === "IMPERIAL"
+                                                    ? "Imperial (lbs)"
+                                                    : "Metric (kg)"}
+                                                ?
+                                            </PixelText>
+                                            <View
+                                                style={{
+                                                    flexDirection: "row",
+                                                    justifyContent: "center",
+                                                }}
+                                            >
+                                                <PixelButton
+                                                    text="Confirm"
+                                                    onPress={handleConfirm}
+                                                    color="#0f0"
+                                                    containerStyle={{
+                                                        marginHorizontal: 8,
+                                                    }}
+                                                />
+                                                <PixelButton
+                                                    text="Cancel"
+                                                    onPress={handleCancel}
+                                                    color="#f00"
+                                                    containerStyle={{
+                                                        marginHorizontal: 8,
+                                                    }}
+                                                />
+                                            </View>
+                                        </View>
+                                    )}
 
-                                <PixelButton
-                                    text="Gym Gamer Pass"
-                                    onPress={() => {
-                                        onClose();
-                                        setTimeout(() => {
-                                            navigation.navigate(
-                                                "SubscriptionScreen"
+                                    <PixelButton
+                                        text="Contact Support"
+                                        onPress={openSupportModal}
+                                        color="#00BFFF"
+                                        containerStyle={styles.button}
+                                    />
+
+                                    <PixelButton
+                                        text={
+                                            isMuted
+                                                ? "Unmute App Sounds"
+                                                : "Mute App Sounds"
+                                        }
+                                        onPress={onToggleMuted}
+                                        color="#FFD700"
+                                        containerStyle={styles.button}
+                                    />
+
+                                    <PixelButton
+                                        text={
+                                            optedIn
+                                                ? "Opt Out Of Emails"
+                                                : "Opt Into Emails & Offers"
+                                        }
+                                        onPress={toggleOpt}
+                                        color="#9B59B6"
+                                        containerStyle={styles.button}
+                                    />
+
+                                    <PixelButton
+                                        text={
+                                            notificationsEnabled
+                                                ? "Turn Off Notifications"
+                                                : "Turn On Notifications"
+                                        }
+                                        onPress={onToggleNotifications}
+                                        color="#7FFF00"
+                                        containerStyle={styles.button}
+                                    />
+
+                                    <PixelButton
+                                        text="Contact Support"
+                                        onPress={openSupportModal}
+                                        color="#00BFFF"
+                                        containerStyle={styles.button}
+                                    />
+
+                                    <PixelButton
+                                        text="Credits"
+                                        onPress={() => {
+                                            onClose();
+                                            setTimeout(() => {
+                                                navigation.navigate(
+                                                    "CreditsScreen"
+                                                );
+                                            }, 100);
+                                        }}
+                                        color="#FF00FF"
+                                        containerStyle={styles.button}
+                                    />
+
+                                    <PixelButton
+                                        text="Delete Account"
+                                        onPress={() => {
+                                            setPixelModalTitle(
+                                                "Confirm Delete"
                                             );
-                                        }, 100);
-                                    }}
-                                    color="#ff0"
-                                    containerStyle={styles.button}
-                                />
-
-                                <PixelButton
-                                    text="Contact Support"
-                                    onPress={openSupportModal}
-                                    color="#00BFFF"
-                                    containerStyle={styles.button}
-                                />
-
-                                <PixelButton
-                                    text={
-                                        isMuted
-                                            ? "Unmute App Sounds"
-                                            : "Mute App Sounds"
-                                    }
-                                    onPress={onToggleMuted}
-                                    color="#FFD700"
-                                    containerStyle={styles.button}
-                                />
-
-                                <PixelButton
-                                    text={
-                                        optedIn
-                                            ? "Opt Out Of Emails"
-                                            : "Opt Into Emails & Offers"
-                                    }
-                                    onPress={toggleOpt}
-                                    color="#9B59B6"
-                                    containerStyle={styles.button}
-                                />
-
-                                <PixelButton
-                                    text={
-                                        notificationsEnabled
-                                            ? "Turn Off Notifications"
-                                            : "Turn On Notifications"
-                                    }
-                                    onPress={onToggleNotifications}
-                                    color="#7FFF00"
-                                    containerStyle={styles.button}
-                                />
-
-                                <PixelButton
-                                    text="Contact Support"
-                                    onPress={openSupportModal}
-                                    color="#00BFFF"
-                                    containerStyle={styles.button}
-                                />
-
-                                <PixelButton
-                                    text="Credits"
-                                    onPress={() => {
-                                        onClose();
-                                        setTimeout(() => {
-                                            navigation.navigate(
-                                                "CreditsScreen"
+                                            setPixelModalMessage(
+                                                "Are you sure you want to delete your account? This cannot be undone."
                                             );
-                                        }, 100);
-                                    }}
-                                    color="#FF00FF"
-                                    containerStyle={styles.button}
-                                />
+                                            setPixelModalButton("Delete");
+                                            setPixelModalMode("delete");
+                                            setShowPixelModal(true);
+                                        }}
+                                        color="#FF4C4C"
+                                        containerStyle={styles.button}
+                                    />
 
-                                <PixelButton
-                                    text="Delete Account"
-                                    onPress={() => {
-                                        setPixelModalTitle("Confirm Delete");
-                                        setPixelModalMessage(
-                                            "Are you sure you want to delete your account? This cannot be undone."
-                                        );
-                                        setPixelModalButton("Delete");
-                                        setPixelModalMode("delete");
-                                        setShowPixelModal(true);
-                                    }}
-                                    color="#FF4C4C"
-                                    containerStyle={styles.button}
-                                />
-
-                                <PixelButton
-                                    text="Close"
-                                    onPress={onClose}
-                                    color="#888"
-                                    containerStyle={[
-                                        styles.button,
-                                        { marginTop: 20 },
-                                    ]}
-                                />
+                                    <PixelButton
+                                        text="Close"
+                                        onPress={onClose}
+                                        color="#888"
+                                        containerStyle={[
+                                            styles.button,
+                                            { marginTop: 20 },
+                                        ]}
+                                    />
+                                </ScrollView>
 
                                 <PixelModal
                                     visible={showPixelModal}
@@ -375,18 +362,9 @@ export default function SettingsModal({
                                 <ConfirmationPixelModal
                                     visible={confirmationPixelModalVisible}
                                     onConfirm={() => {
-                                        if (!isConfirmingSucessSubscription) {
-                                            setConfirmationPixelModalVisible(
-                                                false
-                                            );
-                                            return;
-                                        }
                                         setShowSettings(false);
                                         fetchUserData();
                                         setConfirmationPixelModalVisible(false);
-                                        setIsConfirmingSuccessSubscription(
-                                            false
-                                        );
                                     }}
                                     onCancel={() =>
                                         setConfirmationPixelModalVisible(false)

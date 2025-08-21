@@ -25,7 +25,6 @@ interface WorkoutHeaderProps {
     setSelectedDay: (day: { id: number; name: string } | null) => void;
     finishedWorkout?: boolean;
     setWorkoutFinished: (b: boolean) => void;
-    isConfirmingSubscribed: boolean;
     navigation: any;
 }
 
@@ -49,7 +48,6 @@ export default function WorkoutHeader({
     setSelectedDay,
     finishedWorkout = false,
     setWorkoutFinished,
-    isConfirmingSubscribed,
     navigation,
 }: WorkoutHeaderProps) {
     return (
@@ -113,11 +111,6 @@ export default function WorkoutHeader({
                     if (finishedWorkout) {
                         setSelectedDay(null);
                         setWorkoutFinished(false);
-                        return;
-                    }
-                    if (isConfirmingSubscribed) {
-                        setSelectedDay(null);
-                        navigation.navigate("SubscriptionScreen");
                         return;
                     }
                 }}

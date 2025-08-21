@@ -64,16 +64,7 @@ interface UserData {
     weeklyWeightLifted: number;
     weightSystem: "IMPERIAL" | "METRIC";
     userQuest: UserQuest;
-    isSubscribed: boolean;
-    subscriptionEndDate: Date | null;
 }
-
-type SubscriptionState = {
-    isSubscribed: boolean;
-    subscriptionEndDate: Date | null;
-    stripeCustomerId: string | null;
-    stripeSubscriptionId: string | null;
-};
 
 export default function ProfileScreen({
     navigation,
@@ -102,7 +93,6 @@ export default function ProfileScreen({
     const [displayLevel, setDisplayLevel] = useState<number | null>(null);
     const levelUpAnim = useRef(new Animated.Value(0)).current;
     const [showLevelUpImage, setShowLevelUpImage] = useState(false);
-    const [showWeightSelector, setShowWeightSelector] = useState(false);
     const [selectedSystem, setSelectedSystem] = useState<"IMPERIAL" | "METRIC">(
         userData?.weightSystem || "IMPERIAL"
     );
@@ -124,12 +114,6 @@ export default function ProfileScreen({
     const [optedEnabled, setOptedEnabled] = useState<boolean>(false);
     const [showLevelProgress, setShowLevelProgress] = useState<boolean>(false);
     const opacity = useRef(new Animated.Value(0)).current;
-    const [subscription, setSubscription] = useState<SubscriptionState>({
-        isSubscribed: false,
-        subscriptionEndDate: null,
-        stripeCustomerId: null,
-        stripeSubscriptionId: null,
-    });
 
     const triggerLevelUpImage = () => {
         setShowLevelUpImage(true);
@@ -273,16 +257,6 @@ export default function ProfileScreen({
 
             // Get user opted in settings
             setOptedEnabled(data.optedIn);
-
-            // Get user subscription status
-            setSubscription({
-                isSubscribed: data.isSubscribed,
-                subscriptionEndDate: data.subscriptionEndDate
-                    ? new Date(data.subscriptionEndDate)
-                    : null,
-                stripeCustomerId: data.stripeCustomerId ?? null,
-                stripeSubscriptionId: data.stripeSubscriptionId ?? null,
-            });
         } catch (error: any) {
             if (
                 error.message === "Forbidden" ||
@@ -666,38 +640,6 @@ export default function ProfileScreen({
                                 </PixelText>
                             )}
 
-                            {userData.subscriptionEndDate &&
-                                !userData.isSubscribed &&
-                                (() => {
-                                    const now = new Date();
-                                    const endDate = new Date(
-                                        userData.subscriptionEndDate
-                                    ); // Ensure it's a Date
-                                    const msInDay = 1000 * 60 * 60 * 24;
-
-                                    const timeDiff =
-                                        endDate.getTime() - now.getTime();
-                                    const daysLeft = Math.max(
-                                        0,
-                                        Math.floor(timeDiff / msInDay)
-                                    );
-
-                                    return (
-                                        <PixelText
-                                            fontSize={11}
-                                            color="#fff"
-                                            style={{
-                                                marginBottom: 18,
-                                                lineHeight: 18,
-                                            }}
-                                        >
-                                            You have {daysLeft} day
-                                            {daysLeft !== 1 ? "s" : ""} left of
-                                            your Gym Gamer Pass!
-                                        </PixelText>
-                                    );
-                                })()}
-
                             <PixelText fontSize={12} color="#fff">
                                 Get into the gym:
                             </PixelText>
@@ -890,7 +832,6 @@ export default function ProfileScreen({
                             optedIn={optedEnabled}
                             toggleOpt={toggleOpt}
                             navigation={navigation}
-                            subscription={subscription}
                             fetchUserData={fetchUserData}
                             setShowSettings={() =>
                                 setShowSettings((prev) => !prev)

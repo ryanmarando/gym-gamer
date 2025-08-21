@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     View,
     StyleSheet,
@@ -28,6 +28,35 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
         useState("Whoa there, gamer!");
     const [loading, setLoading] = useState(false);
     const [showResetModal, setShowResetModal] = useState(false);
+
+    async function checkLogin(setIsLoggedIn: (val: boolean) => void) {
+        const token = await SecureStore.getItemAsync("userToken");
+        const loginTimestamp = await SecureStore.getItemAsync("loginTimestamp");
+
+        if (!token || !loginTimestamp) {
+            setIsLoggedIn(false);
+            return;
+        }
+
+        const loginDate = new Date(loginTimestamp);
+        const now = new Date();
+
+        // Check if within 7 days
+        const sevenDays = 7 * 24 * 60 * 60 * 1000; // ms
+        if (now.getTime() - loginDate.getTime() < sevenDays) {
+            setIsLoggedIn(true);
+        } else {
+            // Token expired
+            setIsLoggedIn(false);
+            await SecureStore.deleteItemAsync("userToken");
+            await SecureStore.deleteItemAsync("loginTimestamp");
+            await SecureStore.deleteItemAsync("userId");
+        }
+    }
+
+    useEffect(() => {
+        checkLogin(setIsLoggedIn);
+    }, []);
 
     const handleLogin = async () => {
         if (!email.trim() || !password.trim()) {
@@ -69,8 +98,10 @@ export default function LoginScreen({ navigation, setIsLoggedIn }: any) {
             //const data = await response.json();
             console.log("✅ Login success:", data);
 
+            const now = new Date().toISOString();
             await SecureStore.setItemAsync("userToken", data.token);
             await SecureStore.setItemAsync("userId", data.user.id.toString());
+            await SecureStore.setItemAsync("loginTimestamp", now);
 
             setIsLoggedIn(true);
             playLoginSound();

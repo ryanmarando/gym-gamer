@@ -7,7 +7,6 @@ import userRouter from "./routes/user.js";
 import progressPhotoRouter from "./routes/progressPhoto.js";
 import achievementRouter from "./routes/achievement.js";
 import questRouter from "./routes/quest.js";
-import subscriptionRouter from "./routes/subscription.js";
 import xss from "./middleware/xss.js";
 import authenticated from "./middleware/auth.js";
 import { sendEmail } from "./controllers/user.js";
@@ -56,7 +55,6 @@ app.use("/user", userRouter);
 app.use("/progressPhoto", progressPhotoRouter);
 app.use("/achievement", achievementRouter);
 app.use("/quest", questRouter);
-app.use("/subscription", subscriptionRouter);
 
 // Origin Point
 app.listen(port, "0.0.0.0", () => {

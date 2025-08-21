@@ -15,7 +15,6 @@ import UserWaiverScreen from "./screens/UserWaiverScreen";
 import ProgressPhotos from "./screens/ProgressPhotos";
 import CreditsScreen from "./screens/CreditsScreen";
 import TrackLiftsScreen from "./screens/TrackLiftsScreen";
-import SubscriptionScreen from "./screens/SubscriptionScreen";
 
 const RootStack = createNativeStackNavigator();
 const Stack = createNativeStackNavigator();
@@ -70,10 +69,6 @@ export default function App() {
                     <Stack.Screen
                         name="TrackLifts"
                         component={TrackLiftsScreen}
-                    />
-                    <Stack.Screen
-                        name="SubscriptionScreen"
-                        component={SubscriptionScreen}
                     />
                 </RootStack.Navigator>
             ) : (

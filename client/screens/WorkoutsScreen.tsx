@@ -83,10 +83,6 @@ export default function WorkoutsScreen({ navigation }: any) {
     const [repEntries, setRepEntries] = useState<{
         [workoutId: number]: string[];
     }>({});
-    const [isSubscribed, setIsSubscribed] = useState<boolean>(false);
-    const [isConfirmingSubscribed, setIsConfirmingSubscribed] =
-        useState<boolean>(false);
-    const [subscriptionEndDate, setSubscriptionEndDate] = useState<Date>();
 
     const addSplitDay = () => {
         if (splitDays.length < 7) {
@@ -147,23 +143,7 @@ export default function WorkoutsScreen({ navigation }: any) {
 
     const openStartModal = () => {
         setModalAction("start");
-        const now = new Date();
 
-        if (
-            !(
-                isSubscribed ||
-                (subscriptionEndDate && new Date(subscriptionEndDate) > now)
-            )
-        ) {
-            playBadMoveSound();
-            setmodalConfirmationTitle("Oh no, gamer!");
-            setModalMessage(
-                "You're not actively subscribed... become a true gym gamer to track workouts!"
-            );
-            setIsConfirmingSubscribed(true);
-            setShowConfirmationModal(true);
-            return;
-        }
         setmodalConfirmationTitle("Alright, gamer!");
         setModalMessage("Are you sure you want to start a workout?");
         setShowModal(true);
@@ -180,7 +160,6 @@ export default function WorkoutsScreen({ navigation }: any) {
             setModalMessage("Are you sure you want to complete the workout?");
         }
         setShowModal(true);
-        setIsConfirmingSubscribed(false);
     };
 
     const resetWeightEntries = () => {
@@ -429,9 +408,6 @@ export default function WorkoutsScreen({ navigation }: any) {
             if (weightSystem === "METRIC" || weightSystem === "IMPERIAL") {
                 setWeightSystem(weightSystem);
             }
-
-            setIsSubscribed(userData.isSubscribed);
-            setSubscriptionEndDate(userData.subscriptionEndDate);
         } catch (err) {
             console.error(err);
         }
@@ -697,7 +673,6 @@ export default function WorkoutsScreen({ navigation }: any) {
             setmodalConfirmationTitle("Whoa there, gamer!");
             setShowConfirmationModal(true);
             playBadMoveSound();
-            setIsConfirmingSubscribed(false);
             return;
         }
         setSelectedDay(null);
@@ -877,9 +852,6 @@ export default function WorkoutsScreen({ navigation }: any) {
                                             finishedWorkout={workoutFinished}
                                             setWorkoutFinished={
                                                 setWorkoutFinished
-                                            }
-                                            isConfirmingSubscribed={
-                                                isConfirmingSubscribed
                                             }
                                             navigation={navigation}
                                         />
