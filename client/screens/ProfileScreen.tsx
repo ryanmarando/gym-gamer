@@ -28,42 +28,36 @@ import { playBadMoveSound } from "../utils/playBadMoveSound";
 import { playLoginSound } from "../utils/playLoginSound";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import SettingsModal from "../components/SettingsModal";
+import * as SQLite from "expo-sqlite";
 
 interface AchievementDetails {
     id: number;
     name: string;
     xp: number;
     weeklyReset: boolean;
-    isQuest: boolean;
 }
 
 interface Quest {
     name: string;
     type: "GAIN" | "LOSE";
     goal: number;
-    goalDate: string | Date;
+    goal_date: string | Date;
     baseXP: number;
     initialWeight: number;
-}
-
-interface UserQuest {
-    quest: Quest;
 }
 
 interface UserData {
     id: number;
     email: string;
     name: string;
-    createdAt: string;
     level: number;
-    levelProgress: number;
+    level_progress: number;
     xp: number;
     achievements: AchievementDetails[];
     activeQuest: Quest;
-    totalWeightLifted: number;
-    weeklyWeightLifted: number;
-    weightSystem: "IMPERIAL" | "METRIC";
-    userQuest: UserQuest;
+    total_weight_lifted: number;
+    weekly_weight_lifted: number;
+    weight_system: "IMPERIAL" | "METRIC";
 }
 
 export default function ProfileScreen({
@@ -72,6 +66,7 @@ export default function ProfileScreen({
     setIsLoggedIn,
 }: any) {
     const [userData, setUserData] = useState<UserData | null>(null);
+    const [userQuest, setUserQuest] = useState<Quest | null>(null);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [modalMessage, setModalMessage] = useState<string>(
@@ -94,7 +89,7 @@ export default function ProfileScreen({
     const levelUpAnim = useRef(new Animated.Value(0)).current;
     const [showLevelUpImage, setShowLevelUpImage] = useState(false);
     const [selectedSystem, setSelectedSystem] = useState<"IMPERIAL" | "METRIC">(
-        userData?.weightSystem || "IMPERIAL"
+        userData?.weight_system || "IMPERIAL"
     );
     const [pendingSystem, setPendingSystem] = useState<
         "IMPERIAL" | "METRIC" | null
@@ -133,7 +128,7 @@ export default function ProfileScreen({
         if (remainingLevels <= 0) {
             // Final bar for current level's progress
             Animated.timing(animatedProgress, {
-                toValue: userData!.levelProgress / 100,
+                toValue: userData!.level_progress / 100,
                 duration: 1000,
                 useNativeDriver: false,
             }).start(() => {
@@ -186,7 +181,7 @@ export default function ProfileScreen({
         } else {
             setSparksActive(true);
             Animated.timing(animatedProgress, {
-                toValue: userData.levelProgress / 100,
+                toValue: userData.level_progress / 100,
                 duration: 1000,
                 useNativeDriver: false,
             }).start(() => {
@@ -206,6 +201,7 @@ export default function ProfileScreen({
                 setExpoPushToken(token);
                 setNotificationsEnabled(true);
                 await SecureStore.setItemAsync("notifToken", token);
+                await saveExpoPushTokenLocal(token);
                 updateAPIExpoToken(token);
             } else {
                 setNotificationsEnabled(false);
@@ -222,41 +218,70 @@ export default function ProfileScreen({
         }, [isLoggedIn])
     );
 
+    async function saveExpoPushTokenLocal(token: string) {
+        try {
+            // Open the local database
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+            // Get the userId from SecureStore
+            const userIdStr = await SecureStore.getItemAsync("userId");
+            if (!userIdStr) {
+                console.warn(
+                    "No userId found in SecureStore. Cannot save push token."
+                );
+                return;
+            }
+            const userId = Number(userIdStr);
+
+            // Update the user's expo_push_token
+            const result = await db.runAsync(
+                "UPDATE users SET expo_push_token = ? WHERE id = ?",
+                [token, userId]
+            );
+
+            console.log("✅ Saved expo token to local db!");
+        } catch (err) {
+            console.error("❌ Error saving expo push token locally", err);
+        }
+    }
+
     const fetchUserData = async () => {
         try {
             setLoading(true);
-            const userId = await SecureStore.getItemAsync("userId");
-            const data = await authFetch(`/user/${Number(userId)}`);
 
-            // Get their user achievements
-            const userQuest = await authFetch(
-                `/user/getUserQuest/${Number(userId)}`
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            let localUserData: UserData[] = await db.getAllAsync(
+                "SELECT * FROM users"
             );
+            console.log("SQlite", localUserData[0]);
 
-            // Merge into a single object
-            const userDataWithQuest = {
-                ...data,
-                userQuest,
-            };
+            const localUserQuest: Quest[] = await db.getAllAsync(
+                "SELECT * FROM quests"
+            );
+            console.log("qUESTS", localUserQuest[0]);
+
+            setUserData(localUserData[0]);
+            setUserQuest(localUserQuest[0]);
 
             console.log("✅ Profile screen loaded");
-            setUserData(userDataWithQuest);
 
             // Check if quest is expired
-            if (
-                userQuest.quest.goalDate &&
-                new Date(userQuest.quest.goalDate) < new Date()
-            ) {
+
+            if (new Date(localUserQuest[0].goal_date) < new Date()) {
                 playAlertSound();
                 setQuestExpiredModalVisible(true);
             }
 
             // Get user weight system
-            setSelectedSystem(data.weightSystem);
-            await SecureStore.setItemAsync("weightSystem", data.weightSystem);
-
-            // Get user opted in settings
-            setOptedEnabled(data.optedIn);
+            setSelectedSystem(localUserData[0].weight_system);
+            await SecureStore.setItemAsync(
+                "weight_system",
+                localUserData[0].weight_system
+            );
+            await SecureStore.setItemAsync(
+                "userId",
+                String(localUserData[0].id)
+            );
         } catch (error: any) {
             if (
                 error.message === "Forbidden" ||
@@ -334,13 +359,13 @@ export default function ProfileScreen({
             // Delete all exercise entries
 
             await authFetch(
-                `/user/updateWeightSystem/${userId}?weightSystem=${newSystem}`,
+                `/user/updateWeightSystem/${userId}?weight_system=${newSystem}`,
                 { method: "PATCH" }
             );
 
             setSelectedSystem(newSystem);
             // setUserData(updatedUserData);
-            await SecureStore.setItemAsync("weightSystem", newSystem);
+            await SecureStore.setItemAsync("weight_system", newSystem);
             await fetchUserData();
         } catch (err) {
             playBadMoveSound();
@@ -605,7 +630,7 @@ export default function ProfileScreen({
                                 color="#E67E22"
                                 style={{ marginTop: 8 }}
                             >
-                                {userData.levelProgress}% progress to level{" "}
+                                {userData.level_progress}% progress to level{" "}
                                 {userData.level + 1}!
                             </PixelText>
                         </Animated.View>
@@ -616,7 +641,7 @@ export default function ProfileScreen({
                                 marginTop: 14,
                             }}
                         >
-                            {userData.totalWeightLifted > 0 && (
+                            {userData.total_weight_lifted > 0 && (
                                 <PixelText
                                     fontSize={12}
                                     color="#fff"
@@ -632,10 +657,10 @@ export default function ProfileScreen({
                                     You've lifted a total of{" "}
                                     {selectedSystem === "METRIC"
                                         ? `${formatWeight(
-                                              userData.totalWeightLifted,
+                                              userData.total_weight_lifted,
                                               selectedSystem
                                           )}`
-                                        : `${userData.totalWeightLifted} lbs`}
+                                        : `${userData.total_weight_lifted} lbs`}
                                     !
                                 </PixelText>
                             )}
@@ -725,8 +750,9 @@ export default function ProfileScreen({
                                               name: userData.activeQuest.name,
                                               type: userData.activeQuest.type,
                                               goal: userData.activeQuest.goal,
-                                              goalDate:
-                                                  userData.activeQuest.goalDate,
+                                              goal_date:
+                                                  userData.activeQuest
+                                                      .goal_date,
                                               baseXP: userData.activeQuest
                                                   .baseXP,
                                           }

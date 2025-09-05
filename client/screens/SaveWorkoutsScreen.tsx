@@ -21,6 +21,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { playDeleteSound } from "../utils/playDeleteSound";
 import { playSwordSelectionSound } from "../utils/playSwordSelectionSound";
 import { playCompleteSound } from "../utils/playCompleteSound";
+import * as SQLite from "expo-sqlite";
 
 export default function SaveWorkoutScreen() {
     const [userWorkouts, setUserWorkouts] = useState<any[]>([]);
@@ -93,18 +94,32 @@ export default function SaveWorkoutScreen() {
 
     const fetchWorkouts = async () => {
         try {
-            const userId = await SecureStore.getItemAsync("userId");
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const userIdStr = await SecureStore.getItemAsync("userId");
+            const userId = Number(userIdStr);
 
-            const userData = await authFetch(`/user/getUserWorkouts/${userId}`);
-            const allData = await authFetch(
-                `/workouts?userId=${userId}&all=false`
+            // All workouts
+            const allWorkoutsRows: any[] = await db.getAllAsync(
+                "SELECT * FROM workouts"
             );
 
-            console.log("✅ Workout shop loaded");
-            setUserWorkouts(userData.workouts);
-            setAllWorkouts(allData);
+            // Only user's saved workouts
+            const userWorkoutsRows: any[] = await db.getAllAsync(
+                `SELECT w.*
+                        FROM user_workouts uw
+                        JOIN workouts w ON uw.workout_id = w.id
+                        WHERE uw.user_id = ?`,
+                [userId]
+            );
+
+            console.log(userWorkoutsRows);
+
+            setAllWorkouts(allWorkoutsRows);
+            setUserWorkouts(userWorkoutsRows);
+
+            console.log("✅ Workouts loaded locally");
         } catch (err) {
-            console.error(err);
+            console.error("❌ Failed to load workouts locally:", err);
         } finally {
             setLoading(false);
         }
@@ -117,7 +132,8 @@ export default function SaveWorkoutScreen() {
     );
 
     const isSaved = (workoutId: number) =>
-        userWorkouts.some((w) => w.workoutId === workoutId);
+        Array.isArray(userWorkouts) &&
+        userWorkouts.some((w) => w.id === workoutId);
 
     const filterWorkoutsByArchitype = (type: string) => {
         return allWorkouts.filter((w) => w.architype.includes(type));
@@ -126,21 +142,29 @@ export default function SaveWorkoutScreen() {
     const saveWorkoutToSplit = async (
         userId: number,
         workoutId: number,
-        splitDay: string
+        day_id: number
     ) => {
-        await authFetch(
-            `/workouts/saveToUser?userId=${userId}&workoutId=${workoutId}`,
-            {
-                method: "PATCH",
-                body: JSON.stringify({
-                    dayId: selectedSplitDayId,
-                }),
-            }
-        );
-        const added = allWorkouts.find((w) => w.id === workoutId);
-        if (added) setUserWorkouts((prev) => [...prev, added]);
-        playSwordSelectionSound();
-        fetchWorkouts();
+        try {
+            const added = allWorkouts.find((w) => w.id === workoutId);
+            if (added) setUserWorkouts((prev) => [...prev, added]);
+
+            // Open local SQLite database
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+            // Insert into local table (create table beforehand if needed)
+            await db.runAsync(
+                `INSERT OR IGNORE INTO user_workouts (user_id, workout_id, day_id)
+             VALUES (?, ?, ?)`,
+                [userId, workoutId, day_id]
+            );
+
+            console.log("✅ Workout saved locally");
+
+            playSwordSelectionSound();
+            fetchWorkouts();
+        } catch (error) {
+            console.log(error);
+        }
     };
 
     const toggleWorkout = async (workoutId: number) => {
@@ -160,16 +184,34 @@ export default function SaveWorkoutScreen() {
                 setModalVisible(true);
             } else {
                 // ✅ Always let them choose the day, but preselect if there's a match
-                const userData = await authFetch(`/user/${userId}`);
-                const userSplits = userData?.workoutSplit?.[0]?.days || [];
+                // const userData = await authFetch(`/user/${userId}`);
 
-                const matchingDay = workout.architype.find((type: string) =>
-                    userSplits.some((day: any) => day.dayName === type)
+                // Open local SQLite database
+                const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+                let localUserData: any[] = await db.getAllAsync(
+                    "SELECT * FROM workout_days"
+                );
+                console.log("SQlite", localUserData);
+
+                // Get only the days array for this user
+                const userSplits = localUserData;
+
+                // Parse the JSON string into an array
+                const workoutArchitypes: string[] = JSON.parse(
+                    workout.architype
+                );
+                console.log(workoutArchitypes);
+
+                // Find a matching day for the workout's architype
+                const matchingDay = workoutArchitypes.find((type: string) =>
+                    userSplits.some((day: any) => day.day_name === type)
                 );
 
+                // Create split options for the modal
                 const splitOptions = userSplits.map((d: any) => ({
                     id: d.id,
-                    name: d.dayName,
+                    name: d.day_name,
                 }));
 
                 setSplitOptions(splitOptions);
@@ -177,10 +219,10 @@ export default function SaveWorkoutScreen() {
 
                 if (matchingDay) {
                     const matchedDay = userSplits.find(
-                        (day: any) => day.dayName === matchingDay
+                        (day: any) => day.day_name === matchingDay
                     );
                     if (matchedDay) {
-                        setSelectedSplitDay(matchedDay.dayName);
+                        setSelectedSplitDay(matchedDay.day_name);
                         setSelectedSplitDayId(matchedDay.id);
                     }
                 } else {
@@ -207,13 +249,25 @@ export default function SaveWorkoutScreen() {
         try {
             const userId = Number(await SecureStore.getItemAsync("userId"));
 
-            await authFetch(
-                `/workouts/deleteFromUser?userId=${userId}&workoutId=${workoutId}`,
-                { method: "DELETE" }
+            // await authFetch(
+            //     `/workouts/deleteFromUser?userId=${userId}&workoutId=${workoutId}`,
+            //     { method: "DELETE" }
+            // );
+
+            // Open local database
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+            // Delete the saved workout for this user
+            await db.runAsync(
+                `DELETE FROM user_workouts WHERE user_id = ? AND workout_id = ?`,
+                [userId, workoutId]
             );
 
-            playDeleteSound();
+            // Update local state
+            setUserWorkouts((prev) => prev.filter((w) => w.id !== workoutId));
 
+            fetchWorkouts();
+            playDeleteSound();
             setUserWorkouts((prev) =>
                 prev.filter((w) => w.workoutId !== workoutId)
             );
@@ -227,11 +281,22 @@ export default function SaveWorkoutScreen() {
 
     const deleteCustomWorkout = async (workoutId: number) => {
         try {
-            await authFetch(`/workouts/${workoutId}`, { method: "DELETE" });
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+            // Delete from workouts table
+            await db.runAsync("DELETE FROM workouts WHERE id = ?", [workoutId]);
+
+            // Optionally, also delete any user_workouts referencing it
+            await db.runAsync(
+                "DELETE FROM user_workouts WHERE workout_id = ?",
+                [workoutId]
+            );
+
             console.log("Deleted workoutId:", workoutId);
+
             fetchWorkouts();
         } catch (err) {
-            console.error(err);
+            console.error("Failed to delete custom workout:", err);
         }
     };
 
@@ -249,33 +314,50 @@ export default function SaveWorkoutScreen() {
             if (!userIdStr) throw new Error("User ID not found");
             const userId = Number(userIdStr);
 
-            const body = JSON.stringify({
-                userId,
-                customName: data.customName,
-                architype: data.architype,
-            });
+            // const body = JSON.stringify({
+            //     userId,
+            //     customName: data.customName,
+            //     architype: data.architype,
+            // });
 
-            const result = await authFetch("/workouts/createCustomWorkout", {
-                method: "POST",
-                body,
-            });
+            // const result = await authFetch("/workouts/createCustomWorkout", {
+            //     method: "POST",
+            //     body,
+            // });
 
-            if (result.newlyCompletedAchievements?.length) {
-                // Send notification
-                sendNotification(result.newlyCompletedAchievements);
+            // if (result.newlyCompletedAchievements?.length) {
+            //     // Send notification
+            //     sendNotification(result.newlyCompletedAchievements);
 
-                result.newlyCompletedAchievements.forEach((ach: any) => {
-                    console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
-                    // Show modal, play sound, push notification, etc.
-                });
-            }
+            //     result.newlyCompletedAchievements.forEach((ach: any) => {
+            //         console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
+            //         // Show modal, play sound, push notification, etc.
+            //     });
+            // }
 
-            console.log("Workout created:", result);
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+            // Insert new workout
+            const architypeStr = JSON.stringify(data.architype);
+            await db.runAsync(
+                "INSERT INTO workouts (name, architype, created_by_user_id) VALUES (?, ?, ?)",
+                [data.customName, architypeStr, userId]
+            );
+
+            // Optionally, get the inserted workout ID
+            const insertedWorkouts: any[] = await db.getAllAsync(
+                "SELECT * FROM workouts WHERE created_by_user_id = ? ORDER BY id DESC LIMIT 1",
+                [userId]
+            );
+            const newWorkout = insertedWorkouts[0];
+
+            console.log("Workout created locally:", newWorkout);
+
             fetchWorkouts();
             playCompleteSound();
             setModalConfirmationConfig({
                 title: "Nice work, gamer!",
-                message: `${result.workout.name} is now a new workout created just by you & for you!`,
+                message: `${newWorkout.name} is now a new workout created just by you & for you!`,
                 onConfirm: () => setModalConfirmationVisible(false),
             });
             setModalConfirmationVisible(true);
@@ -297,14 +379,10 @@ export default function SaveWorkoutScreen() {
                 <PixelButton
                     text={isSaved(item.id) ? "Remove" : "Save"}
                     color="#000"
-                    onPress={() => {
-                        toggleWorkout(item.id);
-                    }}
+                    onPress={() => toggleWorkout(item.id)}
                     style={[
                         styles.button,
-                        {
-                            backgroundColor: isSaved(item.id) ? "#f55" : "#0f0",
-                        },
+                        { backgroundColor: isSaved(item.id) ? "#f55" : "#0f0" },
                     ]}
                 >
                     <PixelText fontSize={12} color="#000">
@@ -312,7 +390,7 @@ export default function SaveWorkoutScreen() {
                     </PixelText>
                 </PixelButton>
 
-                {item.createdByUserId !== null && (
+                {item.created_by_user_id !== null && (
                     <PixelButton
                         text="Delete"
                         color="#000"
@@ -412,7 +490,7 @@ export default function SaveWorkoutScreen() {
                                             saveWorkoutToSplit(
                                                 userId,
                                                 pendingSaveWorkout.id,
-                                                selectedSplitDay
+                                                selectedSplitDayId!
                                             );
                                         }
                                     }

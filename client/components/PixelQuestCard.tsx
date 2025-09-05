@@ -13,20 +13,8 @@ import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import { convertWeight, getWeightUnit } from "../utils/unitUtils";
 import { getConvertedQuestFields } from "../utils/unitUtils";
-
-interface Quest {
-    name: string;
-    type: string;
-    goal: number;
-    goalDate: Date | string;
-    initialWeight?: number | null;
-    baseXP: number;
-}
-
-interface WeightEntry {
-    enteredAt: string;
-    weight: number;
-}
+import * as SQLite from "expo-sqlite";
+import { Quest, UserWeightEntry } from "../types/db";
 
 interface PixelQuestCardProps {
     quest?: Quest;
@@ -53,9 +41,9 @@ export default function PixelQuestCard({
             ) {
                 // Sort descending by enteredAt to get latest first
                 const sorted = data.user.weightEntries.sort(
-                    (a: WeightEntry, b: WeightEntry) =>
-                        new Date(b.enteredAt).getTime() -
-                        new Date(a.enteredAt).getTime()
+                    (a: UserWeightEntry, b: UserWeightEntry) =>
+                        new Date(b.entered_at).getTime() -
+                        new Date(a.entered_at).getTime()
                 );
                 setCurrentWeight(sorted[0].weight);
             } else {
@@ -71,7 +59,7 @@ export default function PixelQuestCard({
         const fetchQuestAndWeights = async () => {
             // if (propQuest) {
             //     setQuest(propQuest);
-            //     if (propQuest.initialWeight != null) {
+            //     if (propQuest.initial_weight != null) {
             //         const userId = await SecureStore.getItemAsync("userId");
             //         if (userId) await fetchWeights(userId);
             //     }
@@ -87,14 +75,13 @@ export default function PixelQuestCard({
                 const userId = await SecureStore.getItemAsync("userId");
                 if (!userId) throw new Error("Missing userId");
 
-                const data = await authFetch(`/user/getUserQuest/${userId}`);
-                if (data && data.quest) {
-                    setQuest(data.quest);
+                const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
-                    if (data.quest.initialWeight != null) {
-                        await fetchWeights(userId);
-                    }
-                }
+                const localUserQuest: Quest[] = await db.getAllAsync(
+                    "SELECT * FROM quests"
+                );
+
+                setQuest(localUserQuest[0]);
             } catch (err) {
                 console.error("Error fetching quest:", err);
             } finally {
@@ -105,7 +92,7 @@ export default function PixelQuestCard({
     }, [propQuest]);
 
     function getProgress() {
-        if (!quest || quest.initialWeight == null || currentWeight == null)
+        if (!quest || quest.initial_weight == null || currentWeight == null)
             return null;
 
         const isGain = quest.type === "GAIN";
@@ -116,9 +103,9 @@ export default function PixelQuestCard({
         if (goal === 0) return 0;
 
         const numerator = isGain
-            ? currentWeight - quest.initialWeight
+            ? currentWeight - quest.initial_weight
             : isLose
-            ? quest.initialWeight - currentWeight
+            ? quest.initial_weight - currentWeight
             : 0;
 
         return Math.max(0, Math.min(1, numerator / goal));
@@ -173,7 +160,7 @@ export default function PixelQuestCard({
                     </PixelText>
                 </>
             </View>
-            {quest.initialWeight == null ? (
+            {quest.initial_weight == null ? (
                 <View
                     style={{
                         borderRadius: 12,
@@ -213,17 +200,18 @@ export default function PixelQuestCard({
                                     ? Math.round(
                                           convertWeight(
                                               quest.type === "GAIN"
-                                                  ? quest.initialWeight +
+                                                  ? quest.initial_weight +
                                                         quest.goal
-                                                  : quest.initialWeight -
+                                                  : quest.initial_weight -
                                                         quest.goal,
                                               "METRIC"
                                           ) * 2
                                       ) / 2
                                     : Math.round(
                                           (quest.type === "GAIN"
-                                              ? quest.initialWeight + quest.goal
-                                              : quest.initialWeight -
+                                              ? quest.initial_weight +
+                                                quest.goal
+                                              : quest.initial_weight -
                                                 quest.goal) * 2
                                       ) / 2}{" "}
                                 {getWeightUnit(weightSystem!)}
@@ -241,11 +229,11 @@ export default function PixelQuestCard({
                                                   Math.max(
                                                       0,
                                                       quest.type === "GAIN"
-                                                          ? quest.initialWeight +
+                                                          ? quest.initial_weight +
                                                                 quest.goal -
                                                                 currentWeight
                                                           : currentWeight -
-                                                                (quest.initialWeight -
+                                                                (quest.initial_weight -
                                                                     quest.goal)
                                                   ),
                                                   "METRIC"
@@ -255,11 +243,11 @@ export default function PixelQuestCard({
                                               Math.max(
                                                   0,
                                                   quest.type === "GAIN"
-                                                      ? quest.initialWeight +
+                                                      ? quest.initial_weight +
                                                             quest.goal -
                                                             currentWeight
                                                       : currentWeight -
-                                                            (quest.initialWeight -
+                                                            (quest.initial_weight -
                                                                 quest.goal)
                                               ) * 2
                                           ) / 2}{" "}
@@ -285,7 +273,7 @@ export default function PixelQuestCard({
                                         textAlign: "center",
                                     }}
                                 >
-                                    Worth {quest.baseXP * quest.goal} XP!
+                                    Worth {quest.base_xp * quest.goal} XP!
                                 </PixelText>
                                 <Image
                                     source={require("../assets/RewardPixel.png")}
@@ -316,7 +304,7 @@ export default function PixelQuestCard({
                 </>
             )}
             <PixelText fontSize={10} color="#fff" style={{ marginTop: 4 }}>
-                Days left: {getDaysLeft(quest.goalDate)}
+                Days left: {getDaysLeft(quest.goal_date)}
             </PixelText>
         </View>
     );

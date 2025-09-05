@@ -47,7 +47,7 @@ app.use("/auth", authRouter);
 app.use("/uploads", express.static("uploads"));
 
 // Authentication
-app.use(authenticated);
+//app.use(authenticated);
 
 // Routers
 app.use("/workouts", workoutRouter);

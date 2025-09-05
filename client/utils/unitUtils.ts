@@ -1,3 +1,5 @@
+import { Quest } from "../types/db";
+
 export function convertWeight(value: number, to: string): number {
     if (to === "METRIC") {
         return +(value * 0.453592).toFixed(1); // lbs → kg
@@ -51,15 +53,6 @@ export function getLocalizedAchievementName(
     return name;
 }
 
-interface Quest {
-    name: string;
-    type: string;
-    goal: number;
-    goalDate: Date | string;
-    initialWeight?: number | null;
-    baseXP: number;
-}
-
 export function roundToNearestHalf(value: number): number {
     return Math.round(value * 2) / 2;
 }
@@ -68,12 +61,12 @@ export function getConvertedQuestFields(
     quest: Quest,
     newSystem: "IMPERIAL" | "METRIC"
 ) {
-    if (!quest.initialWeight) {
-        quest.initialWeight = 30;
+    if (!quest.initial_weight) {
+        quest.initial_weight = 30;
     }
 
-    const convertedInitialWeight = roundToNearestHalf(
-        convertWeight(quest.initialWeight, newSystem)
+    const convertedinitial_weight = roundToNearestHalf(
+        convertWeight(quest.initial_weight, newSystem)
     );
 
     let convertedGoalAmount = roundToNearestHalf(
@@ -97,19 +90,19 @@ export function getConvertedQuestFields(
 
     const dateSuffix =
         quest.type.toUpperCase() === "MAINTAIN"
-            ? `through ${new Date(quest.goalDate).toLocaleDateString()}`
-            : `by ${new Date(quest.goalDate).toLocaleDateString()}`;
+            ? `through ${new Date(quest.goal_date).toLocaleDateString()}`
+            : `by ${new Date(quest.goal_date).toLocaleDateString()}`;
 
     const name =
         quest.type.toUpperCase() === "MAINTAIN"
-            ? `${formattedType} ${convertedInitialWeight} ${unit} ${dateSuffix}`
+            ? `${formattedType} ${convertedinitial_weight} ${unit} ${dateSuffix}`
             : `${formattedType} ${convertedGoalAmount} ${unit} ${dateSuffix}`;
 
     return {
         customType: quest.type,
         customGoalAmount: convertedGoalAmount,
-        customDeadline: quest.goalDate,
-        initialWeight: convertedInitialWeight,
+        customDeadline: quest.goal_date,
+        initial_weight: convertedinitial_weight,
         weightSystem,
         name,
     };

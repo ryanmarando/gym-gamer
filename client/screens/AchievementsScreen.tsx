@@ -22,50 +22,16 @@ import {
     getLocalizedAchievementName,
 } from "../utils/unitUtils";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
-
-interface AchievementDetails {
-    id: number;
-    name: string;
-    xp: number;
-    weeklyReset: boolean;
-    description: string;
-    goalAmount: number;
-    goalType: string;
-    targetValue: number;
-}
-
-interface UserAchievement {
-    userId: number;
-    achievementId: number;
-    progress: number;
-    completed: boolean;
-    isQuest: boolean;
-    achievement: AchievementDetails;
-    completedAt: number;
-}
-
-interface PixelAchievementCardProps {
-    achievement?: {
-        id: number;
-        name: string;
-        description: string;
-        imageUrl?: string;
-        // any other fields you want
-    };
-}
-
-interface Quest {
-    id: number;
-    name: string;
-    type: string;
-    goal: number;
-    goalDate: string | Date;
-    baseXP: number;
-    initialWeight: number;
-}
+import * as SQLite from "expo-sqlite";
+import {
+    Quest,
+    Achievement,
+    UserAchievement,
+    UserWeightEntry,
+} from "../types/db";
 
 export default function AchievementsScreen({ navigation }: any) {
-    const [achievements, setAchievements] = useState<AchievementDetails[]>([]); // All achievements
+    const [achievements, setAchievements] = useState<Achievement[]>([]); // All achievements
     const [userAchievements, setUserAchievements] = useState<UserAchievement[]>(
         []
     ); // User's achievements
@@ -103,49 +69,76 @@ export default function AchievementsScreen({ navigation }: any) {
         {
             title: "Completed Achievements",
             data: userAchievements
-                .filter((ua) => ua.completed && ua.completedAt)
+                .filter((ua) => ua.completed && ua.completed_at)
                 .sort(
                     (a, b) =>
-                        new Date(b.completedAt).getTime() -
-                        new Date(a.completedAt).getTime()
+                        new Date(b.completed_at!).getTime() -
+                        new Date(a.completed_at!).getTime()
                 ),
         },
     ];
 
     const fetchWeights = async (userId: number) => {
         try {
-            const data = await authFetch(
-                `/user/getAllUserWeightEntries/${userId}`
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+            const weights: UserWeightEntry[] = await db.getAllAsync(
+                "SELECT * FROM weight_entries WHERE user_id = ? ORDER BY entered_at DESC",
+                [userId]
             );
-            if (data?.user?.weightEntries?.length > 0) {
-                const sorted = data.user.weightEntries.sort(
-                    (a: any, b: any) =>
-                        new Date(b.enteredAt).getTime() -
-                        new Date(a.enteredAt).getTime()
-                );
-                setCurrentWeight(sorted[0].weight);
-                return sorted[0].weight;
+
+            if (weights.length > 0) {
+                setCurrentWeight(weights[0].weight);
+                return weights[0].weight;
             }
         } catch (err) {
-            console.error("Error fetching weights:", err);
+            console.error("Error fetching weights from local DB:", err);
         }
     };
 
     const fetchActiveQuest = async () => {
         if (!userId) return;
-        const quest = await authFetch(`/user/getUserQuest/${userId}`);
-        setActiveQuest(quest.quest || null);
+        try {
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+            const quests: Quest[] = await db.getAllAsync(
+                "SELECT * FROM quests WHERE user_id = ? LIMIT 1",
+                [userId]
+            );
+
+            setActiveQuest(quests[0] || null);
+        } catch (err) {
+            console.error("Error fetching active quest from local DB:", err);
+        }
     };
 
     const fetchAchievements = async () => {
-        const data = await authFetch("/achievement");
-        setAchievements(data || []);
+        try {
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+            const achievements: Achievement[] = await db.getAllAsync(
+                "SELECT * FROM achievements"
+            );
+
+            setAchievements(achievements || []);
+        } catch (err) {
+            console.error("Error fetching achievements from local DB:", err);
+        }
     };
 
-    const fetchUserAchievements = async () => {
-        const data = await authFetch(`/user/getUserAchievements/${userId}`);
-        const achievements = data?.achievements || [];
-        setUserAchievements(achievements);
+    const fetchUserAchievements = async (userId: number) => {
+        const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+        const userAchievements: any[] = await db.getAllAsync(
+            `
+        SELECT ua.*, a.name, a.description, a.goal_amount, a.goal_type, a.target_value, a.weekly_reset, a.xp
+        FROM user_achievements ua
+        JOIN achievements a ON ua.achievement_id = a.id
+        WHERE ua.user_id = ?
+        `,
+            [userId]
+        );
+        setUserAchievements(userAchievements);
     };
 
     // Fetch both achievements and user achievements whenever userId or refreshToggle changes
@@ -246,7 +239,7 @@ export default function AchievementsScreen({ navigation }: any) {
             playCompleteSound();
             setUpdateModalVisible(false);
             fetchActiveQuest();
-            fetchUserAchievements();
+            fetchUserAchievements(Number(userId));
             fetchAchievements();
         } catch (error) {
             console.error("Failed to update quest:", error);
@@ -259,15 +252,11 @@ export default function AchievementsScreen({ navigation }: any) {
     };
 
     const calculateQuestProgress = (
-        quest: {
-            type: string;
-            goal: number;
-            initialWeight: number;
-        },
+        quest: { type: string; goal: number; initial_weight?: number },
         currentWeight: number | null
     ): number | null => {
         if (
-            quest.initialWeight == null ||
+            quest.initial_weight == null ||
             currentWeight == null ||
             quest.goal === 0
         ) {
@@ -278,9 +267,9 @@ export default function AchievementsScreen({ navigation }: any) {
         const isLose = quest.type === "LOSE";
 
         const numerator = isGain
-            ? currentWeight - quest.initialWeight
+            ? currentWeight - quest.initial_weight
             : isLose
-            ? quest.initialWeight - currentWeight
+            ? quest.initial_weight - currentWeight
             : 0;
 
         return Math.max(0, Math.min(1, numerator / quest.goal));
@@ -293,7 +282,7 @@ export default function AchievementsScreen({ navigation }: any) {
         if (
             activeQuest &&
             currentBodyWeight !== null &&
-            calculateQuestProgress(activeQuest, currentBodyWeight)! < 1 &&
+            calculateQuestProgress(activeQuest, currentBodyWeight!)! < 1 &&
             activeQuest.type !== "MAINTAIN"
         ) {
             setModalConfirmationConfig({
@@ -330,7 +319,7 @@ export default function AchievementsScreen({ navigation }: any) {
             });
         }
         fetchAchievements();
-        fetchUserAchievements();
+        fetchUserAchievements(Number(userId));
         setModalConfirmationConfig({
             title: "Amazing!",
             message: `You are a true gamer! You just gained ${result.xp} XP! Update your quest for another goal!`,
@@ -449,7 +438,7 @@ export default function AchievementsScreen({ navigation }: any) {
                 ) : (
                     <SectionList
                         sections={achievementSections}
-                        keyExtractor={(item) => item.achievementId.toString()}
+                        keyExtractor={(item) => item.achievement_id.toString()}
                         renderSectionHeader={({ section: { title } }) => (
                             <View
                                 style={{

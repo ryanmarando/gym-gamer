@@ -15,6 +15,13 @@ import * as SecureStore from "expo-secure-store";
 import { playLoginSound } from "../utils/playLoginSound";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { openDb } from "../db/db";
+import {
+    seedAchievements,
+    seedQuest,
+    seedWorkouts,
+    seedWorkoutSplits,
+} from "../db/seed";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -113,8 +120,24 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
 
     // Once waiver accepted, user presses Register again to register
     const handleRegister = async (cleanedEmail: string) => {
+        // Sign up online for record keeping
         try {
-            console.log("emails opted:", optOutEmails);
+            // Save locally
+            const db = await openDb(true);
+
+            const result = await db.runAsync(
+                `INSERT INTO users (email, name, weight_system)
+               VALUES (?, ?, ?);`,
+                [cleanedEmail, name, weightSystem]
+            );
+
+            const userId = result.lastInsertRowId;
+
+            await seedWorkouts(db);
+            await seedAchievements(db);
+            await seedWorkoutSplits(db, userId);
+            await seedQuest(db, userId, weightSystem);
+
             const response = await fetch(`${API_URL}/auth/register`, {
                 method: "POST",
                 headers: {
