@@ -123,19 +123,10 @@ export const openDb = async (reset = false) => {
       goal_amount REAL,
       goal_type TEXT,
       weekly_reset INTEGER DEFAULT 0,
-      target_value REAL
-    );
-
-    -- UserAchievements (join table)
-    CREATE TABLE IF NOT EXISTS user_achievements (
-      user_id INTEGER,
-      achievement_id INTEGER,
+      target_value REAL,
       progress REAL DEFAULT 0,
       completed INTEGER DEFAULT 0,
-      completed_at TEXT,
-      PRIMARY KEY(user_id, achievement_id),
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY(achievement_id) REFERENCES achievements(id) ON DELETE CASCADE
+      completed_at TEXT
     );
 
     -- Weight entries

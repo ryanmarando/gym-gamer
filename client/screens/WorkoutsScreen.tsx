@@ -26,24 +26,18 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import WorkoutHeader from "../components/WorkoutHeader";
 import WorkoutItem from "../components/WorkoutItem";
-
-interface Workout {
-    userId: number;
-    workoutId: number;
-    workout: {
-        id: number;
-        name: string;
-    };
-    entries: any[];
-    reps: string[];
-    sets: number;
-    weightsLifted: string[];
-}
+import * as SQLite from "expo-sqlite";
+import {
+    UserWorkout,
+    Workout,
+    WorkoutDay,
+    UserWorkoutWithName,
+} from "../types/db";
 
 type WeightEntries = Record<number, string[]>;
 
 export default function WorkoutsScreen({ navigation }: any) {
-    const [workouts, setWorkouts] = useState<Workout[]>([]);
+    const [workouts, setWorkouts] = useState<UserWorkoutWithName[]>([]);
     const [weightEntries, setWeightEntries] = useState<WeightEntries>({});
     const [timer, setTimer] = useState<number>(0);
     const [workoutStarted, setWorkoutStarted] = useState<boolean>(false);
@@ -63,13 +57,8 @@ export default function WorkoutsScreen({ navigation }: any) {
         null
     );
     const [allWorkoutEntries, setAllWorkoutEntries] = useState<any[]>([]);
-    const [workoutDays, setWorkoutDays] = useState<
-        { id: number; name: string }[]
-    >([]);
-    const [selectedDay, setSelectedDay] = useState<{
-        id: number;
-        name: string;
-    } | null>(null);
+    const [workoutDays, setWorkoutDays] = useState<WorkoutDay[]>([]);
+    const [selectedDay, setSelectedDay] = useState<WorkoutDay | null>(null);
     const [showSplitModal, setShowSplitModal] = useState(false);
     const [splitName, setSplitName] = useState("");
     const [splitDays, setSplitDays] = useState<string[]>(["", "", ""]);
@@ -107,38 +96,43 @@ export default function WorkoutsScreen({ navigation }: any) {
     const handleSplitConfirm = async () => {
         if (splitDays.some((d) => d.trim() === "")) {
             playBadMoveSound();
-
             setModalSplitMessage("Please fill in all day names.");
             setPixelModalVisible(true);
-
             return;
         }
 
         const cleanedDays = splitDays.map((day) => day.trim().toUpperCase());
 
-        // TODO: Save or update split logic here
-        console.log("Saving split:", splitName, cleanedDays);
-
         try {
             const userIdStr = await SecureStore.getItemAsync("userId");
             const userId = Number(userIdStr);
-            await authFetch(`/workouts/assignWorkoutSplit/${userId}`, {
-                method: "PATCH",
-                body: JSON.stringify({
-                    days: cleanedDays,
-                }),
-            });
-        } catch (error) {
-            console.error("Couldn't update");
-            return;
-        }
 
-        // Close modal & reset inputs
-        fetchUserData();
-        fetchUserWorkouts();
-        setShowSplitModal(false);
-        setSplitName("");
-        setSplitDays(["", "", ""]);
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+            // 1. Delete existing days for this split
+            await db.runAsync("DELETE FROM workout_days WHERE split_id = ?", [
+                1,
+            ]);
+
+            // 2. Insert new days
+            for (let i = 0; i < cleanedDays.length; i++) {
+                await db.runAsync(
+                    "INSERT INTO workout_days (day_index, day_name, split_id) VALUES (?, ?, ?)",
+                    [i + 1, cleanedDays[i], 1]
+                );
+            }
+
+            console.log("✅ Workout days updated:", cleanedDays);
+
+            // Re-fetch data for UI
+            fetchUserData();
+            fetchUserWorkouts();
+            setShowSplitModal(false);
+            setSplitName("");
+            setSplitDays(["", "", ""]);
+        } catch (error) {
+            console.error("❌ Failed to update workout days:", error);
+        }
     };
 
     const openStartModal = () => {
@@ -387,23 +381,17 @@ export default function WorkoutsScreen({ navigation }: any) {
             if (!userIdStr) return;
             const userId = Number(userIdStr);
 
-            const userData = await authFetch(`/user/${userId}`);
+            // const userData = await authFetch(`/user/${userId}`);
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const workouts: Workout[] = await db.getAllAsync(
+                "SELECT * FROM workouts"
+            );
 
-            if (
-                userData &&
-                userData.workoutSplit &&
-                userData.workoutSplit.length > 0
-            ) {
-                // Get the days array of the first split (assuming one)
-                const days = userData.workoutSplit[0].days
-                    .sort((a: any, b: any) => a.dayIndex - b.dayIndex)
-                    .map((d: any) => ({
-                        id: d.id,
-                        name: d.dayName,
-                    }));
+            const workoutDays: WorkoutDay[] = await db.getAllAsync(
+                "SELECT * FROM workout_days ORDER BY day_index ASC"
+            );
+            setWorkoutDays(workoutDays);
 
-                setWorkoutDays(days);
-            }
             const weightSystem = await SecureStore.getItemAsync("weightSystem");
             if (weightSystem === "METRIC" || weightSystem === "IMPERIAL") {
                 setWeightSystem(weightSystem);
@@ -413,46 +401,50 @@ export default function WorkoutsScreen({ navigation }: any) {
         }
     }, []);
 
-    // Fetch user workouts from API
-    const fetchUserWorkouts = useCallback(async (): Promise<Workout[]> => {
+    const fetchUserWorkouts = useCallback(async () => {
         try {
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+            // 1. Get user ID
             const userIdStr = await SecureStore.getItemAsync("userId");
             if (!userIdStr) return [];
+            const userId = Number(userIdStr);
 
-            if (!selectedDay) return [];
+            // 2. Get selected day ID (you should have a state for selectedDay)
+            if (!selectedDay?.id) return [];
+            const dayId = selectedDay.id;
 
-            const data = await authFetch(
-                `/user/getUserWorkoutsByArchitype?userId=${userIdStr}&splitId=${selectedDay.id}`
+            // 3. Query user_workouts joined with workouts
+            const userWorkouts: UserWorkoutWithName[] = await db.getAllAsync(
+                `
+            SELECT uw.*, w.name, w.architype
+            FROM user_workouts uw
+            JOIN workouts w ON uw.workout_id = w.id
+            WHERE uw.user_id = ? AND uw.day_id = ?
+            ORDER BY uw.order_index ASC
+            `,
+                [userId, dayId]
             );
 
-            const ordered = data.workouts.sort(
-                (a: any, b: any) => (a.order ?? 0) - (b.order ?? 0)
-            );
+            // // 4. Initialize weight entries for UI
+            // setWeightEntries((prev) => {
+            //     const copy = { ...prev };
+            //     userWorkouts.forEach((uw) => {
+            //         if (!copy[uw.workout_id]) {
+            //             copy[uw.workout_id] = uw.weights_lifted
+            //                 ? JSON.parse(uw.weights_lifted).map(String)
+            //                 : ["", "", ""]; // default 3 entries
+            //         }
+            //     });
+            //     return copy;
+            // });
 
-            setWorkouts(ordered);
+            setWorkouts(userWorkouts);
+            console.log("Fetched workouts:", userWorkouts);
 
-            //setWorkouts(data.workouts || []);
-            setAllWorkoutEntries(data.workouts);
-
-            // ✅ Reset the weightEntries so each workout has 3 boxes
-            setWeightEntries((prev) => {
-                const copy = { ...prev };
-
-                (data.workouts || []).forEach((w: Workout) => {
-                    if (!copy[w.workoutId]) {
-                        // Initialize from weightsLifted if it exists, otherwise default to three empty strings
-                        copy[w.workoutId] = w.weightsLifted?.length
-                            ? [...w.weightsLifted]
-                            : ["", "", ""];
-                    }
-                });
-
-                return copy;
-            });
-
-            return ordered;
+            return userWorkouts;
         } catch (err) {
-            console.log("No workouts found.");
+            console.error("Failed to fetch local user workouts:", err);
             return [];
         }
     }, [selectedDay]);
@@ -798,7 +790,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                                                 textAlign: "center",
                                             }}
                                         >
-                                            {selectedDay?.name} Day
+                                            {selectedDay?.day_name} Day
                                         </PixelText>
                                         <View
                                             style={{
@@ -871,10 +863,10 @@ export default function WorkoutsScreen({ navigation }: any) {
                                                 data={workouts}
                                                 onDragEnd={({ data }) => {
                                                     setWorkouts(data);
-                                                    saveWorkoutOrder(data);
+                                                    //saveWorkoutOrder(data);
                                                 }}
                                                 keyExtractor={(item) =>
-                                                    item.workoutId.toString()
+                                                    item.workout_id.toString()
                                                 }
                                                 renderItem={({
                                                     item,

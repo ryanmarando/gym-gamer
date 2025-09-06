@@ -4,9 +4,10 @@ import PixelText from "./PixelText";
 import PixelButton from "./PixelButton";
 import PixelModal from "./PixelModal";
 import ConfirmationPixelModal from "./ConfirmationPixelModal";
+import { WorkoutDay } from "../types/db";
 
 interface WorkoutHeaderProps {
-    selectedDay: any;
+    selectedDay: WorkoutDay;
     timer: number;
     workoutStarted: boolean;
     formatTime: (seconds: number) => string;
@@ -22,7 +23,7 @@ interface WorkoutHeaderProps {
     setShowConfirmationModal: (b: boolean) => void;
     modalConfirmationTitle: string;
     showConfetti: boolean;
-    setSelectedDay: (day: { id: number; name: string } | null) => void;
+    setSelectedDay: (day: WorkoutDay | null) => void;
     finishedWorkout?: boolean;
     setWorkoutFinished: (b: boolean) => void;
     navigation: any;
@@ -62,7 +63,7 @@ export default function WorkoutHeader({
                 color="#ff0"
                 style={{ marginBottom: 12, textAlign: "center" }}
             >
-                {selectedDay?.name} Day
+                {selectedDay.day_name} Day
             </PixelText>
             <PixelText
                 fontSize={18}

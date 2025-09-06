@@ -10,23 +10,24 @@ import {
 import PixelText from "./PixelText";
 import PixelButton from "./PixelButton";
 import { styles } from "../screens/WorkoutsScreen";
+import { UserWorkoutWithName } from "../types/db";
 
 interface WorkoutItemProps {
-    item: any;
+    item: UserWorkoutWithName;
     isActive: boolean;
     drag: () => void;
     weightEntries: Record<number, string[]>;
     handleWeightChange: (
-        workoutId: number,
+        workout_id: number,
         index: number,
         value: string
     ) => void;
-    getLastWorkoutWeight: (workoutId: number) => number;
-    addEntry: (workoutId: number) => void;
-    deleteEntry: (workoutId: number) => void;
+    getLastWorkoutWeight: (workout_id: number) => number;
+    addEntry: (workout_id: number) => void;
+    deleteEntry: (workout_id: number) => void;
     weightSystem: string;
     repEntries: Record<number, string[]>;
-    handleRepChange: (workoutId: number, index: number, value: string) => void;
+    handleRepChange: (workout_id: number, index: number, value: string) => void;
     defaultWeights?: any;
 }
 
@@ -45,8 +46,8 @@ export default function WorkoutItem({
     defaultWeights,
 }: WorkoutItemProps) {
     const scrollRef = useRef<ScrollView>(null);
-    const entryCount = weightEntries[item.workoutId]?.length || 0;
-    const lastWeight = getLastWorkoutWeight(item.workoutId);
+    const entryCount = weightEntries[item.workout_id]?.length || 0;
+    const lastWeight = getLastWorkoutWeight(item.workout_id);
     const convertedWeight =
         weightSystem === "METRIC" ? lastWeight * 0.453592 : lastWeight;
     const weightPlaceholder = weightSystem === "METRIC" ? "kg" : "lbs";
@@ -78,7 +79,7 @@ export default function WorkoutItem({
                         color="#0f0"
                         style={{ marginBottom: 4, textAlign: "left" }}
                     >
-                        {item.workout.name}
+                        {item.name}
                     </PixelText>
 
                     <PixelText
@@ -109,7 +110,7 @@ export default function WorkoutItem({
                         showsHorizontalScrollIndicator={false}
                     >
                         <View style={{ flexDirection: "row", columnGap: 4 }}>
-                            {(weightEntries[item.workoutId] || []).map(
+                            {(weightEntries[item.workout_id] || []).map(
                                 (weight, i) => (
                                     <View
                                         key={i}
@@ -119,7 +120,7 @@ export default function WorkoutItem({
                                             keyboardType="decimal-pad"
                                             onChangeText={(v) =>
                                                 handleRepChange(
-                                                    item.workoutId,
+                                                    item.workout_id,
                                                     i,
                                                     v
                                                 )
@@ -128,8 +129,8 @@ export default function WorkoutItem({
                                                 const defaultRepObj =
                                                     defaultWeights.find(
                                                         (r: any) =>
-                                                            r.workoutId ===
-                                                            item.workoutId
+                                                            r.workout_id ===
+                                                            item.workout_id
                                                     );
                                                 const rep =
                                                     defaultRepObj?.reps?.[i];
@@ -169,7 +170,7 @@ export default function WorkoutItem({
                                             keyboardType="decimal-pad"
                                             onChangeText={(v) =>
                                                 handleWeightChange(
-                                                    item.workoutId,
+                                                    item.workout_id,
                                                     i,
                                                     v
                                                 )
@@ -179,8 +180,8 @@ export default function WorkoutItem({
                                                 const defaultWeightObj =
                                                     defaultWeights.find(
                                                         (w: any) =>
-                                                            w.workoutId ===
-                                                            item.workoutId
+                                                            w.workout_id ===
+                                                            item.workout_id
                                                     );
                                                 const weight =
                                                     defaultWeightObj
@@ -210,7 +211,7 @@ export default function WorkoutItem({
                 <View style={styles.buttonsColumn}>
                     <PixelButton
                         text="+"
-                        onPress={() => addEntry(item.workoutId)}
+                        onPress={() => addEntry(item.workout_id)}
                         containerStyle={{
                             marginBottom: 8,
                             width: Platform.OS === "ios" ? 40 : undefined,
@@ -218,7 +219,7 @@ export default function WorkoutItem({
                     />
                     <PixelButton
                         text="-"
-                        onPress={() => deleteEntry(item.workoutId)}
+                        onPress={() => deleteEntry(item.workout_id)}
                         containerStyle={{
                             width: Platform.OS === "ios" ? 40 : undefined,
                         }}

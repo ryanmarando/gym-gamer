@@ -17,7 +17,7 @@ import * as SQLite from "expo-sqlite";
 import { Quest, UserWeightEntry } from "../types/db";
 
 interface PixelQuestCardProps {
-    quest?: Quest;
+    quest?: Partial<Quest>;
     containerStyle?: ViewStyle;
 }
 

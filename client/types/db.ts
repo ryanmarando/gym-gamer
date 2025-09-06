@@ -32,7 +32,7 @@ export interface Workout {
     name: string;
     created_by_user_id?: number | null;
     created_at: string;
-    architype: string; // JSON stringified array like '["PUSH","CHEST"]'
+    architype: string;
 }
 
 // WorkoutSplits table
@@ -57,7 +57,12 @@ export interface UserWorkout {
     order_index?: number;
     sets: number;
     reps?: string;
-    weights_lifted: string; // JSON string '[0,0,0]'
+    weights_lifted: string;
+}
+
+export interface UserWorkoutWithName extends UserWorkout {
+    name: string;
+    architype: string;
 }
 
 // WorkoutEntries table
@@ -79,12 +84,6 @@ export interface Achievement {
     goal_type?: string;
     weekly_reset: boolean;
     target_value?: number;
-}
-
-// UserAchievements join table
-export interface UserAchievement {
-    user_id: number;
-    achievement_id: number;
     progress: number;
     completed: boolean;
     completed_at?: string;

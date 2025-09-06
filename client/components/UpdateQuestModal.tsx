@@ -13,10 +13,11 @@ import {
 import PixelText from "./PixelText";
 import PixelButton from "./PixelButton";
 import * as SecureStore from "expo-secure-store";
-import { authFetch } from "../utils/authFetch";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import { convertWeight, roundToNearestHalf } from "../utils/unitUtils";
 import ConfirmationPixelModal from "./ConfirmationPixelModal";
+import * as SQLite from "expo-sqlite";
+import { UserWeightEntry } from "../types/db";
 
 interface UpdateQuestModalProps {
     visible: boolean;
@@ -56,19 +57,20 @@ export default function UpdateQuestModal({
                 );
                 if (weightSystem) setWeightSystem(weightSystem);
 
-                const data = await authFetch(
-                    `/user/getAllUserWeightEntries/${userId}`
+                const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+                const weights: UserWeightEntry[] = await db.getAllAsync(
+                    "SELECT * FROM user_weight_entries WHERE user_id = ? ORDER BY entered_at DESC",
+                    [userId]
                 );
-                if (
-                    data &&
-                    Array.isArray(data.user.weightEntries) &&
-                    data.user.weightEntries.length > 0
-                ) {
-                    const sorted = [...data.user.weightEntries].sort(
+
+                if (weights && weights.length > 0) {
+                    const sorted = weights.sort(
                         (a, b) =>
-                            new Date(b.enteredAt).getTime() -
-                            new Date(a.enteredAt).getTime()
+                            new Date(b.entered_at).getTime() -
+                            new Date(a.entered_at).getTime()
                     );
+                    console.log(sorted);
                     let latestWeight = sorted[0].weight;
                     if (weightSystem === "METRIC")
                         latestWeight = roundToNearestHalf(

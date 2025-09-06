@@ -2,10 +2,11 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import PixelButton from "./PixelButton";
 import PixelText from "./PixelText";
+import { WorkoutDay } from "../types/db";
 
 interface Props {
-    days: { id: number; name: string }[];
-    onSelect: (day: { id: number; name: string }) => void;
+    days: WorkoutDay[];
+    onSelect: (day: WorkoutDay) => void;
 }
 
 export default function PickWorkoutDay({ days, onSelect }: Props) {
@@ -18,7 +19,7 @@ export default function PickWorkoutDay({ days, onSelect }: Props) {
             {days.map((day) => (
                 <PixelButton
                     key={day.id}
-                    text={`${day.name} Day`}
+                    text={`${day.day_name} Day`}
                     onPress={() => onSelect(day)}
                     containerStyle={styles.dayButton}
                 />

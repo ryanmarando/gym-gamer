@@ -23,18 +23,10 @@ import {
 } from "../utils/unitUtils";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import * as SQLite from "expo-sqlite";
-import {
-    Quest,
-    Achievement,
-    UserAchievement,
-    UserWeightEntry,
-} from "../types/db";
+import { Quest, Achievement, UserWeightEntry } from "../types/db";
 
 export default function AchievementsScreen({ navigation }: any) {
     const [achievements, setAchievements] = useState<Achievement[]>([]); // All achievements
-    const [userAchievements, setUserAchievements] = useState<UserAchievement[]>(
-        []
-    ); // User's achievements
     const [activeQuest, setActiveQuest] = useState<Quest | null>(null);
     const [userId, setUserId] = useState<number | null>(null);
     const [refreshToggle, setRefreshToggle] = useState(false); // to trigger refresh
@@ -64,11 +56,11 @@ export default function AchievementsScreen({ navigation }: any) {
     const achievementSections = [
         {
             title: "In Progress Achievements",
-            data: userAchievements.filter((ua) => !ua.completed),
+            data: achievements.filter((ua) => !ua.completed),
         },
         {
             title: "Completed Achievements",
-            data: userAchievements
+            data: achievements
                 .filter((ua) => ua.completed && ua.completed_at)
                 .sort(
                     (a, b) =>
@@ -83,7 +75,7 @@ export default function AchievementsScreen({ navigation }: any) {
             const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
             const weights: UserWeightEntry[] = await db.getAllAsync(
-                "SELECT * FROM weight_entries WHERE user_id = ? ORDER BY entered_at DESC",
+                "SELECT * FROM user_weight_entries WHERE user_id = ? ORDER BY entered_at DESC",
                 [userId]
             );
 
@@ -120,25 +112,10 @@ export default function AchievementsScreen({ navigation }: any) {
                 "SELECT * FROM achievements"
             );
 
-            setAchievements(achievements || []);
+            setAchievements(achievements);
         } catch (err) {
             console.error("Error fetching achievements from local DB:", err);
         }
-    };
-
-    const fetchUserAchievements = async (userId: number) => {
-        const db = await SQLite.openDatabaseAsync("gymgamer.db");
-
-        const userAchievements: any[] = await db.getAllAsync(
-            `
-        SELECT ua.*, a.name, a.description, a.goal_amount, a.goal_type, a.target_value, a.weekly_reset, a.xp
-        FROM user_achievements ua
-        JOIN achievements a ON ua.achievement_id = a.id
-        WHERE ua.user_id = ?
-        `,
-            [userId]
-        );
-        setUserAchievements(userAchievements);
     };
 
     // Fetch both achievements and user achievements whenever userId or refreshToggle changes
@@ -167,18 +144,9 @@ export default function AchievementsScreen({ navigation }: any) {
                         setSelectedSystem(weightSystem);
                     }
 
-                    const questData = await authFetch(
-                        `/user/getUserQuest/${id}`
-                    );
-                    setActiveQuest(questData.quest || null);
-
-                    const achievementData = await authFetch("/achievement");
-                    setAchievements(achievementData || []);
-
-                    const userAchData = await authFetch(
-                        `/user/getUserAchievements/${id}`
-                    );
-                    setUserAchievements(userAchData?.achievements || []);
+                    fetchAchievements();
+                    fetchActiveQuest();
+                    fetchWeights(id);
                 } catch (err) {
                     console.error("Error loading achievements data", err);
                 } finally {
@@ -217,32 +185,91 @@ export default function AchievementsScreen({ navigation }: any) {
     const handleQuestUpdateConfirm = async (data: {
         customGoalAmount: number;
         customDeadline: string;
+        customType: "GAIN" | "LOSE" | "MAINTAIN";
+        initialWeight: number;
     }) => {
         try {
             const userId = await SecureStore.getItemAsync("userId");
-            const result = await authFetch(`/quest/editQuest/${userId}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...data, weightSystem: selectedSystem }),
-            });
+            const weightSystem = await SecureStore.getItemAsync("weightSystem");
 
-            if (result.newlyCompletedAchievements?.length) {
-                // Send notification
-                sendNotification(result.newlyCompletedAchievements);
+            // // --- 1. Send API request ---
+            // const result = await authFetch(`/quest/editQuest/${userId}`, {
+            //     method: "PATCH",
+            //     headers: { "Content-Type": "application/json" },
+            //     body: JSON.stringify({ ...data, weightSystem: selectedSystem }),
+            // });
 
-                result.newlyCompletedAchievements.forEach((ach: any) => {
-                    console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
-                    // Show modal, play sound, push notification, etc.
-                });
+            // --- 2. Update local SQLite DB ---
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+            const formattedType =
+                data.customType.charAt(0).toUpperCase() +
+                data.customType.slice(1).toLowerCase();
+
+            let unit;
+            if (weightSystem === "IMPERIAL") {
+                unit = "lbs";
+            } else {
+                unit = "kg";
             }
-            console.log("Quest updated!");
+
+            const deadlineDate = new Date(data.customDeadline);
+
+            const formattedDeadline = isNaN(deadlineDate.getTime())
+                ? data.customDeadline
+                : deadlineDate.toLocaleDateString(undefined, {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                  });
+
+            let questName;
+            const dateSuffix =
+                data.customType.toUpperCase() === "MAINTAIN"
+                    ? `through ${formattedDeadline}`
+                    : `by ${formattedDeadline}`;
+
+            if (data.customType.toUpperCase() === "MAINTAIN") {
+                questName = `${formattedType} ${data.initialWeight} ${unit} ${dateSuffix}`;
+            } else {
+                questName = `${formattedType} ${data.customGoalAmount} ${unit} ${dateSuffix}`;
+            }
+
+            await db.runAsync(
+                `
+            UPDATE quests
+            SET goal = ?, goal_date = ?,  name = ?, initial_weight = ?
+            WHERE user_id = ?
+            `,
+                [
+                    data.customGoalAmount,
+                    data.customDeadline,
+                    questName,
+                    data.initialWeight,
+                    userId,
+                ]
+            );
+
+            console.log("✅ Local quest updated!");
+
+            // // --- 3. Handle new achievements ---
+            // if (result.newlyCompletedAchievements?.length) {
+            //     sendNotification(result.newlyCompletedAchievements);
+
+            //     result.newlyCompletedAchievements.forEach((ach: any) => {
+            //         console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
+            //     });
+            // }
+
             playCompleteSound();
             setUpdateModalVisible(false);
+
+            // Re-sync UI
             fetchActiveQuest();
-            fetchUserAchievements(Number(userId));
             fetchAchievements();
         } catch (error) {
-            console.error("Failed to update quest:", error);
+            console.error("❌ Failed to update quest:", error);
         }
     };
 
@@ -319,7 +346,6 @@ export default function AchievementsScreen({ navigation }: any) {
             });
         }
         fetchAchievements();
-        fetchUserAchievements(Number(userId));
         setModalConfirmationConfig({
             title: "Amazing!",
             message: `You are a true gamer! You just gained ${result.xp} XP! Update your quest for another goal!`,
@@ -427,7 +453,7 @@ export default function AchievementsScreen({ navigation }: any) {
 
                 {/* User's Achievements Section */}
 
-                {userAchievements.length === 0 ? (
+                {achievements.length === 0 ? (
                     <PixelText
                         fontSize={14}
                         color="#888"
@@ -438,7 +464,7 @@ export default function AchievementsScreen({ navigation }: any) {
                 ) : (
                     <SectionList
                         sections={achievementSections}
-                        keyExtractor={(item) => item.achievement_id.toString()}
+                        keyExtractor={(item) => item.id.toString()}
                         renderSectionHeader={({ section: { title } }) => (
                             <View
                                 style={{
@@ -478,11 +504,11 @@ export default function AchievementsScreen({ navigation }: any) {
                                         }}
                                     >
                                         {selectedSystem === "IMPERIAL"
-                                            ? item.achievement.name
+                                            ? item.name
                                             : getLocalizedAchievementName(
-                                                  item.achievement.name,
-                                                  item.achievement.goalType,
-                                                  item.achievement.targetValue,
+                                                  item.name,
+                                                  item.goal_type!,
+                                                  item.target_value!,
                                                   selectedSystem!
                                               )}
                                     </PixelText>
@@ -496,32 +522,28 @@ export default function AchievementsScreen({ navigation }: any) {
                                         }}
                                     >
                                         {selectedSystem === "IMPERIAL"
-                                            ? item.achievement.description
-                                            : item.achievement.goalType ===
-                                              "LIFTINGWEIGHT"
-                                            ? item.achievement.targetValue
+                                            ? item.description
+                                            : item.goal_type === "LIFTINGWEIGHT"
+                                            ? item.target_value
                                                 ? `Lift at least ${convertWeight(
-                                                      item.achievement
-                                                          .targetValue,
+                                                      item.target_value,
                                                       selectedSystem!
                                                   )} ${getWeightUnit(
                                                       selectedSystem!
                                                   )}`
-                                                : item.achievement.name
+                                                : item.name
                                                       .toLowerCase()
                                                       .includes(
                                                           "lift a total"
-                                                      ) &&
-                                                  item.achievement.goalAmount
+                                                      ) && item.goal_amount
                                                 ? `Lift a total of ${convertWeight(
-                                                      item.achievement
-                                                          .goalAmount,
+                                                      item.goal_amount,
                                                       selectedSystem!
                                                   )} ${getWeightUnit(
                                                       selectedSystem!
                                                   )} in a week`
-                                                : item.achievement.description
-                                            : item.achievement.description}
+                                                : item.description
+                                            : item.description}
                                     </PixelText>
 
                                     <ProgressBar
@@ -533,7 +555,7 @@ export default function AchievementsScreen({ navigation }: any) {
                                         borderColor="#9B59B6"
                                     />
 
-                                    {item.achievement.weeklyReset &&
+                                    {item.weekly_reset &&
                                         (() => {
                                             const {
                                                 nextReset,
@@ -549,23 +571,20 @@ export default function AchievementsScreen({ navigation }: any) {
                                                         width: "100%",
                                                     }}
                                                 >
-                                                    Resets on{" "}
-                                                    {nextReset.toLocaleDateString(
+                                                    {`Resets on ${nextReset.toLocaleDateString(
                                                         undefined,
                                                         {
                                                             weekday: "long",
                                                             month: "short",
                                                             day: "numeric",
                                                         }
-                                                    )}{" "}
-                                                    at 11:59 PM — in {diffHours}
-                                                    h {diffMinutes}m
+                                                    )} at 11:59 PM — in ${diffHours}h ${diffMinutes}m`}
                                                 </PixelText>
                                             );
                                         })()}
 
                                     <PixelText fontSize={10} color="#fff">
-                                        {item.achievement.xp} XP
+                                        {`${item.xp} XP`}
                                     </PixelText>
                                 </View>
                             </View>

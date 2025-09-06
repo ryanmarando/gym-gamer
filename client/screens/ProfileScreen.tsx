@@ -29,43 +29,14 @@ import { playLoginSound } from "../utils/playLoginSound";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import SettingsModal from "../components/SettingsModal";
 import * as SQLite from "expo-sqlite";
-
-interface AchievementDetails {
-    id: number;
-    name: string;
-    xp: number;
-    weeklyReset: boolean;
-}
-
-interface Quest {
-    name: string;
-    type: "GAIN" | "LOSE";
-    goal: number;
-    goal_date: string | Date;
-    baseXP: number;
-    initialWeight: number;
-}
-
-interface UserData {
-    id: number;
-    email: string;
-    name: string;
-    level: number;
-    level_progress: number;
-    xp: number;
-    achievements: AchievementDetails[];
-    activeQuest: Quest;
-    total_weight_lifted: number;
-    weekly_weight_lifted: number;
-    weight_system: "IMPERIAL" | "METRIC";
-}
+import { Quest, User } from "../types/db";
 
 export default function ProfileScreen({
     navigation,
     isLoggedIn,
     setIsLoggedIn,
 }: any) {
-    const [userData, setUserData] = useState<UserData | null>(null);
+    const [userData, setUserData] = useState<User | null>(null);
     const [userQuest, setUserQuest] = useState<Quest | null>(null);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -250,7 +221,7 @@ export default function ProfileScreen({
             setLoading(true);
 
             const db = await SQLite.openDatabaseAsync("gymgamer.db");
-            let localUserData: UserData[] = await db.getAllAsync(
+            const localUserData: User[] = await db.getAllAsync(
                 "SELECT * FROM users"
             );
             console.log("SQlite", localUserData[0]);
@@ -745,16 +716,13 @@ export default function ProfileScreen({
                         >
                             <PixelQuestCard
                                 quest={
-                                    userData.activeQuest
+                                    userQuest
                                         ? {
-                                              name: userData.activeQuest.name,
-                                              type: userData.activeQuest.type,
-                                              goal: userData.activeQuest.goal,
-                                              goal_date:
-                                                  userData.activeQuest
-                                                      .goal_date,
-                                              baseXP: userData.activeQuest
-                                                  .baseXP,
+                                              name: userQuest.name,
+                                              type: userQuest.type,
+                                              goal: userQuest.goal,
+                                              goal_date: userQuest.goal_date,
+                                              base_xp: userQuest.base_xp,
                                           }
                                         : undefined
                                 }
