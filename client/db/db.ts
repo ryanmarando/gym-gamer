@@ -96,7 +96,7 @@ export const openDb = async (reset = false) => {
       day_id INTEGER,
       order_index INTEGER,
       sets INTEGER DEFAULT 3,
-      reps TEXT,
+      reps TEXT DEFAULT '[0,0,0]',
       weights_lifted TEXT DEFAULT '[0,0,0]',
       PRIMARY KEY(user_id, workout_id),
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,

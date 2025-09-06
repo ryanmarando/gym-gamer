@@ -89,16 +89,15 @@ export default function AchievementsScreen({ navigation }: any) {
     };
 
     const fetchActiveQuest = async () => {
-        if (!userId) return;
         try {
             const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
             const quests: Quest[] = await db.getAllAsync(
-                "SELECT * FROM quests WHERE user_id = ? LIMIT 1",
-                [userId]
+                "SELECT * FROM quests"
             );
 
-            setActiveQuest(quests[0] || null);
+            setActiveQuest(quests[0]);
+            console.log(quests[0]);
         } catch (err) {
             console.error("Error fetching active quest from local DB:", err);
         }
@@ -462,135 +461,140 @@ export default function AchievementsScreen({ navigation }: any) {
                         You haven't earned any achievements yet.
                     </PixelText>
                 ) : (
-                    <SectionList
-                        sections={achievementSections}
-                        keyExtractor={(item) => item.id.toString()}
-                        renderSectionHeader={({ section: { title } }) => (
-                            <View
-                                style={{
-                                    width: "100%",
-                                    paddingHorizontal: 10,
-                                    paddingBottom: 10,
-                                    backgroundColor: "#111",
-                                }}
-                            >
-                                <PixelText
-                                    fontSize={14}
-                                    color="#0ff"
-                                    style={{
-                                        flexShrink: 1,
-                                    }}
-                                >
-                                    {title}
-                                </PixelText>
-                            </View>
-                        )}
-                        renderItem={({ item }) => (
-                            <View style={styles.card}>
+                    <>
+                        <SectionList
+                            sections={achievementSections}
+                            keyExtractor={(item) => item.id.toString()}
+                            renderSectionHeader={({ section: { title } }) => (
                                 <View
                                     style={{
-                                        flex: 1,
                                         width: "100%",
-                                        alignItems: "center",
-                                        gap: 6,
+                                        paddingHorizontal: 10,
+                                        paddingBottom: 10,
+                                        backgroundColor: "#111",
                                     }}
                                 >
                                     <PixelText
-                                        fontSize={12}
-                                        color="#0f0"
-                                        style={{
-                                            marginBottom: 4,
-                                            width: "100%",
-                                        }}
-                                    >
-                                        {selectedSystem === "IMPERIAL"
-                                            ? item.name
-                                            : getLocalizedAchievementName(
-                                                  item.name,
-                                                  item.goal_type!,
-                                                  item.target_value!,
-                                                  selectedSystem!
-                                              )}
-                                    </PixelText>
-
-                                    <PixelText
-                                        fontSize={10}
+                                        fontSize={14}
                                         color="#0ff"
                                         style={{
-                                            marginBottom: 4,
-                                            width: "100%",
+                                            flexShrink: 1,
                                         }}
                                     >
-                                        {selectedSystem === "IMPERIAL"
-                                            ? item.description
-                                            : item.goal_type === "LIFTINGWEIGHT"
-                                            ? item.target_value
-                                                ? `Lift at least ${convertWeight(
-                                                      item.target_value,
-                                                      selectedSystem!
-                                                  )} ${getWeightUnit(
-                                                      selectedSystem!
-                                                  )}`
-                                                : item.name
-                                                      .toLowerCase()
-                                                      .includes(
-                                                          "lift a total"
-                                                      ) && item.goal_amount
-                                                ? `Lift a total of ${convertWeight(
-                                                      item.goal_amount,
-                                                      selectedSystem!
-                                                  )} ${getWeightUnit(
-                                                      selectedSystem!
-                                                  )} in a week`
-                                                : item.description
-                                            : item.description}
-                                    </PixelText>
-
-                                    <ProgressBar
-                                        progress={item.progress / 100}
-                                        width={200}
-                                        height={15}
-                                        backgroundColor="#333"
-                                        progressColor="#9B59B6"
-                                        borderColor="#9B59B6"
-                                    />
-
-                                    {item.weekly_reset &&
-                                        (() => {
-                                            const {
-                                                nextReset,
-                                                diffHours,
-                                                diffMinutes,
-                                            } = getNextSundayReset();
-                                            return (
-                                                <PixelText
-                                                    fontSize={10}
-                                                    color="#0ff"
-                                                    style={{
-                                                        marginTop: 4,
-                                                        width: "100%",
-                                                    }}
-                                                >
-                                                    {`Resets on ${nextReset.toLocaleDateString(
-                                                        undefined,
-                                                        {
-                                                            weekday: "long",
-                                                            month: "short",
-                                                            day: "numeric",
-                                                        }
-                                                    )} at 11:59 PM — in ${diffHours}h ${diffMinutes}m`}
-                                                </PixelText>
-                                            );
-                                        })()}
-
-                                    <PixelText fontSize={10} color="#fff">
-                                        {`${item.xp} XP`}
+                                        {title}
                                     </PixelText>
                                 </View>
-                            </View>
-                        )}
-                        contentContainerStyle={{ paddingBottom: 700 }}
-                    />
+                            )}
+                            renderItem={({ item }) => (
+                                <View style={styles.card}>
+                                    <View
+                                        style={{
+                                            flex: 1,
+                                            width: "100%",
+                                            alignItems: "center",
+                                            gap: 6,
+                                        }}
+                                    >
+                                        <PixelText
+                                            fontSize={12}
+                                            color="#0f0"
+                                            style={{
+                                                marginBottom: 4,
+                                                width: "100%",
+                                            }}
+                                        >
+                                            {selectedSystem === "IMPERIAL"
+                                                ? item.name
+                                                : getLocalizedAchievementName(
+                                                      item.name,
+                                                      item.goal_type!,
+                                                      item.target_value!,
+                                                      selectedSystem!
+                                                  )}
+                                        </PixelText>
+
+                                        <PixelText
+                                            fontSize={10}
+                                            color="#0ff"
+                                            style={{
+                                                marginBottom: 4,
+                                                width: "100%",
+                                            }}
+                                        >
+                                            {selectedSystem === "IMPERIAL"
+                                                ? `${item.description ?? ""}`
+                                                : item.goal_type ===
+                                                  "LIFTINGWEIGHT"
+                                                ? item.target_value
+                                                    ? `Lift at least ${convertWeight(
+                                                          item.target_value,
+                                                          selectedSystem!
+                                                      )} ${getWeightUnit(
+                                                          selectedSystem!
+                                                      )}`
+                                                    : item.name
+                                                          .toLowerCase()
+                                                          .includes(
+                                                              "lift a total"
+                                                          ) && item.goal_amount
+                                                    ? `Lift a total of ${convertWeight(
+                                                          item.goal_amount,
+                                                          selectedSystem!
+                                                      )} ${getWeightUnit(
+                                                          selectedSystem!
+                                                      )} in a week`
+                                                    : `${
+                                                          item.description ?? ""
+                                                      }`
+                                                : `${item.description ?? ""}`}
+                                        </PixelText>
+
+                                        <ProgressBar
+                                            progress={item.progress / 100}
+                                            width={200}
+                                            height={15}
+                                            backgroundColor="#333"
+                                            progressColor="#9B59B6"
+                                            borderColor="#9B59B6"
+                                        />
+
+                                        {item.weekly_reset &&
+                                            (() => {
+                                                const {
+                                                    nextReset,
+                                                    diffHours,
+                                                    diffMinutes,
+                                                } = getNextSundayReset();
+                                                return (
+                                                    <PixelText
+                                                        fontSize={10}
+                                                        color="#0ff"
+                                                        style={{
+                                                            marginTop: 4,
+                                                            width: "100%",
+                                                        }}
+                                                    >
+                                                        {`Resets on ${nextReset.toLocaleDateString(
+                                                            undefined,
+                                                            {
+                                                                weekday: "long",
+                                                                month: "short",
+                                                                day: "numeric",
+                                                            }
+                                                        )} at 11:59 PM — in ${diffHours}h ${diffMinutes}m`}
+                                                    </PixelText>
+                                                );
+                                            })()}
+
+                                        <PixelText fontSize={10} color="#fff">
+                                            {`${item.xp} XP`}
+                                        </PixelText>
+                                    </View>
+                                </View>
+                            )}
+                            contentContainerStyle={{ paddingBottom: 700 }}
+                        />
+                    </>
                 )}
             </View>
         </SafeAreaView>

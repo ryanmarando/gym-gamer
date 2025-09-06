@@ -224,12 +224,12 @@ export default function ProfileScreen({
             const localUserData: User[] = await db.getAllAsync(
                 "SELECT * FROM users"
             );
-            console.log("SQlite", localUserData[0]);
+            //console.log("SQlite", localUserData[0]);
 
             const localUserQuest: Quest[] = await db.getAllAsync(
                 "SELECT * FROM quests"
             );
-            console.log("qUESTS", localUserQuest[0]);
+            //console.log("qUESTS", localUserQuest[0]);
 
             setUserData(localUserData[0]);
             setUserQuest(localUserQuest[0]);

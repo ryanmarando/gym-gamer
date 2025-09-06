@@ -112,8 +112,6 @@ export default function SaveWorkoutScreen() {
                 [userId]
             );
 
-            console.log(userWorkoutsRows);
-
             setAllWorkouts(allWorkoutsRows);
             setUserWorkouts(userWorkoutsRows);
 
@@ -178,14 +176,11 @@ export default function SaveWorkoutScreen() {
                 setModalConfig({
                     title: "Are you sure?",
                     message:
-                        "This will remove the exercise from your catalog and will remove your weight entries.",
+                        "This will remove the exercise from your catalog and delete your last reps and weights.",
                     onConfirm: () => confirmRemoveWorkout(workoutId),
                 });
                 setModalVisible(true);
             } else {
-                // ✅ Always let them choose the day, but preselect if there's a match
-                // const userData = await authFetch(`/user/${userId}`);
-
                 // Open local SQLite database
                 const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
@@ -248,11 +243,6 @@ export default function SaveWorkoutScreen() {
     const confirmRemoveWorkout = async (workoutId: number) => {
         try {
             const userId = Number(await SecureStore.getItemAsync("userId"));
-
-            // await authFetch(
-            //     `/workouts/deleteFromUser?userId=${userId}&workoutId=${workoutId}`,
-            //     { method: "DELETE" }
-            // );
 
             // Open local database
             const db = await SQLite.openDatabaseAsync("gymgamer.db");

@@ -22,12 +22,12 @@ import { playBadMoveSound } from "../utils/playBadMoveSound";
 import { playDeleteSound } from "../utils/playDeleteSound";
 import { playQuickAddSound } from "../utils/playQuickAddSound";
 import { convertWeight } from "../utils/unitUtils";
+import * as SQLite from "expo-sqlite";
+import { UserWeightEntry } from "../types/db";
 
 export default function UpdateWeightScreen({ navigation }: any) {
     const [userId, setUserId] = useState<number | null>(null);
-    const [weights, setWeights] = useState<
-        { id: number; userId: number; weight: number; enteredAt: string }[]
-    >([]);
+    const [weights, setWeights] = useState<UserWeightEntry[]>([]);
     const [newWeight, setNewWeight] = useState("");
     const [loading, setLoading] = useState(true);
     const [weightSystem, setWeightSystem] = useState<"IMPERIAL" | "METRIC">(
@@ -85,14 +85,20 @@ export default function UpdateWeightScreen({ navigation }: any) {
 
     const fetchWeights = async () => {
         try {
-            const data = await authFetch(
-                `/user/getAllUserWeightEntries/${userId}`
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const bodyweightData: UserWeightEntry[] = await db.getAllAsync(
+                "SELECT * FROM user_weight_entries"
             );
-            if (data?.user?.weightEntries) {
-                const weights = data.user.weightEntries;
-                setWeights(weights);
-                console.log("✅ Weights:", weights.length, "entries found.");
+            if (bodyweightData && bodyweightData.length > 0) {
+                setWeights(bodyweightData);
+                console.log(bodyweightData);
+                console.log(
+                    "✅ Weights:",
+                    bodyweightData.length,
+                    "entries found."
+                );
             } else {
+                setWeights([]);
                 console.warn("⚠️ No weightEntries found");
             }
         } catch (err) {
@@ -171,21 +177,27 @@ export default function UpdateWeightScreen({ navigation }: any) {
 
         try {
             setLoading(true);
-            const result = await authFetch(
-                `/user/addUserWeightEntry/${userId}`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ weight: weightNum }),
-                }
+            // const result = await authFetch(
+            //     `/user/addUserWeightEntry/${userId}`,
+            //     {
+            //         method: "POST",
+            //         headers: { "Content-Type": "application/json" },
+            //         body: JSON.stringify({ weight: weightNum }),
+            //     }
+            // );
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            await db.runAsync(
+                "INSERT INTO user_weight_entries (weight, user_id) VALUES (?, ?)",
+                [weightNum, userId]
             );
-            if (result.newlyCompletedAchievements?.length) {
-                sendNotification(result.newlyCompletedAchievements);
+            console.log(`✅ Updated weight entry ${newWeight}`);
+            // if (result.newlyCompletedAchievements?.length) {
+            //     sendNotification(result.newlyCompletedAchievements);
 
-                result.newlyCompletedAchievements.forEach((ach: any) => {
-                    console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
-                });
-            }
+            //     result.newlyCompletedAchievements.forEach((ach: any) => {
+            //         console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
+            //     });
+            // }
             playQuickAddSound();
             setNewWeight("");
             await fetchWeights();
@@ -214,10 +226,15 @@ export default function UpdateWeightScreen({ navigation }: any) {
                 "Are you sure you want to delete your last bodyweight entry?",
             onConfirm: async () => {
                 try {
-                    await authFetch(
-                        `/user/deleteLastUserWeightEntry/${userId}`,
-                        { method: "DELETE" }
+                    // await authFetch(
+                    //     `/user/deleteLastUserWeightEntry/${userId}`,
+                    //     { method: "DELETE" }
+                    // );
+                    const db = await SQLite.openDatabaseAsync("gymgamer.db");
+                    await db.runAsync(
+                        "DELETE FROM user_weight_entries WHERE id = (SELECT id FROM user_weight_entries ORDER BY id DESC LIMIT 1)"
                     );
+
                     playDeleteSound();
                     await fetchWeights();
                 } catch (err) {
@@ -247,10 +264,13 @@ export default function UpdateWeightScreen({ navigation }: any) {
             message: "Are you sure you want to delete ALL bodyweight entries?",
             onConfirm: async () => {
                 try {
-                    await authFetch(
-                        `/user/deleteAllUserWeightEntries/${userId}`,
-                        { method: "DELETE" }
-                    );
+                    // await authFetch(
+                    //     `/user/deleteAllUserWeightEntries/${userId}`,
+                    //     { method: "DELETE" }
+                    // );
+                    const db = await SQLite.openDatabaseAsync("gymgamer.db");
+                    await db.runAsync("DELETE FROM user_weight_entries");
+                    console.log("✅ Deleted all weight entries");
                     playDeleteSound();
                     await fetchWeights();
                 } catch (err) {
@@ -275,7 +295,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
 
     const sortedWeights = [...weights].sort(
         (a, b) =>
-            new Date(a.enteredAt).getTime() - new Date(b.enteredAt).getTime()
+            new Date(a.entered_at).getTime() - new Date(b.entered_at).getTime()
     );
 
     const convertToKg = (lbs: number) => lbs / 2.20462;

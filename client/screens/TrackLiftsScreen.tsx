@@ -15,9 +15,11 @@ import { playDeleteSound } from "../utils/playDeleteSound";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import { LineChart } from "react-native-gifted-charts";
 import PixelModal from "../components/PixelModal";
+import * as SQLite from "expo-sqlite";
+import { UserWorkoutWithName } from "../types/db";
 
 export default function TrackLiftsScreen({ navigation }: any) {
-    const [workouts, setWorkouts] = useState([]);
+    const [workouts, setWorkouts] = useState<UserWorkoutWithName[]>([]);
     const [loading, setLoading] = useState(true);
     const [workoutIdToDelete, setWorkoutIdToDelete] = useState<number | null>(
         null
@@ -34,12 +36,51 @@ export default function TrackLiftsScreen({ navigation }: any) {
         try {
             setLoading(true);
             const userId = await SecureStore.getItemAsync("userId");
-            const data = await authFetch(`/user/getUserWorkouts/${userId}`);
-            setWorkouts(data.workouts);
-            setWeightSystem(data.weightSystem);
-            console.log("Weight entries loaded.");
+
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+            // Get all user workouts with the workout info
+            const userWorkouts: any[] = await db.getAllAsync(
+                `
+                SELECT uw.workout_id, uw.day_id, uw.order_index, w.name, w.architype
+                FROM user_workouts uw
+                JOIN workouts w ON uw.workout_id = w.id
+                WHERE uw.user_id = ?
+                ORDER BY uw.order_index ASC
+                `,
+                [userId]
+            );
+
+            // 2️⃣ For each workout, get entries
+            const workoutsArray: any[] = [];
+            for (const uw of userWorkouts) {
+                const entries = await db.getAllAsync(
+                    `
+                    SELECT weight, date
+                    FROM workout_entries
+                    WHERE user_id = ? AND workout_id = ?
+                    ORDER BY date ASC
+                    `,
+                    [userId, uw.workout_id]
+                );
+
+                workoutsArray.push({
+                    workout: {
+                        id: uw.workout_id,
+                        name: uw.name,
+                        architype: uw.architype,
+                    },
+                    entries,
+                });
+            }
+
+            setWorkouts(workoutsArray);
+            console.log("Workouts loaded:", workoutsArray);
+            const weightSystem = await SecureStore.getItemAsync("weightSystem");
+            setWeightSystem(weightSystem!);
         } catch (err) {
             console.error("Error fetching workouts", err);
+            playBadMoveSound();
         } finally {
             setLoading(false);
         }
@@ -55,15 +96,20 @@ export default function TrackLiftsScreen({ navigation }: any) {
     const deleteWorkoutEntries = async (workoutId: number) => {
         try {
             const userId = await SecureStore.getItemAsync("userId");
-            await authFetch(
-                `/workouts/deleteAllWorkoutEntries?userId=${userId}&workoutId=${workoutId}`,
-                {
-                    method: "DELETE",
-                }
+            if (!userId) throw new Error("No user ID found");
+
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+            // Delete all entries for this user/workout
+            await db.runAsync(
+                `DELETE FROM workout_entries WHERE user_id = ? AND workout_id = ?`,
+                [userId, workoutId]
             );
+
             playDeleteSound();
-            fetchWorkouts();
-        } catch {
+            fetchWorkouts(); // Refresh UI
+        } catch (err) {
+            console.error("Failed to delete workout entries:", err);
             playBadMoveSound();
         }
     };

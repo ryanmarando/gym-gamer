@@ -32,6 +32,7 @@ import {
     Workout,
     WorkoutDay,
     UserWorkoutWithName,
+    WorkoutEntry,
 } from "../types/db";
 
 type WeightEntries = Record<number, string[]>;
@@ -56,7 +57,13 @@ export default function WorkoutsScreen({ navigation }: any) {
     const [modalAction, setModalAction] = useState<"start" | "complete" | null>(
         null
     );
-    const [allWorkoutEntries, setAllWorkoutEntries] = useState<any[]>([]);
+    const [allWorkoutEntries, setAllWorkoutEntries] = useState<
+        UserWorkoutWithName[]
+    >([]);
+    const [maxWeightEntries, setMaxWeightEntries] = useState<
+        Record<number, number>
+    >({});
+    [];
     const [workoutDays, setWorkoutDays] = useState<WorkoutDay[]>([]);
     const [selectedDay, setSelectedDay] = useState<WorkoutDay | null>(null);
     const [showSplitModal, setShowSplitModal] = useState(false);
@@ -67,10 +74,10 @@ export default function WorkoutsScreen({ navigation }: any) {
     const [isPixelModalVisible, setPixelModalVisible] = useState(false);
     const [modalSplitMessage, setModalSplitMessage] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const minWorkoutTime = 900; //15 minutes
+    const minWorkoutTime = 1; //900 15 minutes
     const [weightSystem, setWeightSystem] = useState<string>();
     const [repEntries, setRepEntries] = useState<{
-        [workoutId: number]: string[];
+        [workout_id: number]: string[];
     }>({});
 
     const addSplitDay = () => {
@@ -157,19 +164,22 @@ export default function WorkoutsScreen({ navigation }: any) {
     };
 
     const resetWeightEntries = () => {
-        const reset: any = {};
-        for (const workoutId in weightEntries) {
-            // Reset to same length but with 0s
-            reset[workoutId] = new Array(weightEntries[workoutId].length).fill(
-                ""
-            );
-        }
-        setWeightEntries(reset);
+        const resetWeights: Record<number, string[]> = {};
+        const resetReps: Record<number, string[]> = {};
+
+        workouts.forEach((w) => {
+            const len = weightEntries[w.workout_id]?.length || w.sets || 3;
+            resetWeights[w.workout_id] = new Array(len).fill("");
+            resetReps[w.workout_id] = new Array(len).fill("");
+        });
+
+        setWeightEntries(resetWeights);
+        setRepEntries(resetReps);
     };
 
     const updateRepsAndSet = async (
         userId: number,
-        workoutId: number,
+        workout_id: number,
         reps: string[],
         weightsLifted: string[]
     ) => {
@@ -178,7 +188,7 @@ export default function WorkoutsScreen({ navigation }: any) {
         await authFetch(`/workouts/updateRepsAndSets/${userId}`, {
             method: "PATCH",
             body: JSON.stringify({
-                workoutId,
+                workout_id,
                 sets,
                 reps,
                 weightsLifted,
@@ -198,135 +208,81 @@ export default function WorkoutsScreen({ navigation }: any) {
         } else if (modalAction === "complete") {
             try {
                 if (timer < minWorkoutTime) {
-                    // User is confirming too-short workout now
                     playBadMoveSound();
                     setWorkoutStarted(false);
                     setWorkoutStartTime(null);
                     setTimer(0);
                     await AsyncStorage.removeItem("workoutStartTime");
                     resetWeightEntries();
-
-                    setmodalConfirmationTitle("Got it!");
-                    setModalMessage("Workout ended without saving progress.");
-                    setShowConfirmationModal(true);
                     return;
                 }
+
                 setIsLoading(true);
+
                 const userIdStr = await SecureStore.getItemAsync("userId");
                 if (!userIdStr) return;
                 const userId = Number(userIdStr);
                 if (isNaN(userId)) return;
 
+                if (!selectedDay) {
+                    console.error("No day selected, cannot complete workout");
+                    setIsLoading(false);
+                    return;
+                }
+
+                const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
                 let totalWeightLifted = 0;
 
-                // Save last weight entry for each workout
+                // Save reps/weights for each workout
                 for (const workout of workouts) {
-                    const entries = weightEntries[workout.workoutId];
-                    const workoutId = workout.workoutId;
-                    const reps = repEntries[workoutId] || [];
-                    const weights = weightEntries[workoutId] || [];
+                    const workout_id = workout.workout_id;
+                    const reps = repEntries[workout_id] || [];
+                    const weights = weightEntries[workout_id] || [];
+                    const entries = weightEntries[workout_id] || [];
 
-                    if (!entries || entries.length === 0) continue;
-                    await updateRepsAndSet(userId, workoutId, reps, weights);
+                    if (entries.length === 0) continue;
+                    if (weights.length === 0) continue;
 
-                    // Sum all weights for this workout (all sets)
-                    const sumWeights = entries.reduce((sum, w) => {
+                    // Update reps + weights in user_workouts
+                    await db.runAsync(
+                        `UPDATE user_workouts
+                     SET reps = ?, weights_lifted = ?
+                     WHERE user_id = ? AND workout_id = ? AND day_id = ?`,
+                        [
+                            JSON.stringify(reps),
+                            JSON.stringify(weights),
+                            userId,
+                            workout_id,
+                            selectedDay?.id,
+                        ]
+                    );
+
+                    // Total lifted
+                    const sumWeights = weights.reduce((sum, w) => {
                         const num = Number(w);
                         return sum + (isNaN(num) ? 0 : num);
                     }, 0);
-
                     totalWeightLifted += sumWeights;
 
                     const maxWeight = Math.max(...entries.map(Number));
 
-                    let newCompletedAchievements: any[] = [];
-
-                    // Only send if lastWeight > 0 (optional)
                     if (maxWeight > 0) {
-                        const result = await authFetch(
-                            `/workouts/addWorkoutEntry?userId=${userId}&workoutId=${workout.workoutId}`,
-                            {
-                                method: "POST",
-                                body: JSON.stringify({
-                                    weight: maxWeight,
-                                }),
-                            }
+                        await db.runAsync(
+                            `INSERT INTO workout_entries (user_id, workout_id, weight, date) 
+                            VALUES (?, ?, ?, ?)`,
+                            [
+                                userId,
+                                workout_id,
+                                maxWeight,
+                                new Date().toISOString(), // optional timestamp
+                            ]
                         );
-
-                        if (result.newlyCompletedAchievements?.length) {
-                            newCompletedAchievements.push(
-                                ...result.newlyCompletedAchievements
-                            );
-                        }
-
-                        // Now send totalWeightLifted to backend for weekly tracking
-                        if (totalWeightLifted > 0) {
-                            const weightLiftedResult = await authFetch(
-                                `/workouts/addUserWeightLifted/${userId}`,
-                                {
-                                    method: "PATCH",
-                                    body: JSON.stringify({
-                                        weightLifted: Number(totalWeightLifted),
-                                        workoutName: workout.workout.name,
-                                    }),
-                                }
-                            );
-
-                            if (
-                                weightLiftedResult.newlyCompletedAchievements
-                                    ?.length
-                            ) {
-                                newCompletedAchievements.push(
-                                    ...weightLiftedResult.newlyCompletedAchievements
-                                );
-                            }
-                        }
-
-                        if (newCompletedAchievements.length) {
-                            // Send notification
-                            sendNotification(newCompletedAchievements);
-
-                            newCompletedAchievements.forEach((ach: any) => {
-                                console.log(
-                                    `🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`
-                                );
-                                // Show modal, play sound, push notification, etc.
-                            });
-                        }
                     }
                 }
 
-                // Now call complete workout endpoint
-                const now = new Date();
-                const workoutEndTime = now.toISOString();
-                const localHour = now.getHours();
-                const workoutProgressData = await authFetch(
-                    `/workouts/completeWorkout/${userId}`,
-                    {
-                        method: "PATCH",
-                        body: JSON.stringify({
-                            duration: timer,
-                            workoutEndTime: workoutEndTime,
-                            localHour,
-                        }),
-                    }
-                );
+                // Check for achievements
 
-                if (workoutProgressData.newlyCompletedAchievements?.length) {
-                    // Send notification
-                    sendNotification(
-                        workoutProgressData.newlyCompletedAchievements
-                    );
-
-                    workoutProgressData.newlyCompletedAchievements.forEach(
-                        (ach: any) => {
-                            console.log(
-                                `🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`
-                            );
-                            // Show modal, play sound, push notification, etc.
-                        }
-                    );
-                }
                 playCompleteSound();
                 setWorkoutStarted(false);
                 setWorkoutStartTime(null);
@@ -335,20 +291,18 @@ export default function WorkoutsScreen({ navigation }: any) {
                 await AsyncStorage.removeItem("workoutStartTime");
                 setWorkoutFinished(true);
                 setmodalConfirmationTitle("Nice work, gamer!");
-                setModalMessage(
-                    `Workout complete! You just gained ${workoutProgressData.xpGiven} XP!`
-                );
+                // setModalMessage(
+                //     `Workout complete! You just gained ${workoutProgressData.xpGiven} XP!`
+                // );
+                setModalMessage(`Workout complete! You just gained 150 XP!`);
                 setShowConfirmationModal(true);
                 resetWeightEntries();
                 setShowConfetti(true);
                 setTimeout(() => setShowConfetti(false), 4800);
             } catch (error) {
                 setIsLoading(false);
-                console.error("Complete workout failed", error);
+                console.error("❌ Complete workout failed", error);
                 playBadMoveSound();
-                setmodalConfirmationTitle("Whoa there, gamer!");
-                setModalMessage(`Complete workout failed: ${error}`);
-                setShowConfirmationModal(true);
             }
         }
 
@@ -375,6 +329,22 @@ export default function WorkoutsScreen({ navigation }: any) {
         await sendPushNotification({ expoPushToken, title, body });
     };
 
+    const loadMaxWeights = async () => {
+        const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+        const rows: { workout_id: number; maxWeight: number }[] =
+            await db.getAllAsync(`
+                        SELECT workout_id, MAX(weight) as maxWeight
+                        FROM workout_entries
+                        GROUP BY workout_id
+                    `);
+        const map: Record<number, number> = {};
+        rows.forEach((r) => {
+            map[r.workout_id] = r.maxWeight;
+        });
+        setMaxWeightEntries(map);
+    };
+
     const fetchUserData = useCallback(async () => {
         try {
             const userIdStr = await SecureStore.getItemAsync("userId");
@@ -383,14 +353,13 @@ export default function WorkoutsScreen({ navigation }: any) {
 
             // const userData = await authFetch(`/user/${userId}`);
             const db = await SQLite.openDatabaseAsync("gymgamer.db");
-            const workouts: Workout[] = await db.getAllAsync(
-                "SELECT * FROM workouts"
-            );
 
             const workoutDays: WorkoutDay[] = await db.getAllAsync(
                 "SELECT * FROM workout_days ORDER BY day_index ASC"
             );
             setWorkoutDays(workoutDays);
+
+            loadMaxWeights();
 
             const weightSystem = await SecureStore.getItemAsync("weightSystem");
             if (weightSystem === "METRIC" || weightSystem === "IMPERIAL") {
@@ -427,17 +396,28 @@ export default function WorkoutsScreen({ navigation }: any) {
             );
 
             // // 4. Initialize weight entries for UI
-            // setWeightEntries((prev) => {
-            //     const copy = { ...prev };
-            //     userWorkouts.forEach((uw) => {
-            //         if (!copy[uw.workout_id]) {
-            //             copy[uw.workout_id] = uw.weights_lifted
-            //                 ? JSON.parse(uw.weights_lifted).map(String)
-            //                 : ["", "", ""]; // default 3 entries
-            //         }
-            //     });
-            //     return copy;
-            // });
+            setWeightEntries((prev) => {
+                const copy = { ...prev };
+                userWorkouts.forEach((uw) => {
+                    if (!copy[uw.workout_id]) {
+                        copy[uw.workout_id] = uw.weights_lifted
+                            ? JSON.parse(uw.weights_lifted).map(String)
+                            : ["", "", ""]; // default 3 entries
+                    }
+                });
+                return copy;
+            });
+
+            setRepEntries((prev) => {
+                const copy: Record<number, string[]> = { ...prev };
+                userWorkouts.forEach((uw) => {
+                    const repsStr = uw.reps as unknown as string | undefined;
+                    copy[uw.workout_id] = repsStr
+                        ? JSON.parse(repsStr).map(String)
+                        : new Array(uw.sets ?? 3).fill("");
+                });
+                return copy;
+            });
 
             setWorkouts(userWorkouts);
             console.log("Fetched workouts:", userWorkouts);
@@ -451,16 +431,18 @@ export default function WorkoutsScreen({ navigation }: any) {
 
     const resetUserRepEntries = () => {
         setRepEntries(() => {
-            (allWorkoutEntries || []).forEach((w: Workout) => {
-                const reps =
-                    w.reps && w.reps.length > 0
+            const newRepEntries: Record<number, string[]> = {};
+
+            (allWorkoutEntries || []).forEach((w: UserWorkout) => {
+                const reps: string[] =
+                    Array.isArray(w.reps) && w.reps.length > 0
                         ? w.reps
                         : new Array(w.sets ?? 3).fill("");
 
-                repEntries[w.workoutId] = reps;
+                newRepEntries[w.workout_id] = reps;
             });
 
-            return repEntries;
+            return newRepEntries;
         });
     };
 
@@ -476,20 +458,23 @@ export default function WorkoutsScreen({ navigation }: any) {
                 setWorkoutStartTime(Number(savedTime));
             }
 
-            //console.log(allWorkoutEntries)
+            //console.log(allWorkoutEntries);
             // Now that workouts are fetched and allWorkoutEntries is set
             setRepEntries(() => {
                 const newEntries: Record<string, string[]> = {};
-                (allWorkouts || []).forEach((w: Workout) => {
-                    const reps =
-                        w.reps && w.reps.length > 0
+
+                (allWorkouts || []).forEach((w: UserWorkout) => {
+                    const reps: string[] =
+                        Array.isArray(w.reps) && w.reps.length > 0
                             ? w.reps
                             : new Array(w.sets ?? 3).fill("");
-                    newEntries[w.workoutId] = reps;
+
+                    newEntries[w.workout_id.toString()] = reps;
                 });
 
                 return newEntries;
             });
+
             console.log("Initialized workout data...");
         };
 
@@ -536,7 +521,7 @@ export default function WorkoutsScreen({ navigation }: any) {
 
     // Handle changes in weight input
     const handleWeightChange = (
-        workoutId: number,
+        workout_id: number,
         index: number,
         value: string
     ): void => {
@@ -548,15 +533,15 @@ export default function WorkoutsScreen({ navigation }: any) {
         }
         setWeightEntries((prev) => {
             const copy = { ...prev };
-            const weights = copy[workoutId] ? [...copy[workoutId]] : [];
+            const weights = copy[workout_id] ? [...copy[workout_id]] : [];
             weights[index] = value;
-            copy[workoutId] = weights;
+            copy[workout_id] = weights;
             return copy;
         });
     };
 
     const handleRepChange = (
-        workoutId: number,
+        workout_id: number,
         index: number,
         value: string
     ) => {
@@ -570,91 +555,103 @@ export default function WorkoutsScreen({ navigation }: any) {
             const copy = { ...prev };
 
             // Initialize if not present
-            if (!copy[workoutId]) {
-                copy[workoutId] = [];
+            if (!copy[workout_id]) {
+                copy[workout_id] = [];
             }
 
             // Update the specific rep entry
-            const newReps = [...copy[workoutId]];
+            const newReps = [...copy[workout_id]];
             newReps[index] = value;
-            copy[workoutId] = newReps;
+            copy[workout_id] = newReps;
 
             return copy;
         });
     };
 
     // Add one more weight entry box
-    const addEntry = (workoutId: number): void => {
+    const addEntry = async (workout_id: number): Promise<void> => {
         const MAX_ENTRIES = 7;
 
-        // Rebuild reps first
+        // Get userId
+        const userIdStr = await SecureStore.getItemAsync("userId");
+        const userId = Number(userIdStr);
+        if (!userId) return;
+
         resetUserRepEntries();
 
-        // Rebuild weights to match new rep count
         setWeightEntries((prev) => {
             const updated = { ...prev };
-            const currentWeights = updated[workoutId] ?? [];
+            const currentWeights = updated[workout_id] ?? [];
 
             if (currentWeights.length >= MAX_ENTRIES) {
-                console.log("❌ Cannot add more than 7 weight entries");
                 playBadMoveSound?.();
+                console.log("❌ Cannot add more than 7 weight entries");
                 return prev;
             }
 
-            // Add blank weight to match reps
-            updated[workoutId] = [...currentWeights, ""];
+            const newWeights = [...currentWeights, ""];
+            updated[workout_id] = newWeights;
+
+            // Also update reps in sync
+            setRepEntries((repPrev) => {
+                const repUpdated = { ...repPrev };
+                const currentReps = repUpdated[workout_id] ?? [];
+                repUpdated[workout_id] = [...currentReps, ""];
+                // Persist both to DB
+                saveWorkoutEntries(
+                    userId,
+                    workout_id,
+                    repUpdated[workout_id],
+                    newWeights
+                );
+                return repUpdated;
+            });
+
             return updated;
         });
     };
 
     // Remove last weight entry box
-    const deleteEntry = (workoutId: number): void => {
+    const deleteEntry = async (workout_id: number): Promise<void> => {
+        const userIdStr = await SecureStore.getItemAsync("userId");
+        const userId = Number(userIdStr);
+        if (!userId) return;
+
         setWeightEntries((prevWeights) => {
             const weightsCopy = { ...prevWeights };
-            if (weightsCopy[workoutId] && weightsCopy[workoutId].length > 1) {
-                weightsCopy[workoutId] = weightsCopy[workoutId].slice(0, -1);
+            let newWeights = weightsCopy[workout_id] ?? [];
+
+            if (newWeights.length > 1) {
+                newWeights = newWeights.slice(0, -1);
+                weightsCopy[workout_id] = newWeights;
             } else {
                 playBadMoveSound();
                 console.log("Cannot delete last weight entry");
             }
+
+            // Reps must also shrink
+            setRepEntries((prevReps) => {
+                const repsCopy = { ...prevReps };
+                let newReps = repsCopy[workout_id] ?? [];
+
+                if (newReps.length > 1) {
+                    newReps = newReps.slice(0, -1);
+                    repsCopy[workout_id] = newReps;
+                }
+
+                // Persist to DB
+                saveWorkoutEntries(userId, workout_id, newReps, newWeights);
+
+                return repsCopy;
+            });
+
             return weightsCopy;
-        });
-
-        setRepEntries((prevReps) => {
-            const repsCopy = { ...prevReps };
-            const savedLength =
-                allWorkoutEntries.find((w) => w.workoutId === workoutId)?.reps
-                    .length ?? 0;
-
-            if (
-                repsCopy[workoutId] &&
-                repsCopy[workoutId].length > savedLength
-            ) {
-                // Only delete if there are extra (unsaved) reps
-                repsCopy[workoutId] = repsCopy[workoutId].slice(0, -1);
-            } else {
-                // Don't delete saved rep
-            }
-
-            return repsCopy;
         });
     };
 
-    const getLastWorkoutWeight = (workoutId: number): number => {
-        // Find the workout in allWorkoutEntries
-        const workout = allWorkoutEntries.find(
-            (w) => w.workoutId === workoutId
-        );
-
-        if (!workout || !workout.entries || workout.entries.length === 0) {
-            return 0;
-        }
-
-        // Get all weights from entries
-        const weights = workout.entries.map((entry: any) => entry.weight);
-
-        // Return max weight
-        return Math.max(...weights);
+    // Get the max weight for a given workout_id
+    const getLastWorkoutWeight = (workout_id: number): number => {
+        return maxWeightEntries[workout_id] || 0;
     };
 
     const handleChangeDay = () => {
@@ -675,24 +672,70 @@ export default function WorkoutsScreen({ navigation }: any) {
         navigation.navigate("Workout Shop");
     };
 
-    const saveWorkoutOrder = async (orderedWorkouts: Workout[]) => {
-        const userIdStr = await SecureStore.getItemAsync("userId");
-        const userId = Number(userIdStr);
-        if (!userId || !selectedDay) return;
+    const saveWorkoutOrder = async (orderedWorkouts: UserWorkoutWithName[]) => {
+        try {
+            const userIdStr = await SecureStore.getItemAsync("userId");
+            const userId = Number(userIdStr);
+            if (!userId || !selectedDay) return;
 
-        // Prepare an array of { workoutId, order }
-        const orderedData = orderedWorkouts.map((w, index) => ({
-            workoutId: w.workoutId,
-            order: index,
-            dayId: selectedDay.id,
-        }));
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
-        console.log("Saving order:", orderedData);
+            // Update each workout’s order_index in user_workouts
+            for (let i = 0; i < orderedWorkouts.length; i++) {
+                const w = orderedWorkouts[i];
+                await db.runAsync(
+                    `UPDATE user_workouts 
+                 SET order_index = ? 
+                 WHERE user_id = ? AND workout_id = ? AND day_id = ?`,
+                    [i, userId, w.workout_id, selectedDay.id]
+                );
+            }
 
-        await authFetch(`/workouts/saveWorkoutOrder/${userId}`, {
-            method: "PATCH",
-            body: JSON.stringify({ workouts: orderedData }),
-        });
+            console.log("✅ Workout order updated in SQLite:", orderedWorkouts);
+        } catch (err) {
+            console.error("❌ Failed to update workout order:", err);
+        }
+    };
+
+    const saveWorkoutEntries = async (
+        userId: number,
+        workout_id: number,
+        reps: string[],
+        weights: string[]
+    ) => {
+        try {
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+            // Ensure reps and weights are clean arrays of strings
+            const cleanReps = Array.isArray(reps)
+                ? reps
+                      .map((r) => String(r).trim())
+                      .filter((r) => r !== "" && r !== "Reps")
+                : [];
+
+            const cleanWeights = Array.isArray(weights)
+                ? weights.map((w) => String(w).trim()).filter((w) => w !== "")
+                : [];
+
+            await db.runAsync(
+                `
+            UPDATE user_workouts
+            SET sets = ?, reps = ?, weights_lifted = ?
+            WHERE user_id = ? AND workout_id = ?
+            `,
+                [
+                    cleanReps.length,
+                    JSON.stringify(cleanReps),
+                    JSON.stringify(cleanWeights),
+                    userId,
+                    workout_id,
+                ]
+            );
+
+            console.log(`✅ Saved entries for workout ${workout_id}`);
+        } catch (err) {
+            console.error("❌ Failed to save entries:", err);
+        }
     };
 
     return (
@@ -863,7 +906,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                                                 data={workouts}
                                                 onDragEnd={({ data }) => {
                                                     setWorkouts(data);
-                                                    //saveWorkoutOrder(data);
+                                                    saveWorkoutOrder(data);
                                                 }}
                                                 keyExtractor={(item) =>
                                                     item.workout_id.toString()
@@ -898,7 +941,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                                                         }
                                                         repEntries={repEntries}
                                                         defaultWeights={
-                                                            allWorkoutEntries
+                                                            workouts
                                                         }
                                                     />
                                                 )}

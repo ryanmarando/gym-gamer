@@ -132,10 +132,19 @@ export default function WorkoutItem({
                                                             r.workout_id ===
                                                             item.workout_id
                                                     );
-                                                const rep =
-                                                    defaultRepObj?.reps?.[i];
+                                                let rep;
+                                                if (defaultRepObj?.reps) {
+                                                    try {
+                                                        const repsArray =
+                                                            JSON.parse(
+                                                                defaultRepObj.reps
+                                                            );
+                                                        rep = repsArray[i];
+                                                    } catch {
+                                                        rep = undefined;
+                                                    }
+                                                }
 
-                                                // If rep is undefined, empty, or 0 — show "Reps"
                                                 if (
                                                     rep === undefined ||
                                                     rep === "" ||
@@ -183,11 +192,22 @@ export default function WorkoutItem({
                                                             w.workout_id ===
                                                             item.workout_id
                                                     );
-                                                const weight =
-                                                    defaultWeightObj
-                                                        ?.weightsLifted?.[i];
+                                                let weight;
+                                                if (
+                                                    defaultWeightObj?.weights_lifted
+                                                ) {
+                                                    try {
+                                                        const weightsArray =
+                                                            JSON.parse(
+                                                                defaultWeightObj.weights_lifted
+                                                            );
+                                                        weight =
+                                                            weightsArray[i];
+                                                    } catch {
+                                                        weight = undefined;
+                                                    }
+                                                }
 
-                                                // If weight is undefined, empty string, or 0 (number or string), use the placeholder
                                                 if (
                                                     weight === undefined ||
                                                     weight === "" ||

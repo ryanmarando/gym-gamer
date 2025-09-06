@@ -1,16 +1,10 @@
 import React from "react";
 import { ScrollView, View, StyleSheet } from "react-native";
 import PixelText from "../components/PixelText";
-
-type WeightEntry = {
-    id: number;
-    userId: number;
-    weight: number;
-    enteredAt: string;
-};
+import { UserWeightEntry } from "../types/db";
 
 type Props = {
-    weights: WeightEntry[];
+    weights: UserWeightEntry[];
     weightSystem: "IMPERIAL" | "METRIC";
 };
 
@@ -18,7 +12,7 @@ export default function WeightEntriesList({ weights, weightSystem }: Props) {
     // Sort descending by date
     const sortedWeights = [...weights].sort(
         (a, b) =>
-            new Date(b.enteredAt).getTime() - new Date(a.enteredAt).getTime()
+            new Date(b.entered_at).getTime() - new Date(a.entered_at).getTime()
     );
 
     const unit = weightSystem === "METRIC" ? "kg" : "lbs";
@@ -31,8 +25,8 @@ export default function WeightEntriesList({ weights, weightSystem }: Props) {
             keyboardShouldPersistTaps="handled"
         >
             {sortedWeights.map((item) => {
-                const dateStr = new Date(item.enteredAt).toLocaleDateString();
-                const timeStr = new Date(item.enteredAt).toLocaleTimeString();
+                const dateStr = new Date(item.entered_at).toLocaleDateString();
+                const timeStr = new Date(item.entered_at).toLocaleTimeString();
 
                 return (
                     <View key={item.id} style={styles.entryContainer}>

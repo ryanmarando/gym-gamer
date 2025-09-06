@@ -63,6 +63,7 @@ export interface UserWorkout {
 export interface UserWorkoutWithName extends UserWorkout {
     name: string;
     architype: string;
+    entries?: WorkoutEntry[];
 }
 
 // WorkoutEntries table
