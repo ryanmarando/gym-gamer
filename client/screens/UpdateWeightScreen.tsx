@@ -15,8 +15,6 @@ import PixelText from "../components/PixelText";
 import PixelModal from "../components/PixelModal";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import WeightEntriesList from "../components/WeightEntriesList";
-import { authFetch } from "../utils/authFetch";
-import { sendPushNotification } from "../utils/notification";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import { playDeleteSound } from "../utils/playDeleteSound";
@@ -24,6 +22,8 @@ import { playQuickAddSound } from "../utils/playQuickAddSound";
 import { convertWeight } from "../utils/unitUtils";
 import * as SQLite from "expo-sqlite";
 import { UserWeightEntry } from "../types/db";
+import { checkAndProgressAchievements } from "../utils/checkAndProgressAchievements";
+import { notifyAchievements } from "../utils/notifyAchievement";
 
 export default function UpdateWeightScreen({ navigation }: any) {
     const [userId, setUserId] = useState<number | null>(null);
@@ -148,23 +148,6 @@ export default function UpdateWeightScreen({ navigation }: any) {
         });
     };
 
-    const sendNotification = async (newCompletedAchievements: any[]) => {
-        const expoPushToken = await SecureStore.getItemAsync("notifToken");
-        if (!expoPushToken) return;
-
-        const title = "Hey, Gym Gamer!";
-        let body: string;
-
-        if (newCompletedAchievements.length === 1) {
-            const achievementName = newCompletedAchievements[0].name;
-            body = `🏆 You completed '${achievementName}'!`;
-        } else {
-            body = `🏆 You completed ${newCompletedAchievements.length} achievements!`;
-        }
-
-        await sendPushNotification({ expoPushToken, title, body });
-    };
-
     // Called when user confirms modal
     const handleConfirmAddWeight = async () => {
         setModalConfig((prev) => ({ ...prev, visible: false }));
@@ -177,27 +160,22 @@ export default function UpdateWeightScreen({ navigation }: any) {
 
         try {
             setLoading(true);
-            // const result = await authFetch(
-            //     `/user/addUserWeightEntry/${userId}`,
-            //     {
-            //         method: "POST",
-            //         headers: { "Content-Type": "application/json" },
-            //         body: JSON.stringify({ weight: weightNum }),
-            //     }
-            // );
+
             const db = await SQLite.openDatabaseAsync("gymgamer.db");
             await db.runAsync(
                 "INSERT INTO user_weight_entries (weight, user_id) VALUES (?, ?)",
                 [weightNum, userId]
             );
             console.log(`✅ Updated weight entry ${newWeight}`);
-            // if (result.newlyCompletedAchievements?.length) {
-            //     sendNotification(result.newlyCompletedAchievements);
 
-            //     result.newlyCompletedAchievements.forEach((ach: any) => {
-            //         console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
-            //     });
-            // }
+            // 5️⃣ Check achievements locally
+            const updateBodyweightAchievement =
+                await checkAndProgressAchievements(["BODYWEIGHT"]);
+
+            if (updateBodyweightAchievement?.length) {
+                await notifyAchievements(updateBodyweightAchievement);
+            }
+
             playQuickAddSound();
             setNewWeight("");
             await fetchWeights();
@@ -264,10 +242,6 @@ export default function UpdateWeightScreen({ navigation }: any) {
             message: "Are you sure you want to delete ALL bodyweight entries?",
             onConfirm: async () => {
                 try {
-                    // await authFetch(
-                    //     `/user/deleteAllUserWeightEntries/${userId}`,
-                    //     { method: "DELETE" }
-                    // );
                     const db = await SQLite.openDatabaseAsync("gymgamer.db");
                     await db.runAsync("DELETE FROM user_weight_entries");
                     console.log("✅ Deleted all weight entries");

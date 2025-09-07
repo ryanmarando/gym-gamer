@@ -27,13 +27,12 @@ import { playBadMoveSound } from "../utils/playBadMoveSound";
 import WorkoutHeader from "../components/WorkoutHeader";
 import WorkoutItem from "../components/WorkoutItem";
 import * as SQLite from "expo-sqlite";
-import {
-    UserWorkout,
-    Workout,
-    WorkoutDay,
-    UserWorkoutWithName,
-    WorkoutEntry,
-} from "../types/db";
+import { UserWorkout, WorkoutDay, UserWorkoutWithName } from "../types/db";
+import { addXpAndCheckLevelUp } from "../utils/addXPAndCheckLevelUp";
+import { checkAndProgressAchievements } from "../utils/checkAndProgressAchievements";
+import { notifyAchievements } from "../utils/notifyAchievement";
+import { convertKgToLbs } from "../utils/conversions";
+import { roundToNearestHalf } from "../utils/unitUtils";
 
 type WeightEntries = Record<number, string[]>;
 
@@ -233,6 +232,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                 const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
                 let totalWeightLifted = 0;
+                let newCompletedAchievements: any[] = [];
 
                 // Save reps/weights for each workout
                 for (const workout of workouts) {
@@ -267,16 +267,10 @@ export default function WorkoutsScreen({ navigation }: any) {
                     const maxWeight = Math.max(...entries.map(Number));
 
                     if (maxWeight > 0) {
-                        // check the user's system
-                        const row: any = await db.getFirstAsync(
-                            "SELECT weight_system FROM users WHERE id = ?",
-                            [Number(userId)]
-                        );
-
                         let finalWeight = maxWeight;
 
                         // 🔥 convert to lbs if user is in metric
-                        if (row?.weight_system === "METRIC") {
+                        if (weightSystem === "METRIC") {
                             finalWeight = maxWeight * 2.20462;
                         }
 
@@ -285,10 +279,88 @@ export default function WorkoutsScreen({ navigation }: any) {
                             VALUES (?, ?, ?)`,
                             [workout_id, finalWeight, new Date().toISOString()]
                         );
+
+                        const previousMax: any = await db.getFirstAsync(
+                            `SELECT MAX(weight) as max_weight FROM workout_entries WHERE workout_id = ?`,
+                            [workout.workout_id]
+                        );
+
+                        // LiftingWeight achievement
+                        const liftingWeightAchievements =
+                            await checkAndProgressAchievements(
+                                ["LIFTINGWEIGHT"],
+                                {
+                                    sets: weightEntries[workout_id],
+                                    weight: finalWeight,
+                                    weightSystem: weightSystem,
+                                    workoutName: workout.name,
+                                    previousMax: previousMax.max_weight,
+                                }
+                            );
+                        if (liftingWeightAchievements.length) {
+                            newCompletedAchievements.push(
+                                ...liftingWeightAchievements
+                            );
+                        }
                     }
                 }
 
                 // Check for achievements
+                const completedWorkoutProgressXP = 150;
+                const levelUpResult = await addXpAndCheckLevelUp(
+                    completedWorkoutProgressXP
+                );
+                console.log(levelUpResult.newlyCompletedAchievements);
+
+                if (levelUpResult.newlyCompletedAchievements?.length) {
+                    newCompletedAchievements.push(
+                        ...levelUpResult.newlyCompletedAchievements
+                    );
+                }
+
+                let weightLifted: number;
+                if (weightSystem === "METRIC") {
+                    weightLifted = convertKgToLbs(totalWeightLifted);
+                    // Round to nearest 0.5 lbs
+                    weightLifted = roundToNearestHalf(totalWeightLifted);
+                } else {
+                    weightLifted = totalWeightLifted;
+                }
+
+                const now = new Date();
+                const workoutEndTime = now.toISOString();
+                const localHour = now.getHours();
+
+                const workoutAndStreakAchievments =
+                    await checkAndProgressAchievements(["WORKOUT", "STREAK"], {
+                        duration: timer,
+                        workoutEndTime: workoutEndTime,
+                        localHour,
+                    });
+
+                if (workoutAndStreakAchievments?.length) {
+                    newCompletedAchievements.push(
+                        ...workoutAndStreakAchievments
+                    );
+                }
+
+                if (newCompletedAchievements.length > 0) {
+                    await notifyAchievements(newCompletedAchievements);
+                    newCompletedAchievements.forEach((ach) =>
+                        console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`)
+                    );
+                }
+
+                // Update total + weekly lifted weight
+                await db.runAsync(
+                    `
+                     UPDATE users
+                     SET total_weight_lifted = total_weight_lifted + ?,
+                         weekly_weight_lifted = weekly_weight_lifted + ?
+                     WHERE id = 1;
+                     `,
+                    [weightLifted, weightLifted]
+                );
 
                 playCompleteSound();
                 setWorkoutStarted(false);
@@ -301,7 +373,9 @@ export default function WorkoutsScreen({ navigation }: any) {
                 // setModalMessage(
                 //     `Workout complete! You just gained ${workoutProgressData.xpGiven} XP!`
                 // );
-                setModalMessage(`Workout complete! You just gained 150 XP!`);
+                setModalMessage(
+                    `Workout complete! You just gained ${completedWorkoutProgressXP} XP!`
+                );
                 setShowConfirmationModal(true);
                 resetWeightEntries();
                 setShowConfetti(true);
@@ -314,26 +388,6 @@ export default function WorkoutsScreen({ navigation }: any) {
         }
 
         setModalAction(null);
-    };
-
-    const sendNotification = async (newCompletedAchievements: any[]) => {
-        const expoPushToken = await SecureStore.getItemAsync("notifToken");
-        console.log("Push token:", expoPushToken);
-        if (!expoPushToken) {
-            return;
-        }
-
-        const title = "Hey, Gym Gamer!";
-        let body: string;
-
-        if (newCompletedAchievements.length === 1) {
-            const achievementName = newCompletedAchievements[0].name;
-            body = `🏆 You completed '${achievementName}'!`;
-        } else {
-            body = `🏆 You completed ${newCompletedAchievements.length} achievements!`;
-        }
-
-        await sendPushNotification({ expoPushToken, title, body });
     };
 
     const loadMaxWeights = async () => {

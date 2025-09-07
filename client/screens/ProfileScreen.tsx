@@ -196,7 +196,7 @@ export default function ProfileScreen({
                 setNotificationsEnabled(true);
             }
         };
-
+        //resetUserAndAchievements();
         initPush();
     }, []);
 
@@ -208,48 +208,31 @@ export default function ProfileScreen({
         }, [isLoggedIn])
     );
 
-    const setupLocalDbForExistingUser = async (userId: number) => {
-        const db = await SQLite.openDatabaseAsync("gymgamer.db");
+    const resetUserAndAchievements = async () => {
+        try {
+            const db = SQLite.openDatabaseSync("gymgamer.db");
+            // Reset user XP/level/progress/weights
+            await db.execAsync(`
+      UPDATE users
+      SET level = 1,
+          level_progress = 0,
+          xp = 0,
+          total_weight_lifted = 0,
+          weekly_weight_lifted = 0
+      WHERE id = 1;
+    `);
 
-        // Create tables if they don't exist
-        await db.runAsync(`
-            CREATE TABLE IF NOT EXISTS users (
-              id INTEGER PRIMARY KEY,
-              email TEXT NOT NULL,
-              name TEXT NOT NULL,
-              weight_system TEXT DEFAULT 'IMPERIAL',
-              level INTEGER DEFAULT 1,
-              level_progress INTEGER DEFAULT 0,
-              xp INTEGER DEFAULT 0,
-              total_weight_lifted REAL DEFAULT 0,
-              weekly_weight_lifted REAL DEFAULT 0,
-              mute_sounds INTEGER DEFAULT 0,
-              expo_push_token TEXT
-            )
-        `);
+            // Reset achievements
+            await db.execAsync(`
+      UPDATE achievements
+      SET progress = 0,
+          completed = 0,
+          completed_at = NULL;
+    `);
 
-        // Check if user exists
-        const row: any = await db.getFirstAsync(
-            "SELECT * FROM users WHERE id = ?",
-            [userId]
-        );
-
-        if (!row) {
-            // Fetch user data from backend
-            const userData = await authFetch(`/user/${userId}`);
-            await db.runAsync(
-                `INSERT INTO users (id, email, name, weight_system, level, xp)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-                [
-                    userData.id,
-                    userData.email,
-                    userData.name,
-                    userData.weight_system,
-                    userData.level,
-                    userData.xp,
-                ]
-            );
-            console.log("✅ Local DB initialized for existing user");
+            console.log("✅ User and achievements reset for testing!");
+        } catch (error) {
+            console.error("❌ Error resetting user and achievements:", error);
         }
     };
 

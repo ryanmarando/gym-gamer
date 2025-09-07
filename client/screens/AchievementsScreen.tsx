@@ -8,10 +8,8 @@ import PixelModal from "../components/PixelModal";
 import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import PixelQuestCard from "../components/PixelQuestCard";
 import UpdateQuestModal from "../components/UpdateQuestModal";
-import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { sendPushNotification } from "../utils/notification";
 import Celebration from "../components/Celebration";
 import { getNextSundayReset } from "../utils/getNextSundayReset";
 import { playCompleteSound } from "../utils/playCompleteSound";
@@ -23,7 +21,10 @@ import {
 } from "../utils/unitUtils";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import * as SQLite from "expo-sqlite";
-import { Quest, Achievement, UserWeightEntry } from "../types/db";
+import { Quest, Achievement, UserWeightEntry, User } from "../types/db";
+import { checkAndProgressAchievements } from "../utils/checkAndProgressAchievements";
+import { notifyAchievements } from "../utils/notifyAchievement";
+import { addXpAndCheckLevelUp } from "../utils/addXPAndCheckLevelUp";
 
 export default function AchievementsScreen({ navigation }: any) {
     const [achievements, setAchievements] = useState<Achievement[]>([]); // All achievements
@@ -107,7 +108,7 @@ export default function AchievementsScreen({ navigation }: any) {
             const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
             const achievements: Achievement[] = await db.getAllAsync(
-                "SELECT * FROM achievements"
+                "SELECT * FROM achievements ORDER BY progress DESC"
             );
 
             setAchievements(achievements);
@@ -160,26 +161,6 @@ export default function AchievementsScreen({ navigation }: any) {
         }, [refreshToggle])
     );
 
-    const sendNotification = async (newCompletedAchievements: any[]) => {
-        const expoPushToken = await SecureStore.getItemAsync("notifToken");
-        console.log("Push token:", expoPushToken);
-        if (!expoPushToken) {
-            return;
-        }
-
-        const title = "Hey, Gym Gamer!";
-        let body: string;
-
-        if (newCompletedAchievements.length === 1) {
-            const achievementName = newCompletedAchievements[0].name;
-            body = `🏆 You completed '${achievementName}'!`;
-        } else {
-            body = `🏆 You completed ${newCompletedAchievements.length} achievements!`;
-        }
-
-        await sendPushNotification({ expoPushToken, title, body });
-    };
-
     const handleQuestUpdateConfirm = async (data: {
         customGoalAmount: number;
         customDeadline: string;
@@ -189,13 +170,6 @@ export default function AchievementsScreen({ navigation }: any) {
         try {
             const userId = await SecureStore.getItemAsync("userId");
             const weightSystem = await SecureStore.getItemAsync("weightSystem");
-
-            // // --- 1. Send API request ---
-            // const result = await authFetch(`/quest/editQuest/${userId}`, {
-            //     method: "PATCH",
-            //     headers: { "Content-Type": "application/json" },
-            //     body: JSON.stringify({ ...data, weightSystem: selectedSystem }),
-            // });
 
             // --- 2. Update local SQLite DB ---
             const db = await SQLite.openDatabaseAsync("gymgamer.db");
@@ -251,14 +225,15 @@ export default function AchievementsScreen({ navigation }: any) {
 
             console.log("✅ Local quest updated!");
 
-            // // --- 3. Handle new achievements ---
-            // if (result.newlyCompletedAchievements?.length) {
-            //     sendNotification(result.newlyCompletedAchievements);
+            // 5️⃣ Check achievements locally
+            const updatedQuestAchievements = await checkAndProgressAchievements(
+                ["CREATION"],
+                { creationType: "updateQuest" }
+            );
 
-            //     result.newlyCompletedAchievements.forEach((ach: any) => {
-            //         console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
-            //     });
-            // }
+            if (updatedQuestAchievements?.length) {
+                await notifyAchievements(updatedQuestAchievements);
+            }
 
             playCompleteSound();
             setUpdateModalVisible(false);
@@ -324,35 +299,75 @@ export default function AchievementsScreen({ navigation }: any) {
         setModalConfig({
             title: "Wow, Gamer!",
             message: "Are you sure you want to complete your quest?",
-            onConfirm: () => handleCompleteQuest(questId),
+            onConfirm: () => handleCompleteQuest(),
         });
         setModalVisible(true);
     };
 
-    const handleCompleteQuest = async (questId: number) => {
+    const handleCompleteQuest = async () => {
         setModalVisible(false);
+        const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
-        const result = await authFetch(`/quest/completeQuest/${userId}`);
+        try {
+            // 1️⃣ Get the quest
+            const quest: Quest[] = await db.getAllAsync(`SELECT * FROM quests`);
 
-        if (result.newlyCompletedAchievements?.length) {
-            // Send notification
-            sendNotification(result.newlyCompletedAchievements);
+            if (!quest[0]) {
+                console.error("Quest not found!");
+                return;
+            }
 
-            result.newlyCompletedAchievements.forEach((ach: any) => {
-                console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
-                // Show modal, play sound, push notification, etc.
+            // 2️⃣ Calculate XP gain
+            const xpGained = quest[0].base_xp * quest[0].goal;
+
+            let newCompletedAchievements: any[] = [];
+            // 3️⃣ Update user XP locally
+            const levelUpResult = await addXpAndCheckLevelUp(xpGained);
+            if (levelUpResult.newlyCompletedAchievements?.length) {
+                newCompletedAchievements.push(
+                    ...levelUpResult.newlyCompletedAchievements
+                );
+            }
+
+            // 4️⃣ Mark quest as completed (optional: reset or delete)
+            await db.runAsync(`UPDATE quests SET updated_at = ?`, [
+                new Date().toISOString(),
+            ]);
+
+            // 5️⃣ Check achievements locally
+            const newlyCompletedQuestAchievements =
+                await checkAndProgressAchievements(["QUEST"]);
+
+            if (newlyCompletedQuestAchievements?.length) {
+                newCompletedAchievements.push(
+                    ...newlyCompletedQuestAchievements
+                );
+            }
+
+            // 6️⃣ Send local notification
+            if (newCompletedAchievements.length > 0) {
+                await notifyAchievements(newCompletedAchievements);
+                newCompletedAchievements.forEach((ach) =>
+                    console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`)
+                );
+            }
+
+            // 7️⃣ Refresh local achievements list
+            fetchAchievements();
+
+            // 8️⃣ Show modal & confetti
+            setModalConfirmationConfig({
+                title: "Amazing!",
+                message: `You are a true gamer! You just gained ${xpGained} XP! Update your quest for another goal!`,
+                onConfirm: () => setModalConfirmationVisible(false),
             });
+            setModalConfirmationVisible(true);
+            setShowConfetti(true);
+            playExcitingSound();
+            setTimeout(() => setShowConfetti(false), 4800);
+        } catch (error) {
+            console.error("Error completing quest locally:", error);
         }
-        fetchAchievements();
-        setModalConfirmationConfig({
-            title: "Amazing!",
-            message: `You are a true gamer! You just gained ${result.xp} XP! Update your quest for another goal!`,
-            onConfirm: () => setModalConfirmationVisible(false),
-        });
-        setModalConfirmationVisible(true);
-        setShowConfetti(true);
-        playExcitingSound();
-        setTimeout(() => setShowConfetti(false), 4800);
     };
 
     return (

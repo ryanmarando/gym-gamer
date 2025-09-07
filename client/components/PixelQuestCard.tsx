@@ -30,17 +30,20 @@ export default function PixelQuestCard({
     const [currentWeight, setCurrentWeight] = useState<number | null>(null);
     const [weightSystem, setWeightSystem] = useState<string>();
 
-    const fetchWeights = async (userId: string) => {
+    const fetchWeights = async () => {
         try {
-            const data = await authFetch(
-                `/user/getAllUserWeightEntries/${userId}`
+            // const data = await authFetch(
+            //     `/user/getAllUserWeightEntries/${userId}`
+            // );
+
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const userBodyWeightData: UserWeightEntry[] = await db.getAllAsync(
+                "SELECT * FROM user_weight_entries"
             );
-            if (
-                data?.user?.weightEntries &&
-                data.user.weightEntries.length > 0
-            ) {
+
+            if (userBodyWeightData && userBodyWeightData.length > 0) {
                 // Sort descending by enteredAt to get latest first
-                const sorted = data.user.weightEntries.sort(
+                const sorted = userBodyWeightData.sort(
                     (a: UserWeightEntry, b: UserWeightEntry) =>
                         new Date(b.entered_at).getTime() -
                         new Date(a.entered_at).getTime()
@@ -72,8 +75,8 @@ export default function PixelQuestCard({
                     "weightSystem"
                 );
                 if (weightSystem) setWeightSystem(weightSystem);
-                const userId = await SecureStore.getItemAsync("userId");
-                if (!userId) throw new Error("Missing userId");
+
+                await fetchWeights();
 
                 const db = await SQLite.openDatabaseAsync("gymgamer.db");
 

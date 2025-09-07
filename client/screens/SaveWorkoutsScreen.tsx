@@ -22,6 +22,8 @@ import { playDeleteSound } from "../utils/playDeleteSound";
 import { playSwordSelectionSound } from "../utils/playSwordSelectionSound";
 import { playCompleteSound } from "../utils/playCompleteSound";
 import * as SQLite from "expo-sqlite";
+import { checkAndProgressAchievements } from "../utils/checkAndProgressAchievements";
+import { notifyAchievements } from "../utils/notifyAchievement";
 
 export default function SaveWorkoutScreen() {
     const [userWorkouts, setUserWorkouts] = useState<any[]>([]);
@@ -304,27 +306,6 @@ export default function SaveWorkoutScreen() {
             if (!userIdStr) throw new Error("User ID not found");
             const userId = Number(userIdStr);
 
-            // const body = JSON.stringify({
-            //     userId,
-            //     customName: data.customName,
-            //     architype: data.architype,
-            // });
-
-            // const result = await authFetch("/workouts/createCustomWorkout", {
-            //     method: "POST",
-            //     body,
-            // });
-
-            // if (result.newlyCompletedAchievements?.length) {
-            //     // Send notification
-            //     sendNotification(result.newlyCompletedAchievements);
-
-            //     result.newlyCompletedAchievements.forEach((ach: any) => {
-            //         console.log(`🏆 Unlocked: ${ach.name} (+${ach.xp} XP)`);
-            //         // Show modal, play sound, push notification, etc.
-            //     });
-            // }
-
             const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
             // Insert new workout
@@ -342,6 +323,16 @@ export default function SaveWorkoutScreen() {
             const newWorkout = insertedWorkouts[0];
 
             console.log("Workout created locally:", newWorkout);
+
+            // 5️⃣ Check achievements locally
+            const createdWorkoutAchievements =
+                await checkAndProgressAchievements(["CREATION"], {
+                    creationType: "createWorkout",
+                });
+
+            if (createdWorkoutAchievements?.length) {
+                await notifyAchievements(createdWorkoutAchievements);
+            }
 
             fetchWorkouts();
             playCompleteSound();
