@@ -248,11 +248,10 @@ export default function WorkoutsScreen({ navigation }: any) {
                     await db.runAsync(
                         `UPDATE user_workouts
                      SET reps = ?, weights_lifted = ?
-                     WHERE user_id = ? AND workout_id = ? AND day_id = ?`,
+                     WHERE workout_id = ? AND day_id = ?`,
                         [
                             JSON.stringify(reps),
                             JSON.stringify(weights),
-                            userId,
                             workout_id,
                             selectedDay?.id,
                         ]
@@ -268,15 +267,23 @@ export default function WorkoutsScreen({ navigation }: any) {
                     const maxWeight = Math.max(...entries.map(Number));
 
                     if (maxWeight > 0) {
+                        // check the user's system
+                        const row: any = await db.getFirstAsync(
+                            "SELECT weight_system FROM users WHERE id = ?",
+                            [Number(userId)]
+                        );
+
+                        let finalWeight = maxWeight;
+
+                        // 🔥 convert to lbs if user is in metric
+                        if (row?.weight_system === "METRIC") {
+                            finalWeight = maxWeight * 2.20462;
+                        }
+
                         await db.runAsync(
-                            `INSERT INTO workout_entries (user_id, workout_id, weight, date) 
-                            VALUES (?, ?, ?, ?)`,
-                            [
-                                userId,
-                                workout_id,
-                                maxWeight,
-                                new Date().toISOString(), // optional timestamp
-                            ]
+                            `INSERT INTO workout_entries (workout_id, weight, date) 
+                            VALUES (?, ?, ?)`,
+                            [workout_id, finalWeight, new Date().toISOString()]
                         );
                     }
                 }
@@ -389,10 +396,10 @@ export default function WorkoutsScreen({ navigation }: any) {
             SELECT uw.*, w.name, w.architype
             FROM user_workouts uw
             JOIN workouts w ON uw.workout_id = w.id
-            WHERE uw.user_id = ? AND uw.day_id = ?
+            WHERE uw.day_id = ?
             ORDER BY uw.order_index ASC
             `,
-                [userId, dayId]
+                [dayId]
             );
 
             // // 4. Initialize weight entries for UI
@@ -685,9 +692,9 @@ export default function WorkoutsScreen({ navigation }: any) {
                 const w = orderedWorkouts[i];
                 await db.runAsync(
                     `UPDATE user_workouts 
-                 SET order_index = ? 
-                 WHERE user_id = ? AND workout_id = ? AND day_id = ?`,
-                    [i, userId, w.workout_id, selectedDay.id]
+                    SET order_index = ? 
+                    WHERE workout_id = ? AND day_id = ?`,
+                    [i, w.workout_id, selectedDay.id]
                 );
             }
 
@@ -721,14 +728,14 @@ export default function WorkoutsScreen({ navigation }: any) {
                 `
             UPDATE user_workouts
             SET sets = ?, reps = ?, weights_lifted = ?
-            WHERE user_id = ? AND workout_id = ?
+            WHERE workout_id = ? AND day_id = ?
             `,
                 [
                     cleanReps.length,
                     JSON.stringify(cleanReps),
                     JSON.stringify(cleanWeights),
-                    userId,
                     workout_id,
+                    selectedDay?.id!,
                 ]
             );
 

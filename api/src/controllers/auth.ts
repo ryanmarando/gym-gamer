@@ -50,7 +50,7 @@ export const login = async (
             { id: user.id, email: user.email, isAdmin: user.isAdmin },
             jwtSecret!,
             {
-                expiresIn: "7d",
+                expiresIn: "8d",
             }
         );
 
@@ -118,7 +118,7 @@ export const register = async (
             { id: newUser.id, email: newUser.email, isAdmin: newUser.isAdmin },
             jwtSecret!,
             {
-                expiresIn: "7d",
+                expiresIn: "8d",
             }
         );
 

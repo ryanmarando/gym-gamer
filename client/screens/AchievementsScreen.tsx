@@ -97,7 +97,6 @@ export default function AchievementsScreen({ navigation }: any) {
             );
 
             setActiveQuest(quests[0]);
-            console.log(quests[0]);
         } catch (err) {
             console.error("Error fetching active quest from local DB:", err);
         }

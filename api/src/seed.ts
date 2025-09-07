@@ -538,7 +538,7 @@ async function SeedWorkouts() {
     console.log("✅ Seed complete with a huge library of workouts!");
 }
 
-await SeedWorkouts();
+//await SeedWorkouts();
 
 export async function SeedAchievements() {
     //await prisma.$executeRaw`ALTER SEQUENCE "Achievement_id_seq" RESTART WITH 1`;
@@ -820,7 +820,7 @@ export async function SeedAchievements() {
     console.log("✅ Seeded achievements with full model fields!");
 }
 
-await SeedAchievements();
+//await SeedAchievements();
 
 async function AssignAdmin() {
     const email = "marandoryan@gmail.com";
@@ -845,10 +845,10 @@ async function AssignAdmin() {
             },
         });
 
-        await assignDefaultAchievementsAndSplitToUser(
-            newUser.id,
-            WeightSystem.IMPERIAL
-        );
+        // await assignDefaultAchievementsAndSplitToUser(
+        //     newUser.id,
+        //     WeightSystem.IMPERIAL
+        // );
 
         console.log(`Admin account ready for ${email}`);
     } catch (error) {

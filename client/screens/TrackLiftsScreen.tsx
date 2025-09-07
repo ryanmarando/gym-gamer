@@ -45,10 +45,8 @@ export default function TrackLiftsScreen({ navigation }: any) {
                 SELECT uw.workout_id, uw.day_id, uw.order_index, w.name, w.architype
                 FROM user_workouts uw
                 JOIN workouts w ON uw.workout_id = w.id
-                WHERE uw.user_id = ?
                 ORDER BY uw.order_index ASC
-                `,
-                [userId]
+                `
             );
 
             // 2️⃣ For each workout, get entries
@@ -58,10 +56,10 @@ export default function TrackLiftsScreen({ navigation }: any) {
                     `
                     SELECT weight, date
                     FROM workout_entries
-                    WHERE user_id = ? AND workout_id = ?
+                    WHERE workout_id = ?
                     ORDER BY date ASC
                     `,
-                    [userId, uw.workout_id]
+                    [uw.workout_id]
                 );
 
                 workoutsArray.push({
@@ -102,8 +100,8 @@ export default function TrackLiftsScreen({ navigation }: any) {
 
             // Delete all entries for this user/workout
             await db.runAsync(
-                `DELETE FROM workout_entries WHERE user_id = ? AND workout_id = ?`,
-                [userId, workoutId]
+                `DELETE FROM workout_entries WHERE workout_id = ?`,
+                [workoutId]
             );
 
             playDeleteSound();

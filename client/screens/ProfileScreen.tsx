@@ -166,19 +166,38 @@ export default function ProfileScreen({
     }, [userData?.xp, userData?.level]);
 
     useEffect(() => {
-        const registerPush = async () => {
-            const token = await registerForPushNotificationsAsync();
-            if (token) {
-                setExpoPushToken(token);
-                setNotificationsEnabled(true);
-                await SecureStore.setItemAsync("notifToken", token);
-                await saveExpoPushTokenLocal(token);
-                updateAPIExpoToken(token);
+        const initPush = async () => {
+            const db = SQLite.openDatabaseSync("gymgamer.db");
+            const userId = await SecureStore.getItemAsync("userId");
+            if (!userId) return;
+
+            // check local DB for existing token
+            const row: any = await db.getFirstAsync(
+                "SELECT expo_push_token FROM users"
+            );
+
+            if (!row?.expo_push_token) {
+                // first-time registration
+                const token = await registerForPushNotificationsAsync();
+                if (token) {
+                    setExpoPushToken(token);
+                    setNotificationsEnabled(true);
+                    await SecureStore.setItemAsync("notifToken", token);
+                    await db.runAsync("UPDATE users SET expo_push_token = ?", [
+                        token,
+                    ]);
+                    updateAPIExpoToken(token);
+                } else {
+                    setNotificationsEnabled(false);
+                }
             } else {
-                setNotificationsEnabled(false);
+                // already registered before → just set state
+                setExpoPushToken(row.expo_push_token);
+                setNotificationsEnabled(true);
             }
         };
-        registerPush();
+
+        initPush();
     }, []);
 
     useFocusEffect(
@@ -189,32 +208,50 @@ export default function ProfileScreen({
         }, [isLoggedIn])
     );
 
-    async function saveExpoPushTokenLocal(token: string) {
-        try {
-            // Open the local database
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+    const setupLocalDbForExistingUser = async (userId: number) => {
+        const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
-            // Get the userId from SecureStore
-            const userIdStr = await SecureStore.getItemAsync("userId");
-            if (!userIdStr) {
-                console.warn(
-                    "No userId found in SecureStore. Cannot save push token."
-                );
-                return;
-            }
-            const userId = Number(userIdStr);
+        // Create tables if they don't exist
+        await db.runAsync(`
+            CREATE TABLE IF NOT EXISTS users (
+              id INTEGER PRIMARY KEY,
+              email TEXT NOT NULL,
+              name TEXT NOT NULL,
+              weight_system TEXT DEFAULT 'IMPERIAL',
+              level INTEGER DEFAULT 1,
+              level_progress INTEGER DEFAULT 0,
+              xp INTEGER DEFAULT 0,
+              total_weight_lifted REAL DEFAULT 0,
+              weekly_weight_lifted REAL DEFAULT 0,
+              mute_sounds INTEGER DEFAULT 0,
+              expo_push_token TEXT
+            )
+        `);
 
-            // Update the user's expo_push_token
-            const result = await db.runAsync(
-                "UPDATE users SET expo_push_token = ? WHERE id = ?",
-                [token, userId]
+        // Check if user exists
+        const row: any = await db.getFirstAsync(
+            "SELECT * FROM users WHERE id = ?",
+            [userId]
+        );
+
+        if (!row) {
+            // Fetch user data from backend
+            const userData = await authFetch(`/user/${userId}`);
+            await db.runAsync(
+                `INSERT INTO users (id, email, name, weight_system, level, xp)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+                [
+                    userData.id,
+                    userData.email,
+                    userData.name,
+                    userData.weight_system,
+                    userData.level,
+                    userData.xp,
+                ]
             );
-
-            console.log("✅ Saved expo token to local db!");
-        } catch (err) {
-            console.error("❌ Error saving expo push token locally", err);
+            console.log("✅ Local DB initialized for existing user");
         }
-    }
+    };
 
     const fetchUserData = async () => {
         try {
@@ -224,7 +261,7 @@ export default function ProfileScreen({
             const localUserData: User[] = await db.getAllAsync(
                 "SELECT * FROM users"
             );
-            //console.log("SQlite", localUserData[0]);
+            console.log("SQlite", localUserData[0]);
 
             const localUserQuest: Quest[] = await db.getAllAsync(
                 "SELECT * FROM quests"
@@ -246,12 +283,8 @@ export default function ProfileScreen({
             // Get user weight system
             setSelectedSystem(localUserData[0].weight_system);
             await SecureStore.setItemAsync(
-                "weight_system",
+                "weightSystem",
                 localUserData[0].weight_system
-            );
-            await SecureStore.setItemAsync(
-                "userId",
-                String(localUserData[0].id)
             );
         } catch (error: any) {
             if (
@@ -325,22 +358,24 @@ export default function ProfileScreen({
         if (newSystem === selectedSystem) return;
 
         try {
-            const userId = await SecureStore.getItemAsync("userId");
+            const db = SQLite.openDatabaseSync("gymgamer.db");
 
-            // Delete all exercise entries
+            // 🔥 update local DB instead of API
+            await db.runAsync("UPDATE users SET weight_system = ?", [
+                newSystem,
+            ]);
 
-            await authFetch(
-                `/user/updateWeightSystem/${userId}?weight_system=${newSystem}`,
-                { method: "PATCH" }
-            );
-
+            // update local state
             setSelectedSystem(newSystem);
-            // setUserData(updatedUserData);
-            await SecureStore.setItemAsync("weight_system", newSystem);
+
+            // update SecureStore
+            await SecureStore.setItemAsync("weightSystem", newSystem);
+
+            // refresh user data from DB instead of API
             await fetchUserData();
         } catch (err) {
             playBadMoveSound();
-            console.error("Error updating weight system and quest", err);
+            console.error("Error updating weight system locally:", err);
         }
     };
 
@@ -360,8 +395,36 @@ export default function ProfileScreen({
     const handleAccountDeletion = async () => {
         try {
             const userId = await SecureStore.getItemAsync("userId");
+
+            // 1️⃣ Delete from backend
             await authFetch(`/user/${Number(userId)}`, { method: "DELETE" });
-            console.log("⚠️ Account deletion triggered");
+            console.log("⚠️ Account deletion triggered on backend");
+
+            // 2️⃣ Clear local database tables
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
+            const tablesToClear = [
+                "users",
+                "user_workouts",
+                "workout_entries",
+                "workout_days",
+                "workouts",
+                "quests",
+                "workout_splits",
+                "achievements",
+                "user_weight_entries",
+            ];
+
+            for (const table of tablesToClear) {
+                await db.runAsync(`DELETE FROM ${table}`);
+                console.log(`✅ Cleared table: ${table}`);
+            }
+
+            // 3️⃣ Clear secure storage
+            await SecureStore.deleteItemAsync("userId");
+            await SecureStore.deleteItemAsync("notifToken");
+
+            // 4️⃣ Reset local state
             setIsLoggedIn(false);
             playDeleteSound();
         } catch (error) {
@@ -371,27 +434,36 @@ export default function ProfileScreen({
                 "There was an error deleting your account... try again later!"
             );
             setConfirmationPixelModalVisible(true);
-            console.log("There was an error deleting account...");
+            console.error("❌ Error deleting account:", error);
         }
     };
 
     const onToggleMuted = async () => {
         const userId = await SecureStore.getItemAsync("userId");
-
+        const db = SQLite.openDatabaseSync("gymgamer.db");
         try {
-            const data = await authFetch(
-                `/user/updateMuteSounds/${Number(userId)}`,
-                { method: "PATCH" }
+            // 1. get current mute_sounds from DB
+            const row: any = await db.getFirstAsync(
+                "SELECT mute_sounds FROM users"
             );
-            console.log(
-                "Successful update sounds will now be muted:",
-                data.muteSounds
-            );
-            setIsMuted(data.muteSounds);
-            const muteSoundsString = String(data.muteSounds);
 
-            await SecureStore.setItemAsync("muteSounds", muteSoundsString);
-            if (data.muteSounds) {
+            const currentMute = row?.mute_sounds === 1;
+            const newMute = !currentMute;
+
+            // 2. update local DB
+            await db.runAsync("UPDATE users SET mute_sounds = ? WHERE id = ?", [
+                newMute ? 1 : 0,
+                Number(userId),
+            ]);
+
+            // 3. update SecureStore
+            await SecureStore.setItemAsync("muteSounds", String(newMute));
+
+            // 4. update state
+            setIsMuted(newMute);
+
+            // 5. show feedback
+            if (newMute) {
                 setConfirmationPixelModalTitle("Quiet time!");
                 setConfirmationPixelModalMessage(
                     "Your gamer sounds have been muted!"
@@ -405,22 +477,27 @@ export default function ProfileScreen({
                 setConfirmationPixelModalVisible(true);
                 playLoginSound();
             }
-        } catch {
+        } catch (err) {
             playBadMoveSound();
             setConfirmationPixelModalTitle("Uh oh, gamer!");
             setConfirmationPixelModalMessage(
                 "There was an error muting your sounds... try again later!"
             );
             setConfirmationPixelModalVisible(true);
-            console.log("There was an error updating sound settings...");
+            console.error("Error updating mute_sounds locally:", err);
         }
     };
 
     const onToggleNotifications = async () => {
+        const db = SQLite.openDatabaseSync("gymgamer.db");
+
         if (notificationsEnabled) {
             await SecureStore.deleteItemAsync("notifToken");
             setExpoPushToken(null);
             setNotificationsEnabled(false);
+
+            await db.runAsync("UPDATE users SET expo_push_token = NULL");
+
             console.log("Deactivated notifs");
             playDeleteSound();
             setConfirmationPixelModalTitle("Notifications turned off!");
@@ -436,6 +513,11 @@ export default function ProfileScreen({
                 setExpoPushToken(token);
                 setNotificationsEnabled(true);
                 await SecureStore.setItemAsync("notifToken", token);
+
+                await db.runAsync("UPDATE users SET expo_push_token = ?", [
+                    token,
+                ]);
+
                 setConfirmationPixelModalTitle("Notifications activated!");
                 setConfirmationPixelModalMessage(
                     "You'll now receive notifications, like when achievements are completed!"
