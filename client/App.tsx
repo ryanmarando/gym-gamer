@@ -6,7 +6,7 @@ import {
     PressStart2P_400Regular,
 } from "@expo-google-fonts/press-start-2p";
 import * as SplashScreen from "expo-splash-screen";
-
+import { handleWeeklyReset } from "./utils/handleWeeklyReset";
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
 import BottomTabs from "./components/BottomTabs";
@@ -34,6 +34,7 @@ export default function App() {
             }
         };
         prepare();
+        handleWeeklyReset();
     }, [fontsLoaded]);
 
     if (!fontsLoaded) {
