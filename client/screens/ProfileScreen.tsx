@@ -212,10 +212,16 @@ export default function ProfileScreen({
             setLoading(true);
 
             const db = await SQLite.openDatabaseAsync("gymgamer.db");
+
             const localUserData: User[] = await db.getAllAsync(
                 "SELECT * FROM users"
             );
             console.log("SQlite", localUserData[0]);
+
+            if (!localUserData || localUserData.length === 0) {
+                console.log("No db found...");
+                logout(setIsLoggedIn, setUserData);
+            }
 
             const localUserQuest: Quest[] = await db.getAllAsync(
                 "SELECT * FROM quests"
