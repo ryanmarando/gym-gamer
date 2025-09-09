@@ -196,7 +196,6 @@ export default function ProfileScreen({
                 setNotificationsEnabled(true);
             }
         };
-        //resetUserAndAchievements();
         initPush();
     }, []);
 
@@ -207,34 +206,6 @@ export default function ProfileScreen({
             }
         }, [isLoggedIn])
     );
-
-    const resetUserAndAchievements = async () => {
-        try {
-            const db = SQLite.openDatabaseSync("gymgamer.db");
-            // Reset user XP/level/progress/weights
-            await db.execAsync(`
-      UPDATE users
-      SET level = 1,
-          level_progress = 0,
-          xp = 0,
-          total_weight_lifted = 0,
-          weekly_weight_lifted = 0
-      WHERE id = 1;
-    `);
-
-            // Reset achievements
-            await db.execAsync(`
-      UPDATE achievements
-      SET progress = 0,
-          completed = 0,
-          completed_at = NULL;
-    `);
-
-            console.log("✅ User and achievements reset for testing!");
-        } catch (error) {
-            console.error("❌ Error resetting user and achievements:", error);
-        }
-    };
 
     const fetchUserData = async () => {
         try {
@@ -406,8 +377,9 @@ export default function ProfileScreen({
             // 3️⃣ Clear secure storage
             await SecureStore.deleteItemAsync("userId");
             await SecureStore.deleteItemAsync("notifToken");
+            await SecureStore.deleteItemAsync("userToken");
+            await SecureStore.deleteItemAsync("loginTimestamp");
 
-            // 4️⃣ Reset local state
             setIsLoggedIn(false);
             playDeleteSound();
         } catch (error) {
@@ -418,6 +390,47 @@ export default function ProfileScreen({
             );
             setConfirmationPixelModalVisible(true);
             console.error("❌ Error deleting account:", error);
+        }
+    };
+
+    const resetUserAndAchievements = async () => {
+        try {
+            const db = SQLite.openDatabaseSync("gymgamer.db");
+
+            // Reset user XP/level/progress/weights
+            await db.execAsync(`
+              UPDATE users
+              SET level = 1,
+                  level_progress = 0,
+                  xp = 0,
+                  total_weight_lifted = 0,
+                  weekly_weight_lifted = 0
+              WHERE id = 1;
+            `);
+
+            // Reset achievements
+            await db.execAsync(`
+              UPDATE achievements
+              SET progress = 0,
+                  completed = 0,
+                  completed_at = NULL;
+            `);
+
+            console.log("✅ User and achievements reset!");
+            setConfirmationPixelModalTitle("Starting from scratch, gamer!");
+            setConfirmationPixelModalMessage(
+                "Your XP, level, achievement progress, and total weight lifted have been reset.!"
+            );
+            setConfirmationPixelModalVisible(true);
+            playDeleteSound();
+        } catch (error) {
+            playBadMoveSound();
+            setConfirmationPixelModalTitle("Uh oh, gamer!");
+            setConfirmationPixelModalMessage(
+                "There was an error resetting your progression... try again later!"
+            );
+            setConfirmationPixelModalVisible(true);
+            console.error("❌ Error resetting user and achievements:", error);
         }
     };
 
@@ -895,6 +908,7 @@ export default function ProfileScreen({
                             setShowSettings={() =>
                                 setShowSettings((prev) => !prev)
                             }
+                            resetUserAndAchievements={resetUserAndAchievements}
                         />
 
                         <PixelButton

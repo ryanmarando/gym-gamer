@@ -2,11 +2,7 @@ import express from "express";
 import cors from "cors";
 import logging from "./middleware/logging.js";
 import authRouter from "./routes/auth.js";
-import workoutRouter from "./routes/workouts.js";
 import userRouter from "./routes/user.js";
-import progressPhotoRouter from "./routes/progressPhoto.js";
-import achievementRouter from "./routes/achievement.js";
-import questRouter from "./routes/quest.js";
 import xss from "./middleware/xss.js";
 import authenticated from "./middleware/auth.js";
 import { sendEmail } from "./controllers/user.js";
@@ -43,18 +39,11 @@ app.post("/email", sendEmail);
 // Login and Register
 app.use("/auth", authRouter);
 
-// Uploaded photos access
-app.use("/uploads", express.static("uploads"));
-
 // Authentication
 app.use(authenticated);
 
 // Routers
-app.use("/workouts", workoutRouter);
 app.use("/user", userRouter);
-app.use("/progressPhoto", progressPhotoRouter);
-app.use("/achievement", achievementRouter);
-app.use("/quest", questRouter);
 
 // Origin Point
 app.listen(port, "0.0.0.0", () => {

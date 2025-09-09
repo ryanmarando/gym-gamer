@@ -13,6 +13,8 @@ import ConfirmationPixelModal from "./ConfirmationPixelModal";
 import { playCompleteSound } from "../utils/playCompleteSound";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import { ScrollView } from "react-native";
+import * as SQLite from "expo-sqlite";
+import { playDeleteSound } from "../utils/playDeleteSound";
 
 interface SettingsModalProps {
     visible: boolean;
@@ -40,6 +42,7 @@ interface SettingsModalProps {
     navigation: any;
     fetchUserData: () => void;
     setShowSettings: (b: boolean) => void;
+    resetUserAndAchievements: () => void;
 }
 
 export default function SettingsModal({
@@ -65,6 +68,7 @@ export default function SettingsModal({
     navigation,
     fetchUserData,
     setShowSettings,
+    resetUserAndAchievements,
 }: SettingsModalProps) {
     const [showPixelModal, setShowPixelModal] = useState(false);
     const [pixelModalTitle, setPixelModalTitle] = useState<string>("");
@@ -137,6 +141,8 @@ export default function SettingsModal({
                 return;
             }
             setSupportConfirmVisible(true);
+        } else if (pixelModalMode == "progress") {
+            resetUserAndAchievements();
         }
     };
 
@@ -298,13 +304,6 @@ export default function SettingsModal({
                                     />
 
                                     <PixelButton
-                                        text="Contact Support"
-                                        onPress={openSupportModal}
-                                        color="#00BFFF"
-                                        containerStyle={styles.button}
-                                    />
-
-                                    <PixelButton
                                         text="Credits"
                                         onPress={() => {
                                             onClose();
@@ -315,6 +314,23 @@ export default function SettingsModal({
                                             }, 100);
                                         }}
                                         color="#FF00FF"
+                                        containerStyle={styles.button}
+                                    />
+
+                                    <PixelButton
+                                        text="Reset Progression"
+                                        onPress={() => {
+                                            setPixelModalTitle(
+                                                "Confirm Reset Progression"
+                                            );
+                                            setPixelModalMessage(
+                                                "Are you sure you want to reset your XP, level, all achievements, and your total weight lifted? This cannot be undone."
+                                            );
+                                            setPixelModalButton("Delete");
+                                            setPixelModalMode("progress");
+                                            setShowPixelModal(true);
+                                        }}
+                                        color="#ff5100ff"
                                         containerStyle={styles.button}
                                     />
 

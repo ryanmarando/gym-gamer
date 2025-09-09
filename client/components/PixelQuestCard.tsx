@@ -32,10 +32,6 @@ export default function PixelQuestCard({
 
     const fetchWeights = async () => {
         try {
-            // const data = await authFetch(
-            //     `/user/getAllUserWeightEntries/${userId}`
-            // );
-
             const db = await SQLite.openDatabaseAsync("gymgamer.db");
             const userBodyWeightData: UserWeightEntry[] = await db.getAllAsync(
                 "SELECT * FROM user_weight_entries"

@@ -7,6 +7,7 @@ export async function logout(
     try {
         // Delete the token from secure storage
         await SecureStore.deleteItemAsync("userToken");
+        await SecureStore.deleteItemAsync("loginTimestamp");
 
         // Reset your app state (set user data to null, loggedIn to false)
         setUserData(null);

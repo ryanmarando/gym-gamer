@@ -856,15 +856,11 @@ export async function seedWorkoutSplits(db: any, userId: number) {
     console.log(`✅ Workout split seeded for user ${userId}`);
 }
 
-export async function seedQuest(
-    db: any,
-    userId: number,
-    weightSystem: "IMPERIAL" | "METRIC"
-) {
+export async function seedQuest(db: any, userId: number) {
     const goalDate = new Date();
     goalDate.setDate(goalDate.getDate() + 30);
-    const goalValue = weightSystem === "METRIC" ? 4.5 : 10; // kg or lbs
-    const unit = weightSystem === "METRIC" ? "kg" : "lbs";
+    const goalValue = 10;
+    const unit = "lbs";
     const name = `Gain ${goalValue} ${unit} by ${goalDate.toLocaleDateString()}`;
 
     // Check if a quest already exists for the user

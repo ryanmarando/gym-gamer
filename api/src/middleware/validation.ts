@@ -1,4 +1,3 @@
-import { WeightSystem } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import z, { ZodSchema } from "zod";
 
@@ -72,7 +71,6 @@ export const RegisterInputSchema = z.object({
     email: z.string().email(),
     name: z.string().min(1),
     password: z.string().min(8),
-    userWeightSystem: z.string().optional(),
     optedIn: z.boolean(),
 });
 

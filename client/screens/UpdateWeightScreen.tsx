@@ -204,10 +204,6 @@ export default function UpdateWeightScreen({ navigation }: any) {
                 "Are you sure you want to delete your last bodyweight entry?",
             onConfirm: async () => {
                 try {
-                    // await authFetch(
-                    //     `/user/deleteLastUserWeightEntry/${userId}`,
-                    //     { method: "DELETE" }
-                    // );
                     const db = await SQLite.openDatabaseAsync("gymgamer.db");
                     await db.runAsync(
                         "DELETE FROM user_weight_entries WHERE id = (SELECT id FROM user_weight_entries ORDER BY id DESC LIMIT 1)"

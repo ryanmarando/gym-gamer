@@ -14,38 +14,18 @@ datasource db {
 }
 
 model User {
-  id                  Int               @id @default(autoincrement())
-  email               String            @unique
-  name                String
-  createdAt           DateTime          @default(now()) @map("created_at")
-  password            Password?
-  isAdmin             Boolean           @default(false)
-  level               Int               @default(1)
-  levelProgress       Int               @default(0)
-  xp                  Int               @default(0)
-  weightEntries       UserWeightEntry[]
-  workouts            UserWorkout[]
-  createdWorkouts     Workout[]
-  progressPhotos      ProgressPhoto[]
-  achievements        UserAchievement[]
-  workoutSplit        WorkoutSplit[]
-  quest               Quest[]
-  totalWeightLifted   Float             @default(0)
-  weeklyWeightLifted  Float             @default(0)
-  weightSystem        WeightSystem      @default(IMPERIAL)
-  muteSounds          Boolean           @default(false)
-  expoPushToken       String?
-  resetCode           String?
-  resetCodeExpiry     DateTime?
-  optedIn             Boolean           @default(true)
-  hasUpdatedToLocalDb Boolean           @default(false)
+  id              Int       @id @default(autoincrement())
+  email           String    @unique
+  name            String
+  createdAt       DateTime  @default(now()) @map("created_at")
+  password        Password?
+  isAdmin         Boolean   @default(false)
+  expoPushToken   String?
+  resetCode       String?
+  resetCodeExpiry DateTime?
+  optedIn         Boolean   @default(true)
 
   @@map("user")
-}
-
-enum WeightSystem {
-  IMPERIAL
-  METRIC
 }
 
 model Password {
@@ -53,148 +33,6 @@ model Password {
   userId Int    @unique
   hash   String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Quest {
-  id            Int       @id @default(autoincrement())
-  type          String    @default("GAIN")
-  goal          Int       @default(10)
-  goalDate      DateTime  @default(now())
-  name          String
-  baseXP        Int       @default(500)
-  updatedAt     DateTime? @updatedAt
-  initialWeight Float?
-
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId Int  @unique
-}
-
-model WorkoutSplit {
-  id     Int          @id @default(autoincrement())
-  userId Int          @unique
-  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  days   WorkoutDay[]
-}
-
-model WorkoutDay {
-  id           Int           @id @default(autoincrement())
-  dayIndex     Int
-  dayName      String
-  splitId      Int
-  split        WorkoutSplit  @relation(fields: [splitId], references: [id], onDelete: Cascade)
-  userWorkouts UserWorkout[]
-}
-
-enum WorkoutArchitype {
-  PUSH
-  PULL
-  LEGS
-  CHEST
-  SHOULDERS
-  ARMS
-  BACK
-  ABS
-  QUADS
-  HAMSTRINGS
-  GLUTES
-  CALVES
-}
-
-model Workout {
-  id              Int                @id @default(autoincrement())
-  name            String
-  createdByUserId Int?
-  architype       WorkoutArchitype[]
-  createdBy       User?              @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
-  users           UserWorkout[]
-}
-
-model UserWorkout {
-  userId    Int
-  workoutId Int
-  dayId     Int?
-
-  order Int?
-
-  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workout Workout     @relation(fields: [workoutId], references: [id], onDelete: Cascade)
-  day     WorkoutDay? @relation(fields: [dayId], references: [id], onDelete: Cascade)
-
-  entries       WorkoutEntry[]
-  sets          Int            @default(3)
-  reps          String[]       @default([])
-  weightsLifted String[]       @default(["0", "0", "0"])
-
-  @@id([userId, workoutId])
-}
-
-model WorkoutEntry {
-  id Int @id @default(autoincrement())
-
-  userId    Int
-  workoutId Int
-
-  userWorkout UserWorkout @relation(fields: [userId, workoutId], references: [userId, workoutId], onDelete: Cascade)
-
-  weight Float
-  date   DateTime @default(now()) @map("created_at")
-}
-
-model ProgressPhoto {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  imagePath String
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-enum AchievementType {
-  WORKOUT
-  STREAK
-  QUEST
-  CREATION
-  BODYWEIGHT
-  LIFTINGWEIGHT
-  EXERCISE
-  LEVEL
-}
-
-model Achievement {
-  id          Int             @id @default(autoincrement())
-  name        String
-  xp          Int
-  description String?
-  deadline    DateTime?
-  goalAmount  Float?
-  goalType    AchievementType
-  weeklyReset Boolean         @default(false)
-  targetValue Float?
-
-  users UserAchievement[]
-}
-
-model UserAchievement {
-  userId        Int
-  achievementId Int
-
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
-
-  progress    Float     @default(0)
-  completed   Boolean   @default(false)
-  completedAt DateTime?
-
-  @@id([userId, achievementId])
-}
-
-model UserWeightEntry {
-  id        Int      @id @default(autoincrement())
-  weight    Float
-  enteredAt DateTime @default(now())
-
-  userId Int
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model SqueezePageUser {

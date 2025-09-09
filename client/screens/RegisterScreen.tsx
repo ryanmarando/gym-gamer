@@ -136,7 +136,7 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
             await seedWorkouts(db);
             await seedAchievements(db);
             await seedWorkoutSplits(db, userId);
-            await seedQuest(db, userId, weightSystem);
+            await seedQuest(db, userId);
 
             const response = await fetch(`${API_URL}/auth/register`, {
                 method: "POST",
@@ -147,7 +147,6 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
                     email: cleanedEmail,
                     name,
                     password,
-                    userWeightSystem: weightSystem,
                     optedIn: !optOutEmails,
                 }),
             });
