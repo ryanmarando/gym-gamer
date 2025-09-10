@@ -38,7 +38,6 @@ export default function ProfileScreen({
 }: any) {
     const [userData, setUserData] = useState<User | null>(null);
     const [userQuest, setUserQuest] = useState<Quest | null>(null);
-    const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [modalMessage, setModalMessage] = useState<string>(
         "You will be logged out."
@@ -209,19 +208,12 @@ export default function ProfileScreen({
 
     const fetchUserData = async () => {
         try {
-            setLoading(true);
-
             const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
             const localUserData: User[] = await db.getAllAsync(
                 "SELECT * FROM users"
             );
             console.log("SQlite", localUserData[0]);
-
-            if (!localUserData || localUserData.length === 0) {
-                console.log("No db found...");
-                logout(setIsLoggedIn, setUserData);
-            }
 
             const localUserQuest: Quest[] = await db.getAllAsync(
                 "SELECT * FROM quests"
@@ -259,7 +251,6 @@ export default function ProfileScreen({
                 console.error("❌ Failed to fetch user data:", error.message);
             }
         } finally {
-            setLoading(false);
         }
     };
 
@@ -597,11 +588,35 @@ export default function ProfileScreen({
         } catch (error) {}
     };
 
-    if (loading || !userData) {
+    if (!userData) {
         return (
-            <View style={styles.container}>
-                <ActivityIndicator size="large" color="#0ff" />
-            </View>
+            <SafeAreaView style={styles.safeArea}>
+                <View style={styles.container}>
+                    <PixelButton
+                        text="Log Out"
+                        onPress={() => {
+                            setModalAction("logout");
+                            setModalVisible(true);
+                            setmodalTitleMessage("Are you sure?");
+                            const message = "You will be logged out.";
+                            setModalMessage(message);
+                        }}
+                        color="#f00"
+                        containerStyle={{
+                            backgroundColor: "#000",
+                            borderColor: "#f00",
+                            marginTop: 10,
+                        }}
+                    />
+                    <PixelModal
+                        visible={modalVisible}
+                        title={modalTitleMessage}
+                        message={modalMessage}
+                        onConfirm={handleModalConfirm}
+                        onCancel={() => setModalVisible(false)}
+                    />
+                </View>
+            </SafeAreaView>
         );
     }
 

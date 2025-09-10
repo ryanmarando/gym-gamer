@@ -1,4 +1,5 @@
 import * as SQLite from "expo-sqlite";
+import { addXpAndCheckLevelUp } from "../utils/addXPAndCheckLevelUp";
 
 export async function progressAchievementLocal(
     achievementId: number,
@@ -28,6 +29,10 @@ export async function progressAchievementLocal(
      WHERE id = ?`,
         [newProgress, completed, completedAt, achievementId]
     );
+
+    if (completed) {
+        addXpAndCheckLevelUp(achievement.xp);
+    }
 
     return {
         ...achievement,

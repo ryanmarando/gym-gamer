@@ -60,8 +60,7 @@ export default function UpdateQuestModal({
                 const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
                 const weights: UserWeightEntry[] = await db.getAllAsync(
-                    "SELECT * FROM user_weight_entries WHERE user_id = ? ORDER BY entered_at DESC",
-                    [userId]
+                    "SELECT * FROM user_weight_entries ORDER BY entered_at DESC"
                 );
 
                 if (weights && weights.length > 0) {

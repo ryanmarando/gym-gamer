@@ -71,13 +71,12 @@ export default function AchievementsScreen({ navigation }: any) {
         },
     ];
 
-    const fetchWeights = async (userId: number) => {
+    const fetchWeights = async () => {
         try {
             const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
             const weights: UserWeightEntry[] = await db.getAllAsync(
-                "SELECT * FROM user_weight_entries WHERE user_id = ? ORDER BY entered_at DESC",
-                [userId]
+                "SELECT * FROM user_weight_entries ORDER BY entered_at DESC"
             );
 
             if (weights.length > 0) {
@@ -145,7 +144,7 @@ export default function AchievementsScreen({ navigation }: any) {
 
                     fetchAchievements();
                     fetchActiveQuest();
-                    fetchWeights(id);
+                    fetchWeights();
                 } catch (err) {
                     console.error("Error loading achievements data", err);
                 } finally {
@@ -212,14 +211,12 @@ export default function AchievementsScreen({ navigation }: any) {
                 `
             UPDATE quests
             SET goal = ?, goal_date = ?,  name = ?, initial_weight = ?
-            WHERE user_id = ?
             `,
                 [
                     data.customGoalAmount,
                     data.customDeadline,
                     questName,
                     data.initialWeight,
-                    userId,
                 ]
             );
 
@@ -277,7 +274,7 @@ export default function AchievementsScreen({ navigation }: any) {
 
     const confirmCompleteQuest = async (questId: number) => {
         const userId = await SecureStore.getItemAsync("userId");
-        const currentBodyWeight = await fetchWeights(Number(userId));
+        const currentBodyWeight = await fetchWeights();
 
         if (
             activeQuest &&

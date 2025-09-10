@@ -109,9 +109,7 @@ export default function SaveWorkoutScreen() {
             const userWorkoutsRows: any[] = await db.getAllAsync(
                 `SELECT w.*
                         FROM user_workouts uw
-                        JOIN workouts w ON uw.workout_id = w.id
-                        WHERE uw.user_id = ?`,
-                [userId]
+                        JOIN workouts w ON uw.workout_id = w.id`
             );
 
             setAllWorkouts(allWorkoutsRows);
@@ -139,11 +137,7 @@ export default function SaveWorkoutScreen() {
         return allWorkouts.filter((w) => w.architype.includes(type));
     };
 
-    const saveWorkoutToSplit = async (
-        userId: number,
-        workoutId: number,
-        day_id: number
-    ) => {
+    const saveWorkoutToSplit = async (workoutId: number, day_id: number) => {
         try {
             const added = allWorkouts.find((w) => w.id === workoutId);
             if (added) setUserWorkouts((prev) => [...prev, added]);
@@ -153,9 +147,9 @@ export default function SaveWorkoutScreen() {
 
             // Insert into local table (create table beforehand if needed)
             await db.runAsync(
-                `INSERT OR IGNORE INTO user_workouts (user_id, workout_id, day_id)
-             VALUES (?, ?, ?)`,
-                [userId, workoutId, day_id]
+                `INSERT OR IGNORE INTO user_workouts (workout_id, day_id)
+             VALUES (?, ?)`,
+                [workoutId, day_id]
             );
 
             console.log("✅ Workout saved locally");
@@ -244,15 +238,13 @@ export default function SaveWorkoutScreen() {
 
     const confirmRemoveWorkout = async (workoutId: number) => {
         try {
-            const userId = Number(await SecureStore.getItemAsync("userId"));
-
             // Open local database
             const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
             // Delete the saved workout for this user
             await db.runAsync(
-                `DELETE FROM user_workouts WHERE user_id = ? AND workout_id = ?`,
-                [userId, workoutId]
+                `DELETE FROM user_workouts WHERE workout_id = ?`,
+                [workoutId]
             );
 
             // Update local state
@@ -312,13 +304,12 @@ export default function SaveWorkoutScreen() {
             const architypeStr = JSON.stringify(data.architype);
             await db.runAsync(
                 "INSERT INTO workouts (name, architype, created_by_user_id) VALUES (?, ?, ?)",
-                [data.customName, architypeStr, userId]
+                [data.customName, architypeStr, 1]
             );
 
             // Optionally, get the inserted workout ID
             const insertedWorkouts: any[] = await db.getAllAsync(
-                "SELECT * FROM workouts WHERE created_by_user_id = ? ORDER BY id DESC LIMIT 1",
-                [userId]
+                "SELECT * FROM workouts WHERE created_by_user_id = 1 ORDER BY id DESC LIMIT 1"
             );
             const newWorkout = insertedWorkouts[0];
 
@@ -467,9 +458,7 @@ export default function SaveWorkoutScreen() {
                                 SecureStore.getItemAsync("userId").then(
                                     (userIdStr) => {
                                         if (userIdStr) {
-                                            const userId = Number(userIdStr);
                                             saveWorkoutToSplit(
-                                                userId,
                                                 pendingSaveWorkout.id,
                                                 selectedSplitDayId!
                                             );

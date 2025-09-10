@@ -135,8 +135,8 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
 
             await seedWorkouts(db);
             await seedAchievements(db);
-            await seedWorkoutSplits(db, userId);
-            await seedQuest(db, userId);
+            await seedWorkoutSplits(db);
+            await seedQuest(db);
 
             const response = await fetch(`${API_URL}/auth/register`, {
                 method: "POST",

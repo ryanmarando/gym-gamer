@@ -16,6 +16,8 @@ export async function addXpAndCheckLevelUp(xpToAdd: number) {
 
     if (!user) throw new Error("User not found");
 
+    console.log(`Awarding ${xpToAdd} XP`);
+
     let newXp = user.xp + xpToAdd;
     let newLevel = user.level;
     const allNewlyCompleted: any[] = [];

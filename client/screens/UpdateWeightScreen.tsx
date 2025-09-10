@@ -163,8 +163,8 @@ export default function UpdateWeightScreen({ navigation }: any) {
 
             const db = await SQLite.openDatabaseAsync("gymgamer.db");
             await db.runAsync(
-                "INSERT INTO user_weight_entries (weight, user_id) VALUES (?, ?)",
-                [weightNum, userId]
+                "INSERT INTO user_weight_entries (weight) VALUES (?)",
+                [weightNum]
             );
             console.log(`✅ Updated weight entry ${newWeight}`);
 

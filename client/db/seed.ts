@@ -811,11 +811,10 @@ export async function seedAchievements(db: any) {
     console.log("✅ Seeded achievements with full model fields!");
 }
 
-export async function seedWorkoutSplits(db: any, userId: number) {
+export async function seedWorkoutSplits(db: any) {
     // 1️⃣ Ensure the split exists for this user
     const splitRow: any = await db.getFirstAsync(
-        `SELECT id FROM workout_splits WHERE user_id = ?`,
-        [userId]
+        `SELECT id FROM workout_splits`
     );
 
     let splitId: number;
@@ -823,8 +822,7 @@ export async function seedWorkoutSplits(db: any, userId: number) {
         splitId = splitRow.id;
     } else {
         const result: any = await db.runAsync(
-            `INSERT INTO workout_splits (user_id) VALUES (?)`,
-            [userId]
+            `INSERT INTO workout_splits DEFAULT VALUES`
         );
         splitId = result.lastInsertRowId;
     }
@@ -853,10 +851,10 @@ export async function seedWorkoutSplits(db: any, userId: number) {
         }
     }
 
-    console.log(`✅ Workout split seeded for user ${userId}`);
+    console.log(`✅ Workout split seeded for user`);
 }
 
-export async function seedQuest(db: any, userId: number) {
+export async function seedQuest(db: any) {
     const goalDate = new Date();
     goalDate.setDate(goalDate.getDate() + 30);
     const goalValue = 10;
@@ -864,27 +862,23 @@ export async function seedQuest(db: any, userId: number) {
     const name = `Gain ${goalValue} ${unit} by ${goalDate.toLocaleDateString()}`;
 
     // Check if a quest already exists for the user
-    const existingQuest = await db.getFirstAsync(
-        `SELECT id FROM quests WHERE user_id = ?`,
-        [userId]
-    );
+    const existingQuest = await db.getFirstAsync(`SELECT id FROM quests`);
 
     if (existingQuest) {
         // Update existing quest
         await db.runAsync(
             `UPDATE quests
-             SET type = ?, goal = ?, goal_date = ?, name = ?, updated_at = CURRENT_TIMESTAMP
-             WHERE user_id = ?`,
-            ["GAIN", goalValue, goalDate.toISOString(), name, userId]
+             SET type = ?, goal = ?, goal_date = ?, name = ?, updated_at = CURRENT_TIMESTAMP`,
+            ["GAIN", goalValue, goalDate.toISOString(), name]
         );
     } else {
         // Insert new quest
         await db.runAsync(
-            `INSERT INTO quests (user_id, type, goal, goal_date, name, base_xp)
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [userId, "GAIN", goalValue, goalDate.toISOString(), name, 500]
+            `INSERT INTO quests (type, goal, goal_date, name, base_xp)
+             VALUES (?, ?, ?, ?, ?)`,
+            ["GAIN", goalValue, goalDate.toISOString(), name, 500]
         );
     }
 
-    console.log(`✅ Quest seeded for user ${userId}`);
+    console.log(`✅ Quest seeded for user`);
 }
