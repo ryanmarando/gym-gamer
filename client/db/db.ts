@@ -1,12 +1,6 @@
 import * as SQLite from "expo-sqlite";
 import * as FileSystem from "expo-file-system/legacy";
 
-declare module "expo-file-system" {
-    export const documentDirectory: string;
-    export function getInfoAsync(uri: string, options?: any): Promise<any>;
-    export function deleteAsync(uri: string, options?: any): Promise<void>;
-}
-
 export const openDb = async (reset = false) => {
     const dbPath = `${FileSystem.documentDirectory}gymgamer.db`;
 
