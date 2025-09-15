@@ -166,7 +166,7 @@ export default function ProfileScreen({
 
     useEffect(() => {
         const initPush = async () => {
-            const db = SQLite.openDatabaseSync("gymgamer.db");
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
             const userId = await SecureStore.getItemAsync("userId");
             if (!userId) return;
 
@@ -309,7 +309,7 @@ export default function ProfileScreen({
         if (newSystem === selectedSystem) return;
 
         try {
-            const db = SQLite.openDatabaseSync("gymgamer.db");
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
             // 🔥 update local DB instead of API
             await db.runAsync("UPDATE users SET weight_system = ?", [
@@ -392,7 +392,7 @@ export default function ProfileScreen({
 
     const resetUserAndAchievements = async () => {
         try {
-            const db = SQLite.openDatabaseSync("gymgamer.db");
+            const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
             // Reset user XP/level/progress/weights
             await db.execAsync(`
@@ -433,7 +433,7 @@ export default function ProfileScreen({
 
     const onToggleMuted = async () => {
         const userId = await SecureStore.getItemAsync("userId");
-        const db = SQLite.openDatabaseSync("gymgamer.db");
+        const db = await SQLite.openDatabaseAsync("gymgamer.db");
         try {
             // 1. get current mute_sounds from DB
             const row: any = await db.getFirstAsync(
@@ -482,7 +482,7 @@ export default function ProfileScreen({
     };
 
     const onToggleNotifications = async () => {
-        const db = SQLite.openDatabaseSync("gymgamer.db");
+        const db = await SQLite.openDatabaseAsync("gymgamer.db");
 
         if (notificationsEnabled) {
             await SecureStore.deleteItemAsync("notifToken");

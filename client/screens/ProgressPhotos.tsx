@@ -9,8 +9,8 @@ import {
     ActivityIndicator,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
-import { openDatabaseSync } from "expo-sqlite";
+import * as FileSystem from "expo-file-system/legacy";
+import * as SQLite from "expo-sqlite";
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import ImageViewerModal from "../components/ImageViewerModal";
@@ -18,18 +18,6 @@ import PixelModal from "../components/PixelModal";
 import { playPixelSound } from "../utils/playPixelSound";
 import { playDeleteSound } from "../utils/playDeleteSound";
 import { playQuickAddSound } from "../utils/playQuickAddSound";
-
-// Open database (sync API)
-const db = openDatabaseSync("progressPhotos.db");
-
-// Create table once
-db.execSync(`
-    CREATE TABLE IF NOT EXISTS photos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        path TEXT,
-        date TEXT
-    );
-`);
 
 export default function ProgressPhotos({ navigation }: any) {
     const [photos, setPhotos] = useState<
@@ -44,16 +32,33 @@ export default function ProgressPhotos({ navigation }: any) {
         message: "",
         onConfirm: () => {},
     });
+    const [db, setDb] = useState<any>(null);
 
     useEffect(() => {
-        loadPhotos();
+        const setup = async () => {
+            await initDb();
+        };
+        setup();
     }, []);
 
-    const loadPhotos = () => {
+    const initDb = async () => {
+        const database = await SQLite.openDatabaseAsync("progressPhotos.db");
+
+        // Create table
+        database.execSync(`
+        CREATE TABLE IF NOT EXISTS photos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            path TEXT,
+            date TEXT
+        );
+    `);
+
+        setDb(database);
+
+        // Now that DB exists, load photos
         try {
-            db.runSync("DELETE FROM photos WHERE path IS NULL OR path = '';");
-            const result = db.getAllSync("SELECT * FROM photos;");
-            setPhotos(result as any); // result is already typed
+            const result = database.getAllSync("SELECT * FROM photos;");
+            setPhotos(result as any);
         } catch (err) {
             console.error("Failed to load photos:", err);
         }
@@ -85,7 +90,8 @@ export default function ProgressPhotos({ navigation }: any) {
                     now,
                 ]);
                 playQuickAddSound();
-                loadPhotos();
+                const result = db.getAllSync("SELECT * FROM photos;");
+                setPhotos(result as any);
                 setLoading(false);
             } catch (error) {
                 console.error("Error saving image:", error);
@@ -101,16 +107,21 @@ export default function ProgressPhotos({ navigation }: any) {
                 "Document directory is not available on this platform"
             );
         }
-        if (!path || !path.startsWith(FileSystem.documentDirectory)) {
-            console.warn("Skipping delete — invalid path:", path);
-            db.runSync("DELETE FROM photos WHERE id = ?;", [id]);
-            loadPhotos();
-            return;
-        }
+
         try {
-            await FileSystem.deleteAsync(path, { idempotent: true });
+            // Delete from filesystem if path is valid
+            if (path && path.startsWith(FileSystem.documentDirectory)) {
+                await FileSystem.deleteAsync(path, { idempotent: true });
+            }
+
+            // Delete from database
             db.runSync("DELETE FROM photos WHERE id = ?;", [id]);
-            loadPhotos();
+
+            // Reload photos so FlatList rerenders
+            const result = db.getAllSync("SELECT * FROM photos;");
+            setPhotos(result as any);
+
+            // Optional: play sound and close modal
             playDeleteSound();
             setModalVisible(false);
         } catch (err) {
