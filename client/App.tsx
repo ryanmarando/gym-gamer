@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import {
@@ -22,19 +22,27 @@ const AuthStack = createNativeStackNavigator();
 
 export default function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const didRun = useRef(false);
 
     const [fontsLoaded] = useFonts({
         PressStart2P_400Regular,
     });
 
     useEffect(() => {
+        if (didRun.current) return;
+        didRun.current = true;
+
         const prepare = async () => {
             if (fontsLoaded) {
                 await SplashScreen.hideAsync();
             }
         };
+
         prepare();
-        handleWeeklyReset();
+
+        handleWeeklyReset().catch((err) => {
+            console.error("Weekly reset failed:", err);
+        });
     }, [fontsLoaded]);
 
     if (!fontsLoaded) {

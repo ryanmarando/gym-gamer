@@ -1,9 +1,14 @@
 import * as SQLite from "expo-sqlite";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
+
+declare module "expo-file-system" {
+    export const documentDirectory: string;
+    export function getInfoAsync(uri: string, options?: any): Promise<any>;
+    export function deleteAsync(uri: string, options?: any): Promise<void>;
+}
 
 export const openDb = async (reset = false) => {
-    const dbName = "gymgamer.db";
-    const dbPath = `${FileSystem.documentDirectory}${dbName}`;
+    const dbPath = `${FileSystem.documentDirectory}gymgamer.db`;
 
     if (reset) {
         // Delete the file if it exists
@@ -38,7 +43,7 @@ export const openDb = async (reset = false) => {
     PRAGMA journal_mode = WAL;
 
     -- Users
-    CREATE TABLE users (
+    CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY,
       email TEXT NOT NULL,
       name TEXT NOT NULL,
