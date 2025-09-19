@@ -155,10 +155,7 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
                 const data = await response.json();
 
                 // Handle Prisma unique constraint error differently
-                if (
-                    data.error &&
-                    data.error.includes("Unique constraint failed")
-                ) {
+                if (data.error && data.error.includes("Email")) {
                     throw new Error("Email is already registered.");
                 }
 

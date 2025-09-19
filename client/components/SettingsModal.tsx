@@ -326,7 +326,7 @@ export default function SettingsModal({
                                             setPixelModalMessage(
                                                 "Are you sure you want to reset your XP, level, all achievements, and your total weight lifted? This cannot be undone."
                                             );
-                                            setPixelModalButton("Delete");
+                                            setPixelModalButton("Reset");
                                             setPixelModalMode("progress");
                                             setShowPixelModal(true);
                                         }}

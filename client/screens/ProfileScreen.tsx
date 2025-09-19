@@ -12,6 +12,7 @@ import {
 import PixelText from "../components/PixelText";
 import PixelButton from "../components/PixelButton";
 import PixelModal from "../components/PixelModal";
+import ConfirmationPixelModal from "../components/ConfirmationPixelModal";
 import PixelQuestCard from "../components/PixelQuestCard";
 import ProgressBar from "../components/ProgressBar";
 import Sparks from "../components/Sparks";
@@ -30,6 +31,13 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import SettingsModal from "../components/SettingsModal";
 import * as SQLite from "expo-sqlite";
 import { Quest, User } from "../types/db";
+import { openDb } from "../db/db";
+import {
+    seedAchievements,
+    seedQuest,
+    seedWorkouts,
+    seedWorkoutSplits,
+} from "../db/seed";
 
 export default function ProfileScreen({
     navigation,
@@ -444,9 +452,8 @@ export default function ProfileScreen({
             const newMute = !currentMute;
 
             // 2. update local DB
-            await db.runAsync("UPDATE users SET mute_sounds = ? WHERE id = ?", [
+            await db.runAsync("UPDATE users SET mute_sounds = ?", [
                 newMute ? 1 : 0,
-                Number(userId),
             ]);
 
             // 3. update SecureStore
@@ -570,6 +577,7 @@ export default function ProfileScreen({
             const updatedUser = await authFetch(`/user/opt/${userId}`, {
                 method: "PATCH",
             });
+            setOptedEnabled(updatedUser.optedIn);
             if (updatedUser.optedIn) {
                 playCompleteSound();
                 setConfirmationPixelModalTitle("Nice gamer, gamer!");
@@ -588,10 +596,64 @@ export default function ProfileScreen({
         } catch (error) {}
     };
 
+    const resetAccountWithNewData = async () => {
+        const userId = await SecureStore.getItemAsync("userId");
+        const updatedUser: any = await authFetch(`/user/${userId}`);
+
+        const cleanedEmail = updatedUser.email;
+        const name = updatedUser.name;
+        const weightSystem = "IMPERIAL";
+
+        const db = await openDb(true);
+
+        const result = await db.runAsync(
+            `INSERT INTO users (email, name, weight_system)
+                                VALUES (?, ?, ?);`,
+            [cleanedEmail, name, weightSystem]
+        );
+
+        await seedWorkouts(db);
+        await seedAchievements(db);
+        await seedWorkoutSplits(db);
+        await seedQuest(db);
+    };
+
     if (!userData) {
         return (
             <SafeAreaView style={styles.safeArea}>
                 <View style={styles.container}>
+                    <PixelText
+                        fontSize={20}
+                        color="#0ff"
+                        style={{ marginBottom: 20 }}
+                    >
+                        Oh no, your data has been lost!
+                    </PixelText>
+                    <PixelButton
+                        text="Create New Data"
+                        onPress={() => {
+                            setConfirmationPixelModalTitle(
+                                "Welcome back, gamer!"
+                            );
+                            setConfirmationPixelModalMessage(
+                                "We're back on that gym gamer journey!"
+                            );
+                            setConfirmationPixelModalVisible(true);
+                        }}
+                        color="#A3E635"
+                        containerStyle={{
+                            backgroundColor: "#000",
+                            borderColor: "#A3E635",
+                            marginTop: 10,
+                        }}
+                    />
+                    <PixelText
+                        fontSize={14}
+                        color="#0ff"
+                        style={{ margin: 20 }}
+                    >
+                        or
+                    </PixelText>
                     <PixelButton
                         text="Log Out"
                         onPress={() => {
@@ -608,6 +670,23 @@ export default function ProfileScreen({
                             marginTop: 10,
                         }}
                     />
+
+                    <ConfirmationPixelModal
+                        visible={confirmationPixelModalVisible}
+                        onConfirm={async () => {
+                            await resetAccountWithNewData();
+                            fetchUserData();
+                            setConfirmationPixelModalVisible(false);
+                        }}
+                        onCancel={async () => {
+                            await resetAccountWithNewData();
+                            fetchUserData();
+                            setConfirmationPixelModalVisible(false);
+                        }}
+                        title={confirmationPixelModalTitle}
+                        message={confirmationPixelModalMessage}
+                    />
+
                     <PixelModal
                         visible={modalVisible}
                         title={modalTitleMessage}

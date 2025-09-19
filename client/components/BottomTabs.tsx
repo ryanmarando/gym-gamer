@@ -7,7 +7,6 @@ import PixelText from "./PixelText";
 import ProfileScreen from "../screens/ProfileScreen";
 import WorkoutsScreen from "../screens/WorkoutsScreen";
 import AchievementsScreen from "../screens/AchievementsScreen";
-import LeaderboardsScreen from "../screens/LeaderboardsScreen";
 import SaveWorkoutScreen from "../screens/SaveWorkoutsScreen";
 
 const Tab = createBottomTabNavigator();
@@ -97,7 +96,7 @@ export default function BottomTabs({
                         flex: 1,
                         justifyContent: "center",
                         alignItems: "center",
-                        transform: [{ translateX: -16 }], // 👈 shift left
+                        transform: [{ translateX: -16 }],
                     },
                 }}
                 component={WorkoutsScreen}

@@ -372,10 +372,6 @@ export async function seedWorkouts(db: any) {
             architype: ["LEGS", "HAMSTRINGS"],
         },
         {
-            name: "Hip Thrust",
-            architype: ["LEGS", "HAMSTRINGS"],
-        },
-        {
             name: "Reverse Hyperextension",
             architype: ["LEGS", "HAMSTRINGS"],
         },
