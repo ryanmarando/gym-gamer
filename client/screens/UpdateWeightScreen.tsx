@@ -20,7 +20,7 @@ import { playBadMoveSound } from "../utils/playBadMoveSound";
 import { playDeleteSound } from "../utils/playDeleteSound";
 import { playQuickAddSound } from "../utils/playQuickAddSound";
 import { convertWeight } from "../utils/unitUtils";
-import * as SQLite from "expo-sqlite";
+import { getDb } from "../db/db";
 import { UserWeightEntry } from "../types/db";
 import { checkAndProgressAchievements } from "../utils/checkAndProgressAchievements";
 import { notifyAchievements } from "../utils/notifyAchievement";
@@ -59,14 +59,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
     // Load userId and weightSystem once
     useEffect(() => {
         const loadUserData = async () => {
-            const idStr = await SecureStore.getItemAsync("userId");
-            if (!idStr) {
-                Alert.alert("Error", "User ID not found.");
-                setLoading(false);
-                return;
-            }
-
-            setUserId(Number(idStr));
+            await fetchWeights();
 
             const weightSystem = await SecureStore.getItemAsync("weightSystem");
             if (weightSystem === "METRIC" || weightSystem === "IMPERIAL") {
@@ -76,16 +69,9 @@ export default function UpdateWeightScreen({ navigation }: any) {
         loadUserData();
     }, []);
 
-    // Fetch weights only when userId is valid
-    useEffect(() => {
-        if (userId !== null) {
-            fetchWeights();
-        }
-    }, [userId]);
-
     const fetchWeights = async () => {
         try {
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
             const bodyweightData: UserWeightEntry[] = await db.getAllAsync(
                 "SELECT * FROM user_weight_entries"
             );
@@ -101,8 +87,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
                 setWeights([]);
                 console.warn("⚠️ No weightEntries found");
             }
-        } catch (err) {
-            console.error(err);
+        } catch (err: any) {
             playBadMoveSound();
             setModalConfirmationConfig({
                 visible: true,
@@ -161,14 +146,14 @@ export default function UpdateWeightScreen({ navigation }: any) {
         try {
             setLoading(true);
 
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
             await db.runAsync(
                 "INSERT INTO user_weight_entries (weight) VALUES (?)",
                 [weightNum]
             );
             console.log(`✅ Updated weight entry ${newWeight}`);
 
-            // 5️⃣ Check achievements locally
+            // // 5️⃣ Check achievements locally
             const updateBodyweightAchievement =
                 await checkAndProgressAchievements(["BODYWEIGHT"]);
 
@@ -179,7 +164,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
             playQuickAddSound();
             setNewWeight("");
             await fetchWeights();
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
             playBadMoveSound();
             setModalConfirmationConfig({
@@ -204,7 +189,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
                 "Are you sure you want to delete your last bodyweight entry?",
             onConfirm: async () => {
                 try {
-                    const db = await SQLite.openDatabaseAsync("gymgamer.db");
+                    const db = await getDb();
                     await db.runAsync(
                         "DELETE FROM user_weight_entries WHERE id = (SELECT id FROM user_weight_entries ORDER BY id DESC LIMIT 1)"
                     );
@@ -238,7 +223,7 @@ export default function UpdateWeightScreen({ navigation }: any) {
             message: "Are you sure you want to delete ALL bodyweight entries?",
             onConfirm: async () => {
                 try {
-                    const db = await SQLite.openDatabaseAsync("gymgamer.db");
+                    const db = await getDb();
                     await db.runAsync("DELETE FROM user_weight_entries");
                     console.log("✅ Deleted all weight entries");
                     playDeleteSound();

@@ -10,7 +10,6 @@ import PixelQuestCard from "../components/PixelQuestCard";
 import UpdateQuestModal from "../components/UpdateQuestModal";
 import * as SecureStore from "expo-secure-store";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Celebration from "../components/Celebration";
 import { getNextSundayReset } from "../utils/getNextSundayReset";
 import { playCompleteSound } from "../utils/playCompleteSound";
 import { playExcitingSound } from "../utils/playExcitingSound";
@@ -20,11 +19,11 @@ import {
     getLocalizedAchievementName,
 } from "../utils/unitUtils";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
-import * as SQLite from "expo-sqlite";
 import { Quest, Achievement, UserWeightEntry, User } from "../types/db";
 import { checkAndProgressAchievements } from "../utils/checkAndProgressAchievements";
 import { notifyAchievements } from "../utils/notifyAchievement";
 import { addXpAndCheckLevelUp } from "../utils/addXPAndCheckLevelUp";
+import { getDb } from "../db/db";
 
 export default function AchievementsScreen({ navigation }: any) {
     const [achievements, setAchievements] = useState<Achievement[]>([]); // All achievements
@@ -73,7 +72,7 @@ export default function AchievementsScreen({ navigation }: any) {
 
     const fetchWeights = async () => {
         try {
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             const weights: UserWeightEntry[] = await db.getAllAsync(
                 "SELECT * FROM user_weight_entries ORDER BY entered_at DESC"
@@ -90,7 +89,7 @@ export default function AchievementsScreen({ navigation }: any) {
 
     const fetchActiveQuest = async () => {
         try {
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             const quests: Quest[] = await db.getAllAsync(
                 "SELECT * FROM quests"
@@ -104,7 +103,7 @@ export default function AchievementsScreen({ navigation }: any) {
 
     const fetchAchievements = async () => {
         try {
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             const achievements: Achievement[] = await db.getAllAsync(
                 "SELECT * FROM achievements ORDER BY progress DESC"
@@ -167,11 +166,10 @@ export default function AchievementsScreen({ navigation }: any) {
         initialWeight: number;
     }) => {
         try {
-            const userId = await SecureStore.getItemAsync("userId");
             const weightSystem = await SecureStore.getItemAsync("weightSystem");
 
             // --- 2. Update local SQLite DB ---
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             const formattedType =
                 data.customType.charAt(0).toUpperCase() +
@@ -210,13 +208,14 @@ export default function AchievementsScreen({ navigation }: any) {
             await db.runAsync(
                 `
             UPDATE quests
-            SET goal = ?, goal_date = ?,  name = ?, initial_weight = ?
+            SET goal = ?, goal_date = ?,  name = ?, initial_weight = ?, type = ?
             `,
                 [
                     data.customGoalAmount,
                     data.customDeadline,
                     questName,
                     data.initialWeight,
+                    data.customType,
                 ]
             );
 
@@ -303,7 +302,7 @@ export default function AchievementsScreen({ navigation }: any) {
 
     const handleCompleteQuest = async () => {
         setModalVisible(false);
-        const db = await SQLite.openDatabaseAsync("gymgamer.db");
+        const db = await getDb();
 
         try {
             // 1️⃣ Get the quest

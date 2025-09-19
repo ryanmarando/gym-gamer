@@ -1,6 +1,15 @@
 import * as SQLite from "expo-sqlite";
 import * as FileSystem from "expo-file-system/legacy";
 
+let db: any | null = null;
+
+export const getDb = async () => {
+    if (!db) {
+        throw new Error("Database not initialized. Call openDb() first.");
+    }
+    return db;
+};
+
 export const openDb = async (reset = false) => {
     const dbPath = `${FileSystem.documentDirectory}gymgamer.db`;
 
@@ -14,7 +23,7 @@ export const openDb = async (reset = false) => {
         }
     }
 
-    const db = await SQLite.openDatabaseAsync("gymgamer.db");
+    db = await SQLite.openDatabaseAsync("gymgamer.db");
 
     if (reset) {
         await db.execAsync(`

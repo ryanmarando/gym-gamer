@@ -18,7 +18,6 @@ import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import PickWorkoutDay from "../components/PickWorkoutDay";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { sendPushNotification } from "../utils/notification";
 import { playCompleteSound } from "../utils/playCompleteSound";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import DraggableFlatList from "react-native-draggable-flatlist";
@@ -26,7 +25,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import WorkoutHeader from "../components/WorkoutHeader";
 import WorkoutItem from "../components/WorkoutItem";
-import * as SQLite from "expo-sqlite";
+import { getDb } from "../db/db";
 import { UserWorkout, WorkoutDay, UserWorkoutWithName } from "../types/db";
 import { addXpAndCheckLevelUp } from "../utils/addXPAndCheckLevelUp";
 import { checkAndProgressAchievements } from "../utils/checkAndProgressAchievements";
@@ -113,7 +112,7 @@ export default function WorkoutsScreen({ navigation }: any) {
             const userIdStr = await SecureStore.getItemAsync("userId");
             const userId = Number(userIdStr);
 
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             // 1. Delete existing days for this split
             await db.runAsync("DELETE FROM workout_days WHERE split_id = ?", [
@@ -229,7 +228,7 @@ export default function WorkoutsScreen({ navigation }: any) {
                     return;
                 }
 
-                const db = await SQLite.openDatabaseAsync("gymgamer.db");
+                const db = await getDb();
 
                 let totalWeightLifted = 0;
                 let newCompletedAchievements: any[] = [];
@@ -391,7 +390,7 @@ export default function WorkoutsScreen({ navigation }: any) {
     };
 
     const loadMaxWeights = async () => {
-        const db = await SQLite.openDatabaseAsync("gymgamer.db");
+        const db = await getDb();
 
         const rows: { workout_id: number; maxWeight: number }[] =
             await db.getAllAsync(`
@@ -413,7 +412,7 @@ export default function WorkoutsScreen({ navigation }: any) {
             const userId = Number(userIdStr);
 
             // const userData = await authFetch(`/user/${userId}`);
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             const workoutDays: WorkoutDay[] = await db.getAllAsync(
                 "SELECT * FROM workout_days ORDER BY day_index ASC"
@@ -433,7 +432,7 @@ export default function WorkoutsScreen({ navigation }: any) {
 
     const fetchUserWorkouts = useCallback(async () => {
         try {
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             // 1. Get user ID
             const userIdStr = await SecureStore.getItemAsync("userId");
@@ -739,7 +738,7 @@ export default function WorkoutsScreen({ navigation }: any) {
             const userId = Number(userIdStr);
             if (!userId || !selectedDay) return;
 
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             // Update each workout’s order_index in user_workouts
             for (let i = 0; i < orderedWorkouts.length; i++) {
@@ -765,7 +764,7 @@ export default function WorkoutsScreen({ navigation }: any) {
         weights: string[]
     ) => {
         try {
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             // Ensure reps and weights are clean arrays of strings
             const cleanReps = Array.isArray(reps)
@@ -1055,6 +1054,7 @@ export const styles = StyleSheet.create({
         marginLeft: 12,
         justifyContent: "center",
         alignItems: "center",
+        width: Platform.OS === "ios" ? 40 : 55,
     },
     keyboardAvoidingContainer: {
         flex: 1,

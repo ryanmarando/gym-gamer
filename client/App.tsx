@@ -15,6 +15,7 @@ import UserWaiverScreen from "./screens/UserWaiverScreen";
 import ProgressPhotos from "./screens/ProgressPhotos";
 import CreditsScreen from "./screens/CreditsScreen";
 import TrackLiftsScreen from "./screens/TrackLiftsScreen";
+import { openDb } from "./db/db";
 
 const RootStack = createNativeStackNavigator();
 const Stack = createNativeStackNavigator();
@@ -43,6 +44,10 @@ export default function App() {
         handleWeeklyReset().catch((err) => {
             console.error("Weekly reset failed:", err);
         });
+
+        (async () => {
+            await openDb();
+        })();
     }, [fontsLoaded]);
 
     if (!fontsLoaded) {

@@ -1,11 +1,11 @@
-import * as SQLite from "expo-sqlite";
+import { getDb } from "../db/db";
 import { addXpAndCheckLevelUp } from "../utils/addXPAndCheckLevelUp";
 
 export async function progressAchievementLocal(
     achievementId: number,
     progressToAdd: number
 ) {
-    const db = await SQLite.openDatabaseAsync("gymgamer.db");
+    const db = await getDb();
 
     const achievement: any = await db.getFirstAsync(
         `SELECT * FROM achievements WHERE id = ?`,

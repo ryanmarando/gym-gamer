@@ -1,4 +1,4 @@
-import * as SQLite from "expo-sqlite";
+import { getDb } from "../db/db";
 import { checkAndProgressAchievements } from "./checkAndProgressAchievements";
 
 function getRequiredXp(level: number): number {
@@ -8,7 +8,7 @@ function getRequiredXp(level: number): number {
 }
 
 export async function addXpAndCheckLevelUp(xpToAdd: number) {
-    const db = await SQLite.openDatabaseAsync("gymgamer.db");
+    const db = await getDb();
 
     const user: any = await db.getFirstAsync(
         "SELECT id, xp, level, name FROM users"

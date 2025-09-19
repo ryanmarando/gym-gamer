@@ -38,6 +38,7 @@ import {
     seedWorkouts,
     seedWorkoutSplits,
 } from "../db/seed";
+import { getDb } from "../db/db";
 
 export default function ProfileScreen({
     navigation,
@@ -174,7 +175,7 @@ export default function ProfileScreen({
 
     useEffect(() => {
         const initPush = async () => {
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
             const userId = await SecureStore.getItemAsync("userId");
             if (!userId) return;
 
@@ -216,7 +217,7 @@ export default function ProfileScreen({
 
     const fetchUserData = async () => {
         try {
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             const localUserData: User[] = await db.getAllAsync(
                 "SELECT * FROM users"
@@ -317,7 +318,7 @@ export default function ProfileScreen({
         if (newSystem === selectedSystem) return;
 
         try {
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             // 🔥 update local DB instead of API
             await db.runAsync("UPDATE users SET weight_system = ?", [
@@ -360,7 +361,7 @@ export default function ProfileScreen({
             console.log("⚠️ Account deletion triggered on backend");
 
             // 2️⃣ Clear local database tables
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             const tablesToClear = [
                 "users",
@@ -400,7 +401,7 @@ export default function ProfileScreen({
 
     const resetUserAndAchievements = async () => {
         try {
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             // Reset user XP/level/progress/weights
             await db.execAsync(`
@@ -441,7 +442,7 @@ export default function ProfileScreen({
 
     const onToggleMuted = async () => {
         const userId = await SecureStore.getItemAsync("userId");
-        const db = await SQLite.openDatabaseAsync("gymgamer.db");
+        const db = await getDb();
         try {
             // 1. get current mute_sounds from DB
             const row: any = await db.getFirstAsync(
@@ -489,7 +490,7 @@ export default function ProfileScreen({
     };
 
     const onToggleNotifications = async () => {
-        const db = await SQLite.openDatabaseAsync("gymgamer.db");
+        const db = await getDb();
 
         if (notificationsEnabled) {
             await SecureStore.deleteItemAsync("notifToken");

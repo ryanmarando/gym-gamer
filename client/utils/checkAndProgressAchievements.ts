@@ -1,4 +1,4 @@
-import * as SQLite from "expo-sqlite";
+import { getDb } from "../db/db";
 import { progressAchievementLocal } from "./progressAchievement";
 
 const checkWorkoutDuration = (duration: number) => {
@@ -44,7 +44,7 @@ export async function checkAndProgressAchievements(
     goalTypes: string | string[],
     context: any = {}
 ) {
-    const db = await SQLite.openDatabaseAsync("gymgamer.db");
+    const db = await getDb();
     const goalTypeArray = Array.isArray(goalTypes) ? goalTypes : [goalTypes];
 
     const active: any = await db.getAllAsync(

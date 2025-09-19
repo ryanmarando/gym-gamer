@@ -16,7 +16,7 @@ import * as SecureStore from "expo-secure-store";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import { convertWeight, roundToNearestHalf } from "../utils/unitUtils";
 import ConfirmationPixelModal from "./ConfirmationPixelModal";
-import * as SQLite from "expo-sqlite";
+import { getDb } from "../db/db";
 import { UserWeightEntry } from "../types/db";
 
 interface UpdateQuestModalProps {
@@ -57,7 +57,7 @@ export default function UpdateQuestModal({
                 );
                 if (weightSystem) setWeightSystem(weightSystem);
 
-                const db = await SQLite.openDatabaseAsync("gymgamer.db");
+                const db = await getDb();
 
                 const weights: UserWeightEntry[] = await db.getAllAsync(
                     "SELECT * FROM user_weight_entries ORDER BY entered_at DESC"

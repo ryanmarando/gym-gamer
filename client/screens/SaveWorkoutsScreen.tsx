@@ -21,7 +21,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { playDeleteSound } from "../utils/playDeleteSound";
 import { playSwordSelectionSound } from "../utils/playSwordSelectionSound";
 import { playCompleteSound } from "../utils/playCompleteSound";
-import * as SQLite from "expo-sqlite";
+import { getDb } from "../db/db";
 import { checkAndProgressAchievements } from "../utils/checkAndProgressAchievements";
 import { notifyAchievements } from "../utils/notifyAchievement";
 
@@ -96,7 +96,7 @@ export default function SaveWorkoutScreen() {
 
     const fetchWorkouts = async () => {
         try {
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
             const userIdStr = await SecureStore.getItemAsync("userId");
             const userId = Number(userIdStr);
 
@@ -143,7 +143,7 @@ export default function SaveWorkoutScreen() {
             if (added) setUserWorkouts((prev) => [...prev, added]);
 
             // Open local SQLite database
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             // Insert into local table (create table beforehand if needed)
             await db.runAsync(
@@ -178,7 +178,7 @@ export default function SaveWorkoutScreen() {
                 setModalVisible(true);
             } else {
                 // Open local SQLite database
-                const db = await SQLite.openDatabaseAsync("gymgamer.db");
+                const db = await getDb();
 
                 let localUserData: any[] = await db.getAllAsync(
                     "SELECT * FROM workout_days"
@@ -239,7 +239,7 @@ export default function SaveWorkoutScreen() {
     const confirmRemoveWorkout = async (workoutId: number) => {
         try {
             // Open local database
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             // Delete the saved workout for this user
             await db.runAsync(
@@ -265,7 +265,7 @@ export default function SaveWorkoutScreen() {
 
     const deleteCustomWorkout = async (workoutId: number) => {
         try {
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             // Delete from workouts table
             await db.runAsync("DELETE FROM workouts WHERE id = ?", [workoutId]);
@@ -298,7 +298,7 @@ export default function SaveWorkoutScreen() {
             if (!userIdStr) throw new Error("User ID not found");
             const userId = Number(userIdStr);
 
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             // Insert new workout
             const architypeStr = JSON.stringify(data.architype);

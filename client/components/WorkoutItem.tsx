@@ -234,14 +234,14 @@ export default function WorkoutItem({
                         onPress={() => addEntry(item.workout_id)}
                         containerStyle={{
                             marginBottom: 8,
-                            width: Platform.OS === "ios" ? 40 : undefined,
+                            width: "100%",
                         }}
                     />
                     <PixelButton
                         text="-"
                         onPress={() => deleteEntry(item.workout_id)}
                         containerStyle={{
-                            width: Platform.OS === "ios" ? 40 : undefined,
+                            width: "100%",
                         }}
                     />
                 </View>

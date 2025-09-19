@@ -9,11 +9,10 @@ import {
 } from "react-native";
 import PixelText from "./PixelText";
 import ProgressBar from "./ProgressBar";
-import { authFetch } from "../utils/authFetch";
 import * as SecureStore from "expo-secure-store";
 import { convertWeight, getWeightUnit } from "../utils/unitUtils";
 import { getConvertedQuestFields } from "../utils/unitUtils";
-import * as SQLite from "expo-sqlite";
+import { getDb } from "../db/db";
 import { Quest, UserWeightEntry } from "../types/db";
 
 interface PixelQuestCardProps {
@@ -32,7 +31,7 @@ export default function PixelQuestCard({
 
     const fetchWeights = async () => {
         try {
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
             const userBodyWeightData: UserWeightEntry[] = await db.getAllAsync(
                 "SELECT * FROM user_weight_entries"
             );
@@ -74,7 +73,7 @@ export default function PixelQuestCard({
 
                 await fetchWeights();
 
-                const db = await SQLite.openDatabaseAsync("gymgamer.db");
+                const db = await getDb();
 
                 const localUserQuest: Quest[] = await db.getAllAsync(
                     "SELECT * FROM quests"
@@ -200,9 +199,11 @@ export default function PixelQuestCard({
                                           convertWeight(
                                               quest.type === "GAIN"
                                                   ? quest.initial_weight +
-                                                        quest.goal
-                                                  : quest.initial_weight -
-                                                        quest.goal,
+                                                        quest.goal // add for gain
+                                                  : quest.type === "LOSE"
+                                                  ? quest.initial_weight -
+                                                    quest.goal // subtract for lose
+                                                  : quest.initial_weight, // maintain = same
                                               "METRIC"
                                           ) * 2
                                       ) / 2
@@ -210,8 +211,10 @@ export default function PixelQuestCard({
                                           (quest.type === "GAIN"
                                               ? quest.initial_weight +
                                                 quest.goal
-                                              : quest.initial_weight -
-                                                quest.goal) * 2
+                                              : quest.type === "LOSE"
+                                              ? quest.initial_weight -
+                                                quest.goal
+                                              : quest.initial_weight) * 2
                                       ) / 2}{" "}
                                 {getWeightUnit(weightSystem!)}
                             </PixelText>

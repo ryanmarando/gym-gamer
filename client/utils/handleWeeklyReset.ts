@@ -1,5 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-import * as SQLite from "expo-sqlite";
+import { getDb } from "../db/db";
 import { sendPushNotification } from "./notification";
 
 export const handleWeeklyReset = async (force: boolean = false) => {
@@ -13,7 +13,7 @@ export const handleWeeklyReset = async (force: boolean = false) => {
 
     // If we are after last Sunday 11:59PM and haven't reset yet, do it
     if (force || (now > lastSunday && (!lastReset || lastReset < lastSunday))) {
-        const db = await SQLite.openDatabaseAsync("gymgamer.db");
+        const db = await getDb();
 
         await db.runAsync(
             `UPDATE achievements SET progress = 0 WHERE weekly_reset = TRUE`

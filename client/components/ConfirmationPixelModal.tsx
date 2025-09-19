@@ -3,7 +3,6 @@ import {
     Modal,
     View,
     StyleSheet,
-    TouchableOpacity,
     TouchableWithoutFeedback,
     Image,
     Platform,
@@ -34,16 +33,13 @@ export default function ConfirmationPixelModal({
             <TouchableWithoutFeedback onPress={onCancel}>
                 <View style={styles.overlay}>
                     {/* Confetti absolutely centered on overlay */}
-                    {confettiVisible &&
-                        (Platform.OS === "android" ? (
-                            <Celebration />
-                        ) : (
-                            <Image
-                                source={require("../assets/PixelConfettiAnimation.gif")}
-                                style={styles.confettiImage}
-                                resizeMode="center"
-                            />
-                        ))}
+                    {confettiVisible && (
+                        <Image
+                            source={require("../assets/PixelConfettiAnimation.gif")}
+                            style={styles.confettiImage}
+                            resizeMode="center"
+                        />
+                    )}
 
                     <TouchableWithoutFeedback>
                         <View style={styles.modalContainer}>

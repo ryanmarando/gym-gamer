@@ -15,7 +15,7 @@ import { playDeleteSound } from "../utils/playDeleteSound";
 import { playBadMoveSound } from "../utils/playBadMoveSound";
 import { LineChart } from "react-native-gifted-charts";
 import PixelModal from "../components/PixelModal";
-import * as SQLite from "expo-sqlite";
+import { getDb } from "../db/db";
 import { UserWorkoutWithName } from "../types/db";
 
 export default function TrackLiftsScreen({ navigation }: any) {
@@ -37,7 +37,7 @@ export default function TrackLiftsScreen({ navigation }: any) {
             setLoading(true);
             const userId = await SecureStore.getItemAsync("userId");
 
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             // Get all user workouts with the workout info
             const userWorkouts: any[] = await db.getAllAsync(
@@ -96,7 +96,7 @@ export default function TrackLiftsScreen({ navigation }: any) {
             const userId = await SecureStore.getItemAsync("userId");
             if (!userId) throw new Error("No user ID found");
 
-            const db = await SQLite.openDatabaseAsync("gymgamer.db");
+            const db = await getDb();
 
             // Delete all entries for this user/workout
             await db.runAsync(
