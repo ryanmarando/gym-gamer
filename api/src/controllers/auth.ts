@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { prisma, jwtSecret, resend, resendEmail } from "../config.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { Prisma } from "@prisma/client";
 
 export const login = async (
     req: Request,
@@ -116,8 +117,15 @@ export const register = async (
                 name: newUser.name,
             },
         });
-    } catch (error) {
-        console.log("Unsuccessful POST Registering User");
+    } catch (error: any) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === "P2002") {
+                // Unique constraint failed
+                res.status(409).json({ error: "Email already exists." });
+                return;
+            }
+        }
+        console.error("Unsuccessful POST Registering User", error);
         res.status(500).json({ error: "Internal server error." });
     }
 };
