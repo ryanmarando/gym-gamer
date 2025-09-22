@@ -16,10 +16,14 @@ import ProgressPhotos from "./screens/ProgressPhotos";
 import CreditsScreen from "./screens/CreditsScreen";
 import TrackLiftsScreen from "./screens/TrackLiftsScreen";
 import { openDb } from "./db/db";
+import { Text } from "react-native";
 
 const RootStack = createNativeStackNavigator();
 const Stack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
+
+(Text as any).defaultProps = (Text as any).defaultProps || {};
+(Text as any).defaultProps.allowFontScaling = false;
 
 export default function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -37,17 +41,16 @@ export default function App() {
             if (fontsLoaded) {
                 await SplashScreen.hideAsync();
             }
+
+            try {
+                await openDb();
+                await handleWeeklyReset();
+            } catch (err) {
+                console.error("Weekly reset failed:", err);
+            }
         };
 
         prepare();
-
-        handleWeeklyReset().catch((err) => {
-            console.error("Weekly reset failed:", err);
-        });
-
-        (async () => {
-            await openDb();
-        })();
     }, [fontsLoaded]);
 
     if (!fontsLoaded) {

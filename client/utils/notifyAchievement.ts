@@ -23,6 +23,7 @@ export const notifyAchievements = async (achievements: { name: string }[]) => {
         }
 
         await sendPushNotification({ expoPushToken, title, body });
+        console.log(`🏆 You completed '${achievements[0].name}'!`);
     } catch (error) {
         console.error("Failed to send notification:", error);
     }

@@ -389,7 +389,10 @@ export default function AchievementsScreen({ navigation }: any) {
                         >
                             <PixelQuestCard
                                 quest={activeQuest}
-                                containerStyle={{ width: "90%", maxWidth: 400 }}
+                                containerStyle={{
+                                    width: "100%",
+                                    maxWidth: 400,
+                                }}
                             />
                             <PixelButton
                                 fontSize={15}

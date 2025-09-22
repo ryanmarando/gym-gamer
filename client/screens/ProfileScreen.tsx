@@ -29,7 +29,6 @@ import { playBadMoveSound } from "../utils/playBadMoveSound";
 import { playLoginSound } from "../utils/playLoginSound";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import SettingsModal from "../components/SettingsModal";
-import * as SQLite from "expo-sqlite";
 import { Quest, User } from "../types/db";
 import { openDb } from "../db/db";
 import {
@@ -607,10 +606,22 @@ export default function ProfileScreen({
 
         const db = await openDb(true);
 
+        const token = await registerForPushNotificationsAsync();
+        if (token) {
+            setExpoPushToken(token);
+            setNotificationsEnabled(true);
+            await SecureStore.setItemAsync("notifToken", token);
+
+            await db.runAsync("UPDATE users SET expo_push_token = ?", [token]);
+            updateAPIExpoToken(token);
+        }
+
+        await SecureStore.setItemAsync("muteSounds", "false");
+
         const result = await db.runAsync(
-            `INSERT INTO users (email, name, weight_system)
-                                VALUES (?, ?, ?);`,
-            [cleanedEmail, name, weightSystem]
+            `INSERT INTO users (email, name, weight_system, expo_push_token)
+                                VALUES (?, ?, ?, ?);`,
+            [cleanedEmail, name, weightSystem, token]
         );
 
         await seedWorkouts(db);
@@ -1060,14 +1071,12 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#111",
-        paddingHorizontal: "5%",
         width: "100%",
     },
     content: {
         flex: 1,
         alignItems: "center",
         justifyContent: "flex-start",
-        width: "100%",
     },
     bottomButtonContainer: {
         alignItems: "center",

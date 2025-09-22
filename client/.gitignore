@@ -40,3 +40,5 @@ yarn-error.*
 
 # Apple notification keys
 pushNotificationKey
+google-services.json
+gymgamer-406c5-firebase-adminsdk-fbsvc-275ffbd381.json

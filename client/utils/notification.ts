@@ -33,7 +33,7 @@ export async function sendPushNotification({
         data,
     };
 
-    await fetch("https://exp.host/--/api/v2/push/send", {
+    const res = await fetch("https://exp.host/--/api/v2/push/send", {
         method: "POST",
         headers: {
             Accept: "application/json",
@@ -42,6 +42,8 @@ export async function sendPushNotification({
         },
         body: JSON.stringify(message),
     });
+    const result = await res.json();
+    console.log("📩 Expo push response:", result);
 }
 
 export async function scheduleNotification({
