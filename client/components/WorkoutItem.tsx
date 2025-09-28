@@ -172,6 +172,7 @@ export default function WorkoutItem({
                                                 textAlignVertical: "center",
                                                 fontFamily:
                                                     "PressStart2P_400Regular",
+                                                width: 70,
                                             }}
                                         />
 

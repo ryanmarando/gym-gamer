@@ -181,8 +181,10 @@ export default function RegisterScreen({ navigation, setIsLoggedIn }: any) {
             }
 
             const data = await response.json();
+            const now = new Date().toISOString();
             await SecureStore.setItemAsync("userToken", data.token);
             await SecureStore.setItemAsync("userId", data.user.id.toString());
+            await SecureStore.setItemAsync("loginTimestamp", now);
 
             playLoginSound();
             setModalTitleMessage("Level up!");
